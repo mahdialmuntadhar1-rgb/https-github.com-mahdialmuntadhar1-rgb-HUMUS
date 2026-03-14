@@ -1,17 +1,12 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import { runGovernor } from "./server/governors/index.js";
-import { registerCrawlerRoutes } from "./server/api/crawler-routes.js";
-import { CrawlOrchestrator } from "./server/crawler/orchestrator.js";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
-  const orchestrator = new CrawlOrchestrator();
 
   app.use(express.json());
-
-  let paused = false;
 
   // Mock agent state
   let agents: any[] = [
@@ -33,33 +28,34 @@ async function startServer() {
     { name: "Agent-16", governorate: "Qadisiyyah", category: "Co-working Spaces", status: "idle", governmentRate: "Rate Level 5", recordsInserted: 156, lastActivity: "6h ago" },
     { name: "Agent-17", governorate: "Saladin", category: "Entertainment", status: "active", governmentRate: "Rate Level 5", recordsInserted: 743, lastActivity: "18m ago" },
     { name: "Agent-18", governorate: "Diyala", category: "Tourism", status: "active", governmentRate: "Rate Level 5", recordsInserted: 512, lastActivity: "22m ago" },
-    { name: "Agent-19", governorate: "Iraq", category: "Quality Control", status: "active", governmentRate: "Supervisory", recordsInserted: 15420, lastActivity: "1m ago" },
-    { name: "Agent-20", governorate: "Iraq", category: "Enrichment", status: "idle", governmentRate: "Enrichment", recordsInserted: 0, lastActivity: "N/A" },
-    { name: "Agent-21", governorate: "Iraq", category: "Geocoding", status: "idle", governmentRate: "Enrichment", recordsInserted: 0, lastActivity: "N/A" },
-    { name: "Agent-22", governorate: "Iraq", category: "Website Parser", status: "idle", governmentRate: "Enrichment", recordsInserted: 0, lastActivity: "N/A" },
-    { name: "Agent-23", governorate: "Iraq", category: "Social Discovery", status: "idle", governmentRate: "Enrichment", recordsInserted: 0, lastActivity: "N/A" },
-    { name: "Agent-24", governorate: "Iraq", category: "Image Collection", status: "idle", governmentRate: "Enrichment", recordsInserted: 0, lastActivity: "N/A" },
+    { name: "QC Overseer", governorate: "QC Overseer", category: "Quality Control", status: "active", governmentRate: "Supervisory", recordsInserted: 15420, lastActivity: "1m ago" },
   ];
 
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", paused }));
-  app.get("/api/agents", (_req, res) => res.json(agents));
+  // API routes
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok" });
+  });
 
-  app.post("/api/orchestrator/start", async (_req, res) => {
-    paused = false;
-    await orchestrator.tick();
-    agents = agents.map((a) => ({ ...a, status: a.status === "error" ? "error" : "running" }));
+  app.get("/api/agents", (req, res) => {
+    res.json(agents);
+  });
+
+  app.post("/api/orchestrator/start", (req, res) => {
+    agents = agents.map(a => ({ ...a, status: "running" }));
     res.json({ status: "started", agents });
   });
 
-  app.post("/api/orchestrator/stop", (_req, res) => {
-    paused = true;
-    agents = agents.map((a) => ({ ...a, status: "idle" }));
+  app.post("/api/orchestrator/stop", (req, res) => {
+    agents = agents.map(a => ({ ...a, status: "idle" }));
     res.json({ status: "stopped", agents });
   });
 
+  // Endpoint to manually trigger a governor
   app.post("/api/agents/:agentName/run", async (req, res) => {
     const { agentName } = req.params;
     try {
+      // In a real app, this would be triggered by a cron job or background worker
+      // We run it asynchronously so we don't block the response
       runGovernor(agentName).catch(console.error);
       res.json({ status: "started", agentName });
     } catch (error: any) {
@@ -67,16 +63,20 @@ async function startServer() {
     }
   });
 
-  registerCrawlerRoutes(app);
-
+  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
     app.use(vite.middlewares);
   } else {
     app.use(express.static("dist"));
   }
 
-  app.listen(PORT, "0.0.0.0", () => console.log(`Server running on http://localhost:${PORT}`));
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 }
 
 startServer();

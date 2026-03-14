@@ -3,7 +3,6 @@ import { supabase } from "../lib/supabase";
 import { Link } from "react-router-dom";
 import { AgentControlPanel } from "../components/admin/AgentControlPanel";
 import { SystemLog } from "../components/admin/SystemLog";
-import { CrawlerMonitorPanels } from "../components/admin/CrawlerMonitorPanels";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie
@@ -735,9 +734,6 @@ export default function Admin() {
 
         {/* System Event Log */}
         <SystemLog />
-
-        {/* Crawler Monitor Panels */}
-        <CrawlerMonitorPanels />
 
         {/* Footer */}
         <div style={{
