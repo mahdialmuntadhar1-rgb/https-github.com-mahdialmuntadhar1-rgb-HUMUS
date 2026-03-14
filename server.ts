@@ -2,6 +2,7 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import { runGovernor } from "./server/governors/index.js";
 import { AgentOrchestrator } from "./server/orchestrator.js";
+import { AgentOrchestrator } from "./server/orchestrator";
 
 async function startServer() {
   const app = express();
@@ -36,6 +37,14 @@ async function startServer() {
       status: "stopped",
       agents: orchestrator.getAgents(),
     });
+  app.post("/api/orchestrator/start", async (req, res) => {
+    const result = await orchestrator.startAll();
+    res.json(result);
+  });
+
+  app.post("/api/orchestrator/stop", async (req, res) => {
+    const result = await orchestrator.stopAll();
+    res.json(result);
   });
 
   // Endpoint to manually trigger a governor
@@ -67,6 +76,7 @@ async function startServer() {
 
     console.log("Starting enrichment agents automatically...");
     orchestrator.startAll();
+    void orchestrator.startAll();
   });
 }
 
