@@ -1,5 +1,10 @@
-import express from "express";
 import { createServer as createViteServer } from "vite";
+import express from "express";
+import app from "./server/index.js";
+
+const PORT = 3000;
+
+async function startServer() {
 import { AgentQueueSystem } from "./server/agent-queue.js";
 
 async function startServer() {
@@ -76,6 +81,7 @@ async function startServer() {
       server: { middlewareMode: true },
       appType: "spa",
     });
+
     app.use(vite.middlewares);
   } else {
     app.use(express.static("dist"));
