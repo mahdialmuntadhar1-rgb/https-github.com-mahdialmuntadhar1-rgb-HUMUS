@@ -53,3 +53,10 @@ Optional:
 1. Keep a persistent process (PM2/systemd/Docker) running `npm run dev` or production `npm run start`.
 2. Add a GitHub Actions scheduled workflow that calls the run endpoint.
 3. Add Vercel Cron to call `/api/orchestrator/start` or `/api/agents/:agentName/run`.
+## Enrichment agent startup
+
+The enrichment orchestrator now starts all 18 governorate agents automatically when the server boots (`npm run dev` / server startup). Manual orchestration endpoints are still available if you want to explicitly trigger start/stop operations:
+
+- `POST /api/orchestrator/start` (optional manual start)
+- `POST /api/orchestrator/stop`
+- `GET /api/agents`
