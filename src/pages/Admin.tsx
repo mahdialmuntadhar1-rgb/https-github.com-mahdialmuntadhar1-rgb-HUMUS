@@ -2,7 +2,50 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { Link } from "react-router-dom";
 import { AgentControlPanel } from "../components/admin/AgentControlPanel";
+import { supabase } from "../lib/supabase";
 
+type Governor = {
+  id: string;
+  name: string;
+  category: string;
+  emoji: string;
+  color: string;
+  records: number;
+  target: number;
+  status: string;
+  lastRun: string;
+  errors: number;
+};
+
+type BusinessRecord = {
+  id: number;
+  name: string;
+  category: string;
+  status: string;
+  created_at: string;
+};
+
+type AgentResponse = {
+  id?: string | number;
+  name?: string;
+  agent_name?: string;
+  category?: string;
+  emoji?: string;
+  color?: string;
+  records_collected?: number | string;
+  records?: number | string;
+  target?: number | string;
+  status?: string;
+  lastRun?: string;
+  errors?: number | string;
+};
+
+const GOVERNOR_STYLE_FALLBACKS = [
+  { emoji: "🍽️", color: "#FF6B35" },
+  { emoji: "☕", color: "#F7B731" },
+  { emoji: "🥐", color: "#FC5C65" },
+  { emoji: "🏨", color: "#45AAF2" },
+  { emoji: "💪", color: "#26de81" },
 const STATIC_GOVERNORS = [
   { id: 1, name: "Baghdad", category: "Restaurants", emoji: "🍽️", color: "#FF6B35", records: 3247, target: 4000, status: "active", lastRun: "2m ago", errors: 2 },
   { id: 2, name: "Basra", category: "Cafes", emoji: "☕", color: "#F7B731", records: 1892, target: 2500, status: "active", lastRun: "5m ago", errors: 0 },
@@ -24,11 +67,18 @@ const STATIC_GOVERNORS = [
   { id: 18, name: "Diyala", category: "Tourism", emoji: "🕌", color: "#2d98da", records: 512, target: 800, status: "active", lastRun: "22m ago", errors: 4 },
 ];
 
-const statusConfig: Record<string, any> = {
+const statusConfig: Record<string, { label: string; bg: string; border: string; dot: string }> = {
   active: { label: "ACTIVE", bg: "rgba(38,222,129,0.15)", border: "#26de81", dot: "#26de81" },
   idle:   { label: "IDLE",   bg: "rgba(247,183,49,0.15)",  border: "#F7B731", dot: "#F7B731" },
   error:  { label: "ERROR",  bg: "rgba(252,92,101,0.15)",  border: "#FC5C65", dot: "#FC5C65" },
 };
+
+const IRAQI_GOVERNORATES = [
+  "Baghdad", "Basra", "Nineveh", "Erbil", "Sulaymaniyah", "Kirkuk", "Duhok", "Anbar", "Babil",
+  "Karbala", "Wasit", "Dhi Qar", "Maysan", "Muthanna", "Najaf", "Qadisiyyah", "Saladin", "Diyala",
+];
+
+const CARDS_PER_PAGE = 6;
 
 function pulse(color: string) {
   return {
@@ -41,8 +91,13 @@ function pulse(color: string) {
 export default function Admin() {
   const [time, setTime] = useState(new Date());
   const [animatedRecords, setAnimatedRecords] = useState<Record<string, number>>({});
-  const [selectedGov, setSelectedGov] = useState<string | number | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [governors, setGovernors] = useState<Governor[]>([]);
+  const [newToday, setNewToday] = useState(0);
+  const [expandedGovernorId, setExpandedGovernorId] = useState<string | null>(null);
+  const [cityRecords, setCityRecords] = useState<Record<string, BusinessRecord[]>>({});
+  const [loadingCityRecords, setLoadingCityRecords] = useState<Record<string, boolean>>({});
+  const [currentPage, setCurrentPage] = useState(1);
   const [governors, setGovernors] = useState(STATIC_GOVERNORS);
   const [newToday, setNewToday] = useState(1247); // Mocked for visual
 
@@ -65,6 +120,11 @@ export default function Admin() {
     return () => clearInterval(interval);
   }, []);
 
+  function resolveGovernorateName(agent: AgentResponse, index: number) {
+    const candidate = String(agent.name ?? agent.agent_name ?? agent.id ?? "");
+    const match = candidate.match(/(\d+)/);
+    const governorateIndex = match ? Number(match[1]) - 1 : index;
+    return IRAQI_GOVERNORATES[governorateIndex] ?? IRAQI_GOVERNORATES[index] ?? `Governor ${index + 1}`;
   useEffect(() => {
     setCurrentPage(1);
     setExpandedGovId(null);
@@ -96,6 +156,27 @@ export default function Admin() {
       const { data, error } = await supabase.from("agents").select("*").order("agent_name");
       if (error) throw error;
 
+      const data = await response.json();
+      const liveGovernors = Array.isArray(data)
+        ? data.map((agent: AgentResponse, index: number) => {
+            const fallback = GOVERNOR_STYLE_FALLBACKS[index % GOVERNOR_STYLE_FALLBACKS.length];
+            return {
+              id: String(agent.id ?? agent.name ?? `agent-${index + 1}`),
+              name: resolveGovernorateName(agent, index),
+              category: agent.category ?? "Unassigned",
+              emoji: agent.emoji ?? fallback.emoji,
+              color: agent.color ?? fallback.color,
+              records: Number(agent.records_collected ?? agent.records ?? 0),
+              target: Number(agent.target ?? 1000),
+              status: agent.status ?? "idle",
+              lastRun: agent.lastRun ?? "Unknown",
+              errors: Number(agent.errors ?? 0),
+            };
+          })
+        : [];
+
+      setGovernors(liveGovernors);
+      setNewToday(liveGovernors.reduce((total: number, governor: Governor) => total + governor.records, 0));
       if (data && data.length > 0) {
         const merged = data.map((dbGov, index) => {
           // Match by name or index to ensure we get the right Iraqi city name
@@ -157,6 +238,48 @@ export default function Admin() {
   const overallProgress = totalTarget > 0 ? Math.round((totalRecords / totalTarget) * 100) : 0;
 
   const filtered = activeFilter === "all" ? governors : governors.filter(g => g.status === activeFilter);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / CARDS_PER_PAGE));
+  const paginatedGovernors = filtered.slice((currentPage - 1) * CARDS_PER_PAGE, currentPage * CARDS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  async function handleToggleRecords(gov: Governor) {
+    if (expandedGovernorId === gov.id) {
+      setExpandedGovernorId(null);
+      return;
+    }
+
+    setExpandedGovernorId(gov.id);
+
+    if (cityRecords[gov.name]) {
+      return;
+    }
+
+    setLoadingCityRecords(prev => ({ ...prev, [gov.name]: true }));
+    const { data, error } = await supabase
+      .from("businesses")
+      .select("id, name, category, status, created_at")
+      .eq("city", gov.name)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error(`Error loading records for ${gov.name}:`, error);
+      setCityRecords(prev => ({ ...prev, [gov.name]: [] }));
+    } else {
+      setCityRecords(prev => ({ ...prev, [gov.name]: (data as BusinessRecord[]) ?? [] }));
+    }
+
+    setLoadingCityRecords(prev => ({ ...prev, [gov.name]: false }));
+  }
 
   return (
     <div style={{
@@ -293,7 +416,7 @@ export default function Admin() {
         </div>
 
         {/* Filter */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
           {["all", "active", "idle", "error"].map(f => (
             <button key={f} className="filter-btn" onClick={() => setActiveFilter(f)} style={{
               background: activeFilter === f ? "rgba(69,170,242,0.15)" : "rgba(255,255,255,0.03)",
@@ -311,6 +434,52 @@ export default function Admin() {
           ))}
         </div>
 
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+          color: "#64748b",
+          fontSize: 11,
+          letterSpacing: 2,
+        }}>
+          <span>PAGE {currentPage} OF {totalPages}</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(69,170,242,0.5)",
+                color: currentPage === 1 ? "#334155" : "#45AAF2",
+                borderRadius: 4,
+                padding: "6px 12px",
+                fontSize: 11,
+                letterSpacing: 2,
+                fontFamily: "inherit",
+                cursor: currentPage === 1 ? "not-allowed" : "pointer",
+              }}
+            >
+              PREV
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(69,170,242,0.5)",
+                color: currentPage === totalPages ? "#334155" : "#45AAF2",
+                borderRadius: 4,
+                padding: "6px 12px",
+                fontSize: 11,
+                letterSpacing: 2,
+                fontFamily: "inherit",
+                cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+              }}
+            >
+              NEXT
+            </button>
+          </div>
         {/* Pagination Controls */}
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 20, marginBottom: 24 }}>
           <button 
@@ -356,14 +525,16 @@ export default function Admin() {
 
         {/* Governor Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          {paginatedGovernors.map((gov, i) => {
           {filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((gov, i) => {
             const pct = gov.target > 0 ? Math.round((gov.records / gov.target) * 100) : 0;
             const sc = statusConfig[gov.status] || statusConfig.idle;
-            const isSelected = selectedGov === gov.id;
+            const isSelected = expandedGovernorId === gov.id;
+            const records = cityRecords[gov.name] ?? [];
+            const isLoadingRecords = loadingCityRecords[gov.name] ?? false;
 
             return (
               <div key={gov.id} className="gov-card"
-                onClick={() => setSelectedGov(isSelected ? null : gov.id)}
                 style={{
                   background: isSelected ? "rgba(69,170,242,0.06)" : "rgba(255,255,255,0.025)",
                   borderTop: `1px solid ${isSelected ? "#45AAF2" : "rgba(255,255,255,0.07)"}`,
@@ -439,6 +610,74 @@ export default function Admin() {
                   <span style={{ color: "#334155" }}>→ NEXT: 6h</span>
                 </div>
 
+                <button
+                  onClick={() => handleToggleRecords(gov)}
+                  style={{
+                    marginTop: 12,
+                    width: "100%",
+                    background: "rgba(69,170,242,0.08)",
+                    border: "1px solid rgba(69,170,242,0.45)",
+                    color: "#45AAF2",
+                    borderRadius: 4,
+                    padding: "7px 8px",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: 2,
+                    fontFamily: "inherit",
+                    cursor: "pointer",
+                  }}
+                >
+                  {isSelected ? "▲ HIDE" : "▼ VIEW RECORDS"}
+                </button>
+
+                {isSelected && (
+                  <div style={{
+                    marginTop: 10,
+                    border: "1px solid rgba(69,170,242,0.3)",
+                    borderRadius: 6,
+                    background: "rgba(9,13,19,0.9)",
+                    padding: "8px 10px",
+                  }}>
+                    {isLoadingRecords ? (
+                      <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 1 }}>LOADING TOP 10 RECORDS...</div>
+                    ) : records.length === 0 ? (
+                      <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 1 }}>NO RECORDS FOUND FOR THIS GOVERNORATE.</div>
+                    ) : (
+                      <div style={{ display: "grid", gap: 6 }}>
+                        {records.map(record => {
+                          const recordStatus = statusConfig[record.status] || statusConfig.idle;
+                          return (
+                            <div key={record.id} style={{
+                              display: "grid",
+                              gridTemplateColumns: "1.2fr 0.8fr 0.7fr 0.9fr",
+                              gap: 6,
+                              alignItems: "center",
+                              fontSize: 10,
+                              color: "#cbd5e1",
+                              padding: "6px 0",
+                              borderBottom: "1px solid rgba(255,255,255,0.05)",
+                            }}>
+                              <span>{record.name}</span>
+                              <span style={{ color: "#94a3b8" }}>{record.category}</span>
+                              <span style={{
+                                justifySelf: "start",
+                                background: recordStatus.bg,
+                                border: `1px solid ${recordStatus.border}`,
+                                color: recordStatus.dot,
+                                borderRadius: 4,
+                                padding: "2px 6px",
+                                letterSpacing: 1,
+                                fontWeight: 700,
+                                fontSize: 9,
+                              }}>
+                                {recordStatus.label}
+                              </span>
+                              <span style={{ color: "#64748b", fontVariantNumeric: "tabular-nums" }}>
+                                {new Date(record.created_at).toLocaleDateString("en-US")}
+                              </span>
+                            </div>
+                          );
+                        })}
                 {/* View Records Button */}
                 <button 
                   onClick={(e) => {
