@@ -134,7 +134,8 @@ export default function AgentCommander() {
     }
 
     const userMessage: Message = { role: 'user', parts: [{ text: fullPrompt }] };
-    const newHistory = [...currentHistory, userMessage];
+    const orchestratorLog: Message = { role: 'model', parts: [{ text: `[ORCHESTRATOR] Routing intent to ${selectedAgent.name} (${selectedAgent.role})...` }] };
+    const newHistory = [...currentHistory, userMessage, orchestratorLog];
     
     setChatHistories(prev => ({
       ...prev,

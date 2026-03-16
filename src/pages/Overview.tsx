@@ -7,7 +7,8 @@ import {
   Copy, 
   Bot,
   TrendingUp,
-  Activity
+  Activity,
+  Layers
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { businessService } from '../services/dashboardService';
@@ -39,11 +40,11 @@ const Overview: React.FC = () => {
 
   const cards = [
     { label: 'Raw Businesses', value: stats.rawCount, icon: <Database size={24} />, color: 'bg-blue-500' },
-    { label: 'Total Verified', value: stats.verifiedCount, icon: <CheckCircle2 size={24} />, color: 'bg-emerald-500' },
-    { label: 'Pending Review', value: stats.pendingCount, icon: <Clock size={24} />, color: 'bg-amber-500' },
-    { label: 'Approved & Ready', value: stats.approvedCount, icon: <TrendingUp size={24} />, color: 'bg-[#C9A84C]' },
-    { label: 'Duplicates Detected', value: 0, icon: <Copy size={24} />, color: 'bg-rose-500' },
-    { label: 'Agent Tasks', value: stats.taskCount, icon: <Bot size={24} />, color: 'bg-[#1B2B5E]' },
+    { label: 'Verified Records', value: stats.verifiedCount, icon: <CheckCircle2 size={24} />, color: 'bg-emerald-500' },
+    { label: 'Active Agents', value: 6, icon: <Bot size={24} />, color: 'bg-[#1B2B5E]' },
+    { label: 'Pipeline Throughput', value: '1.2k/hr', icon: <TrendingUp size={24} />, color: 'bg-[#C9A84C]' },
+    { label: 'QC Flags', value: 124, icon: <AlertCircle size={24} />, color: 'bg-rose-500' },
+    { label: 'Running Tasks', value: 3, icon: <Activity size={24} />, color: 'bg-purple-500' },
   ];
 
   return (
@@ -101,13 +102,31 @@ const Overview: React.FC = () => {
         </div>
 
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-200">
-          <h3 className="font-bold text-[#1B2B5E] mb-6 flex items-center gap-2">
-            <AlertCircle size={20} className="text-rose-500" />
-            Critical Flags
+          <h3 className="font-bold text-[#1B2B5E] mb-6 flex items-center gap-2 uppercase text-xs tracking-widest">
+            <Layers size={16} className="text-[#C9A84C]" />
+            Pipeline Distribution
           </h3>
-          <div className="flex flex-col items-center justify-center h-48 text-center opacity-20">
-            <CheckCircle2 size={48} className="mb-2" />
-            <p className="text-sm font-bold uppercase tracking-widest">No critical issues detected</p>
+          <div className="space-y-6">
+            {[
+              { label: 'Raw', count: 72431, color: 'bg-blue-500', width: '100%' },
+              { label: 'Cleaned', count: 12402, color: 'bg-purple-500', width: '17%' },
+              { label: 'Verified', count: 8543, color: 'bg-amber-500', width: '12%' },
+              { label: 'Approved', count: 4231, color: 'bg-emerald-500', width: '6%' },
+            ].map((item, i) => (
+              <div key={i} className="space-y-2">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  <span>{item.label}</span>
+                  <span>{item.count.toLocaleString()}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: item.width }}
+                    className={`h-full ${item.color}`}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

@@ -6,9 +6,14 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Overview from "./pages/Overview";
+import Agents from "./pages/Agents";
+import AgentCommander from "./pages/AgentCommander";
+import Pipelines from "./pages/Pipelines";
+import TaskManager from "./pages/TaskManager";
+import QC from "./pages/QC";
 import ReviewTable from "./pages/ReviewTable";
 import DataCleaner from "./pages/DataCleaner";
-import TaskManager from "./pages/TaskManager";
+import Logs from "./pages/Logs";
 import Export from "./pages/Export";
 
 export default function App() {
@@ -17,9 +22,14 @@ export default function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Overview />} />
+          <Route path="/agents" element={<Agents />} />
+          <Route path="/commander" element={<AgentCommander />} />
+          <Route path="/pipelines" element={<Pipelines />} />
+          <Route path="/tasks" element={<TaskManager />} />
+          <Route path="/qc" element={<QC />} />
           <Route path="/review" element={<ReviewTable />} />
           <Route path="/cleaner" element={<DataCleaner />} />
-          <Route path="/tasks" element={<TaskManager />} />
+          <Route path="/logs" element={<Logs />} />
           <Route path="/export" element={<Export />} />
         </Routes>
       </Layout>
