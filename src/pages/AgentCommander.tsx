@@ -18,6 +18,7 @@ import {
   Info,
   Globe
 } from 'lucide-react';
+import { GoogleGenAI } from '@google/genai';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -46,11 +47,6 @@ interface AgentTask {
   prompt: string;
   result: string | null;
   created_at: string;
-}
-
-interface PipelineConfig {
-  cityCenterOnly: boolean;
-  languagePriority: boolean;
 }
 
 // --- Constants ---
@@ -107,7 +103,6 @@ const TASK_TEMPLATES = [
   { label: 'Detect duplicates', prompt: 'Find duplicates: name sim >80%, same phone, near address. Output: [{pair:[id1,id2], score, action}]' },
   { label: 'Assign categories', prompt: 'Categorize each business into one of: restaurants, cafes, bakeries, hotels, gyms, beauty_salons, pharmacies, supermarkets. Output updated JSON.' },
   { label: 'Final QA check', prompt: 'QA before publish. Check: all fields complete, no placeholders, score>=60, trilingual content present. Output: [{name, pass:bool, issues:[]}]' },
-  { label: 'Launch Sulemania City Center pilot', prompt: 'Launch pilot: Sulemania City Center only. Skip Bazyan/Tasluja/Bakrajo. Keep native name and return Arabic + English columns. Force social links to link_instagram/link_facebook or "Requires Human Review". Output pilot activity log.' },
 ];
 
 export default function AgentCommander() {
@@ -121,13 +116,6 @@ export default function AgentCommander() {
   const [customPrompt, setCustomPrompt] = useState('');
   const [taskHistory, setTaskHistory] = useState<AgentTask[]>([]);
   const [importStatus, setImportStatus] = useState('');
-  const [cityCenterOnly, setCityCenterOnly] = useState(true);
-  const [localScriptPriority, setLocalScriptPriority] = useState(true);
-  const [forceColumnWrite, setForceColumnWrite] = useState(true);
-  const [pipelineConfig, setPipelineConfig] = useState<PipelineConfig>({
-    cityCenterOnly: true,
-    languagePriority: true,
-  });
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -161,19 +149,6 @@ export default function AgentCommander() {
     if (!text.trim() || isLoading) return;
 
     let fullPrompt = text;
-    const intelligenceControls = [
-      cityCenterOnly
-        ? "- City Center Only: enforce 6km geofence from Saray Square, exclude Bakrajo and Pira Magrun."
-        : "- City Center Only: disabled.",
-      localScriptPriority
-        ? "- Kurdish/Arabic Priority: preserve native script in name_primary, provide commercial English in name_en."
-        : "- Kurdish/Arabic Priority: disabled.",
-      forceColumnWrite
-        ? "- Force Column Write: write social links directly to link_instagram and link_facebook columns."
-        : "- Force Column Write: disabled."
-    ].join("\n");
-    fullPrompt = `Intelligence Layer Controls:\n${intelligenceControls}\n\n${fullPrompt}`;
-    fullPrompt += `\n\n--- Pipeline Settings ---\ncity_center_only: ${pipelineConfig.cityCenterOnly}\nlanguage_priority: ${pipelineConfig.languagePriority ? 'native-first' : 'balanced'}\n`;
     if (uploadedFiles.length > 0) {
       fullPrompt += "\n\n";
       uploadedFiles.forEach(file => {
@@ -192,34 +167,18 @@ export default function AgentCommander() {
     setIsLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error("Authentication required");
-      }
-
-      const promptWithContext = [
-        AGENT_SYSTEM_PROMPTS[selectedAgent.id],
-        ...newHistory.map((m) => `${m.role.toUpperCase()}: ${m.parts[0].text}`),
-      ].join("\n\n");
-
-      const response = await fetch('/api/llm/run', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          taskType: 'agent-run',
-          prompt: promptWithContext,
-        }),
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      
+      const result = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        config: { systemInstruction: AGENT_SYSTEM_PROMPTS[selectedAgent.id] },
+        contents: newHistory.map(m => ({
+          role: m.role,
+          parts: [{ text: m.parts[0].text }]
+        }))
       });
 
-      if (!response.ok) {
-        throw new Error('LLM request failed');
-      }
-
-      const result = await response.json();
-      const agentResponse = result?.data?.text || "⚠️ Agent unavailable. Please retry.";
+      const agentResponse = result.text || "⚠️ Agent unavailable. Please retry.";
       const agentMessage: Message = { role: 'model', parts: [{ text: agentResponse }] };
       
       setChatHistories(prev => ({
@@ -240,7 +199,7 @@ export default function AgentCommander() {
       fetchTaskHistory();
 
     } catch (error) {
-      console.error('LLM proxy error:', error);
+      console.error('Gemini error:', error);
       const errorMessage: Message = { role: 'model', parts: [{ text: "⚠️ Agent unavailable. Please retry." }] };
       setChatHistories(prev => ({
         ...prev,
@@ -490,41 +449,6 @@ export default function AgentCommander() {
               >
                 Assign task to agent
               </button>
-
-              <div className="space-y-3 p-4 bg-gray-50 rounded-2xl border border-gray-200">
-                <h4 className="text-[10px] font-black text-[#1B2B5E] uppercase">Agent Commander Update</h4>
-                <label className="flex items-center justify-between text-[10px] font-bold text-gray-600">
-                  City Center Only
-                  <input type="checkbox" checked={cityCenterOnly} onChange={(e) => setCityCenterOnly(e.target.checked)} />
-                </label>
-                <label className="flex items-center justify-between text-[10px] font-bold text-gray-600">
-                  Kurdish/Arabic Priority
-                  <input type="checkbox" checked={localScriptPriority} onChange={(e) => setLocalScriptPriority(e.target.checked)} />
-                </label>
-                <label className="flex items-center justify-between text-[10px] font-bold text-gray-600">
-                  Force Column Write
-                  <input type="checkbox" checked={forceColumnWrite} onChange={(e) => setForceColumnWrite(e.target.checked)} />
-              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-3">
-                <h4 className="text-[10px] font-black text-[#1B2B5E] uppercase">Real AI Upgrade</h4>
-                <label className="flex items-center justify-between text-[10px] font-bold text-gray-600">
-                  City Center Only (6km ring)
-                  <input
-                    type="checkbox"
-                    checked={pipelineConfig.cityCenterOnly}
-                    onChange={(e) => setPipelineConfig(prev => ({ ...prev, cityCenterOnly: e.target.checked }))}
-                    className="accent-[#1B2B5E]"
-                  />
-                </label>
-                <label className="flex items-center justify-between text-[10px] font-bold text-gray-600">
-                  Language Priority (Native → AR/EN)
-                  <input
-                    type="checkbox"
-                    checked={pipelineConfig.languagePriority}
-                    onChange={(e) => setPipelineConfig(prev => ({ ...prev, languagePriority: e.target.checked }))}
-                    className="accent-[#1B2B5E]"
-                  />
-                </label>
-              </div>
 
               <div className="p-4 bg-[#1B2B5E]/5 rounded-2xl border border-[#1B2B5E]/10">
                 <h4 className="text-[10px] font-black text-[#1B2B5E] uppercase mb-2">Agent Specialty</h4>
