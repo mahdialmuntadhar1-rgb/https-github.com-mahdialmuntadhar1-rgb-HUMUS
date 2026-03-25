@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 interface LogEntry {
   id: string;
@@ -8,6 +8,14 @@ interface LogEntry {
   agent?: string;
 }
 
+interface SystemLogProps {
+  logs: LogEntry[];
+}
+
+export function SystemLog({ logs }: SystemLogProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
 export function SystemLog() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -60,6 +68,9 @@ export function SystemLog() {
           scrollbarColor: "rgba(255,255,255,0.1) transparent"
         }}
       >
+        {logs.length === 0 ? (
+          <div style={{ color: "#64748b" }}>No streamed logs yet. Run an agent to receive live events.</div>
+        ) : logs.map(log => (
         {logs.length === 0 && (
           <div style={{ color: "#64748b" }}>Awaiting live worker events...</div>
         )}
