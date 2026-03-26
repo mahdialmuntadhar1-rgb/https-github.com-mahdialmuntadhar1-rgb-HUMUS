@@ -99,8 +99,6 @@ export default function CommandCenter() {
       if (typeof snapshot.exists !== 'function') {
         setTaskStatusWarning('Task status updates are temporarily unavailable. Reload the page and check Firebase configuration.');
         console.error('Unexpected Firestore snapshot shape for agent_tasks listener', snapshot);
-        return;
-      }
         setLogs((prev) => {
           if (prev.some((entry) => entry.message.includes('Firestore SDK mismatch detected'))) {
             return prev;

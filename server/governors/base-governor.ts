@@ -9,31 +9,42 @@ export abstract class BaseGovernor {
   async run() {
     await this.setStatus("active");
     try {
-      // 1. Concurrency-safe task claim using RPC (FOR UPDATE SKIP LOCKED)
-      const task = await this.claimTask();
-      
-      if (!task) {
-        console.log(`${this.agentName}: No pending tasks found. Entering idle mode.`);
-        await this.setStatus("idle");
-        return;
-      }
+      const maxTasksPerRun = Number(process.env.MAX_TASKS_PER_RUN || 5);
+      let processed = 0;
 
-      console.log(`${this.agentName}: Processing task ${task.id} - ${task.category} in ${task.city}`);
-      
-      // 2. Scrape/Gather data
-      const businesses = await this.gather(task.city, task.category);
-      
-      if (businesses.length > 0) {
-        // 3. Validate and 4. Insert (Supabase handles duplicate protection via unique index)
-        const validated = await this.validate(businesses);
-        const { added, errors } = await this.store(validated, task.government_rate);
-        
-        await this.log("success", added, errors);
-      }
+      while (processed < maxTasksPerRun) {
+        // 1. Concurrency-safe task claim using RPC (FOR UPDATE SKIP LOCKED)
+        const task = await this.claimTask();
 
-      // 5. Mark task as complete
-      await this.completeTask(task.id);
-      
+        if (!task) {
+          if (processed === 0) {
+            console.log(`${this.agentName}: No pending tasks found. Entering idle mode.`);
+          }
+          break;
+        }
+
+        try {
+          console.log(`${this.agentName}: Processing task ${task.id} - ${task.category} in ${task.city}`);
+
+          // 2. Scrape/Gather data
+          const businesses = await this.gather(task.city, task.category);
+
+          if (businesses.length > 0) {
+            // 3. Validate and 4. Insert (Supabase handles duplicate protection via unique index)
+            const validated = await this.validate(businesses);
+            const { added, errors } = await this.store(validated, task.government_rate);
+            await this.log("success", added, errors);
+          }
+
+          // 5. Mark task as complete
+          await this.completeTask(task.id);
+          processed += 1;
+        } catch (taskError: any) {
+          console.error(`${this.agentName}: Task ${task.id} failed`, taskError);
+          await this.failTask(task.id, task.attempts || 0, taskError?.message || "Unknown error");
+          await this.log("error", 0, 1);
+        }
+      }
     } catch (err) {
       console.error(`Error in ${this.agentName}:`, err);
       await this.setStatus("error");
@@ -79,7 +90,22 @@ export abstract class BaseGovernor {
   private async completeTask(taskId: number) {
     await this.supabase
       .from("agent_tasks")
-      .update({ status: "completed" })
+      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .eq("id", taskId);
+  }
+
+  private async failTask(taskId: number, attempts: number, reason: string) {
+    const nextAttempts = attempts + 1;
+    const status = nextAttempts >= 3 ? "failed" : "pending";
+
+    await this.supabase
+      .from("agent_tasks")
+      .update({
+        status,
+        attempts: nextAttempts,
+        last_error: reason,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", taskId);
   }
 
