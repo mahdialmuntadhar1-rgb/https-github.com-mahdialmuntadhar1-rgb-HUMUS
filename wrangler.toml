@@ -1,0 +1,24 @@
+name = "18agents"
+main = "worker/agent-runtime.ts"
+compatibility_date = "2026-03-26"
+workers_dev = true
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+[[queues.producers]]
+binding = "AGENT_TASK_QUEUE"
+queue = "agent-task-queue"
+
+[[queues.consumers]]
+queue = "agent-task-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+
+[vars]
+RUN_LOOP_ENDPOINT = "/api/orchestrator/run-loop"
+
+# Set these with `wrangler secret put` in real deployments:
+# VITE_SUPABASE_URL
+# SUPABASE_SERVICE_ROLE_KEY
+# INTERNAL_ORCHESTRATOR_TOKEN

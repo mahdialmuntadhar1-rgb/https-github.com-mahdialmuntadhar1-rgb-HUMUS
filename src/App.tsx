@@ -26,8 +26,8 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <Layout>
           <Routes>
+            <Route element={<Layout />}>
             <Route path="/" element={<CommandCenter />} />
             <Route path="/overview" element={<Overview />} />
             <Route path="/approval" element={<ApprovalHub />} />
@@ -42,8 +42,8 @@ export default function App() {
             <Route path="/cleaner" element={<DataCleaner />} />
             <Route path="/logs" element={<Logs />} />
             <Route path="/export" element={<Export />} />
+            </Route>
           </Routes>
-        </Layout>
       </Router>
     </AuthProvider>
   );

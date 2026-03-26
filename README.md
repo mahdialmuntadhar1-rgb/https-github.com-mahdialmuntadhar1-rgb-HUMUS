@@ -34,3 +34,27 @@ Before running the app, ensure you have executed the SQL schema provided in the 
 - Full RTL support for Arabic and Kurdish.
 - Trilingual data fields (AR, KU, EN).
 - Dir="rtl" implemented on relevant UI components.
+
+## Cloudflare Agent Runtime (New)
+
+This repository now includes a baseline Cloudflare Worker runtime scaffold:
+
+- `wrangler.toml` with Cron + Queue bindings
+- `worker/agent-runtime.ts` to enqueue scheduled runs and call the internal orchestrator endpoint
+- `POST /api/orchestrator/run-loop` endpoint in `server.ts` for controlled orchestration triggering
+
+Set secrets with Wrangler before deploy:
+
+- `VITE_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `INTERNAL_ORCHESTRATOR_TOKEN`
+
+## Canonical Supabase Migration (New)
+
+Use `supabase/migrations/0001_agent_runtime.sql` as the canonical schema for:
+
+- `agents`
+- `agent_tasks`
+- `businesses`
+- `agent_logs`
+- `claim_next_task(agent_name text)` RPC
