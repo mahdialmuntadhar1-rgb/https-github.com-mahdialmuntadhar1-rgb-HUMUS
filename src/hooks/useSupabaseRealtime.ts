@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { toast } from '../lib/toast';
+import { toast } from 'sonner';
 
 export function useSupabaseRealtime() {
   const [recordCount, setRecordCount] = useState(0);

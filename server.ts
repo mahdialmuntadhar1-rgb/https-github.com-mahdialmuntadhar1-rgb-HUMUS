@@ -1,6 +1,6 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import { runAllGovernors, runGovernor } from "./server/governors/index.js";
+import { runGovernor } from "./server/governors/index.js";
 
 async function startServer() {
   const app = express();
@@ -60,22 +60,6 @@ async function startServer() {
       res.json({ status: "started", agentName });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/orchestrator/run-loop", async (req, res) => {
-    const expectedToken = process.env.INTERNAL_ORCHESTRATOR_TOKEN;
-    const authHeader = req.headers.authorization;
-
-    if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
-      return res.status(401).json({ error: "Unauthorized orchestrator trigger." });
-    }
-
-    try {
-      await runAllGovernors();
-      return res.json({ status: "completed", runAt: new Date().toISOString() });
-    } catch (error: any) {
-      return res.status(500).json({ error: error.message });
     }
   });
 
