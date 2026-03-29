@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { toast } from '../lib/toast';
+import { toast } from 'sonner';
 
 export default function DiscoveryFeed() {
   const [businesses, setBusinesses] = useState<any[]>([]);

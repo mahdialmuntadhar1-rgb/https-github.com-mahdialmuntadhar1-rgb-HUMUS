@@ -5,16 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "dev:client": "vite",
-    "start": "NODE_ENV=production tsx server.ts",
-    "build": "npm run build:client",
-    "build:client": "vite build",
-    "typecheck": "tsc --noEmit",
-    "lint": "npm run typecheck",
+    "start": "node dist-server/server.js",
+    "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "worker:dev": "wrangler dev",
-    "worker:deploy": "wrangler deploy"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

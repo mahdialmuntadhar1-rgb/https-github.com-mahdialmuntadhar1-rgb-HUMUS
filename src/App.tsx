@@ -3,31 +3,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import CommandCenter from './pages/CommandCenter';
-import Overview from './pages/Overview';
-import ApprovalHub from './pages/ApprovalHub';
-import FinalReport from './pages/FinalReport';
-import PilotRuns from './pages/PilotRuns';
-import Agents from './pages/Agents';
-import AgentCommander from './pages/AgentCommander';
-import Pipelines from './pages/Pipelines';
-import TaskManager from './pages/TaskManager';
-import QC from './pages/QC';
-import ReviewTable from './pages/ReviewTable';
-import DataCleaner from './pages/DataCleaner';
-import Logs from './pages/Logs';
-import Export from './pages/Export';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout";
+import CommandCenter from "./pages/CommandCenter";
+import Overview from "./pages/Overview";
+import ApprovalHub from "./pages/ApprovalHub";
+import FinalReport from "./pages/FinalReport";
+import PilotRuns from "./pages/PilotRuns";
+import Agents from "./pages/Agents";
+import AgentCommander from "./pages/AgentCommander";
+import Pipelines from "./pages/Pipelines";
+import TaskManager from "./pages/TaskManager";
+import QC from "./pages/QC";
+import ReviewTable from "./pages/ReviewTable";
+import DataCleaner from "./pages/DataCleaner";
+import Logs from "./pages/Logs";
+import Export from "./pages/Export";
 
-import { AppAuthProvider } from './AuthContext';
+import { AuthProvider } from "./AuthContext";
 
 export default function App() {
   return (
-    <AppAuthProvider>
+    <AuthProvider>
       <Router>
-        <Routes>
-          <Route element={<Layout />}>
+        <Layout>
+          <Routes>
             <Route path="/" element={<CommandCenter />} />
             <Route path="/overview" element={<Overview />} />
             <Route path="/approval" element={<ApprovalHub />} />
@@ -42,9 +42,9 @@ export default function App() {
             <Route path="/cleaner" element={<DataCleaner />} />
             <Route path="/logs" element={<Logs />} />
             <Route path="/export" element={<Export />} />
-          </Route>
-        </Routes>
+          </Routes>
+        </Layout>
       </Router>
-    </AppAuthProvider>
+    </AuthProvider>
   );
 }
