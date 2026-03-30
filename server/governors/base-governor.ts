@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../supabase-admin.js";
+export type { BusinessData } from "../sources/base-adapter.js";
 
 export abstract class BaseGovernor {
   protected supabase = supabaseAdmin;
