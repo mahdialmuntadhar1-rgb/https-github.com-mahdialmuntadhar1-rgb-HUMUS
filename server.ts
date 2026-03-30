@@ -1,34 +1,8 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import { runGovernor } from "./server/governors/index.js";
+import { runDiscoveryOrchestrator } from "./server/discovery/orchestrator.js";
 import { supabaseAdmin } from "./server/supabase-admin.js";
-
-const isSupabaseConfigured = () => {
-  const url = process.env.VITE_SUPABASE_URL;
-  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  return Boolean(url && serviceRole && url.startsWith("https://") && serviceRole !== "placeholder");
-};
-
-async function fetchAgentsForControlPanel() {
-  const { data, error } = await supabaseAdmin
-    .from("agents")
-    .select("agent_name, category, status, records_collected, last_run, government_rate")
-    .order("agent_name", { ascending: true });
-
-  if (error) {
-    throw error;
-  }
-
-  return (data || []).map((agent: any) => ({
-    name: agent.agent_name,
-    governorate: agent.category || "Unknown",
-    category: agent.category || "Unknown",
-    status: agent.status === "active" ? "running" : agent.status || "idle",
-    governmentRate: agent.government_rate || "N/A",
-    recordsInserted: agent.records_collected || 0,
-    lastActivity: agent.last_run ? new Date(agent.last_run).toISOString() : "N/A",
-  }));
-}
 
 async function startServer() {
   const app = express();
@@ -39,64 +13,33 @@ async function startServer() {
   let activeDiscoveryRun: Promise<void> | null = null;
   let activeDiscoveryRunId: string | null = null;
 
-  // API routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
   });
 
-  app.get("/api/agents", async (req, res) => {
-    if (!isSupabaseConfigured()) {
-      return res.status(503).json({
-        ok: false,
-        error: "Supabase is not configured on the server",
-      });
-    }
-
-    try {
-      const agents = await fetchAgentsForControlPanel();
-      return res.json(agents);
-    } catch (error: any) {
-      return res.status(500).json({ ok: false, error: error.message || "Failed to fetch agents" });
-    }
+  app.get("/api/agents", async (_req, res) => {
+    const { data } = await supabaseAdmin.from("agents").select("*").order("agent_name");
+    res.json((data || []).map((a: any) => ({
+      name: a.agent_name,
+      governorate: a.agent_name,
+      category: a.category || "unknown",
+      status: a.status === "active" ? "running" : a.status || "idle",
+      governmentRate: a.government_rate || "N/A",
+      recordsInserted: a.records_collected || 0,
+      lastActivity: a.last_run ? new Date(a.last_run).toLocaleString() : "Never",
+    })));
   });
 
-  app.post("/api/orchestrator/start", async (req, res) => {
-    if (!isSupabaseConfigured()) {
-      return res.status(503).json({
-        ok: false,
-        error: "Supabase is not configured on the server",
-      });
-    }
-
-    const { error } = await supabaseAdmin.from("agents").update({ status: "active" }).neq("agent_name", "");
-
-    if (error) {
-      return res.status(500).json({ ok: false, error: error.message || "Failed to start agents" });
-    }
-
-    const agents = await fetchAgentsForControlPanel();
-    return res.json({ status: "started", agents });
+  app.post("/api/orchestrator/start", async (_req, res) => {
+    await supabaseAdmin.from("agents").update({ status: "active" }).neq("agent_name", "");
+    res.json({ status: "started" });
   });
 
-  app.post("/api/orchestrator/stop", async (req, res) => {
-    if (!isSupabaseConfigured()) {
-      return res.status(503).json({
-        ok: false,
-        error: "Supabase is not configured on the server",
-      });
-    }
-
-    const { error } = await supabaseAdmin.from("agents").update({ status: "idle" }).neq("agent_name", "");
-
-    if (error) {
-      return res.status(500).json({ ok: false, error: error.message || "Failed to stop agents" });
-    }
-
-    const agents = await fetchAgentsForControlPanel();
-    return res.json({ status: "stopped", agents });
+  app.post("/api/orchestrator/stop", async (_req, res) => {
+    await supabaseAdmin.from("agents").update({ status: "idle" }).neq("agent_name", "");
+    res.json({ status: "stopped" });
   });
 
-  // Endpoint to manually trigger a governor
   app.post("/api/agents/:agentName/run", async (req, res) => {
     const { agentName } = req.params;
     try {
@@ -108,7 +51,7 @@ async function startServer() {
   });
 
   app.post("/api/discovery/run", async (req, res) => {
-    const { agentName } = req.body || {};
+    const { agentName, city = "Baghdad", governorate, category = "restaurants", query, includeGoogleFallback = false } = req.body || {};
 
     if (!isSupabaseConfigured()) {
       return res.status(503).json({
@@ -118,11 +61,7 @@ async function startServer() {
     }
 
     if (activeDiscoveryRun) {
-      return res.status(409).json({
-        ok: false,
-        error: "A discovery run is already in progress",
-        runId: activeDiscoveryRunId,
-      });
+      return res.status(409).json({ ok: false, error: "A discovery run is already in progress", runId: activeDiscoveryRunId });
     }
 
     const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -133,8 +72,54 @@ async function startServer() {
         try {
           if (agentName) {
             await runGovernor(agentName);
-          } else {
-            await runGovernor("Agent-01");
+            return;
+          }
+
+          const result = await runDiscoveryOrchestrator({
+            query: query || `${category} in ${city}, Iraq`,
+            city,
+            governorate: governorate || city,
+            category,
+            includeGoogleFallback,
+            limit: 20,
+          });
+
+          if (result.records.length > 0) {
+            const upserts = result.records.map((r) => ({
+              name_en: r.name,
+              name_ar: r.local_name || "",
+              name_ku: "",
+              name: { en: r.name, ar: r.local_name || "", ku: "" },
+              category: r.category || category,
+              governorate: r.governorate,
+              city: r.city || city,
+              address: r.address,
+              phone: r.phone,
+              website: r.website,
+              source: r.source,
+              source_url: r.source_url,
+              facebook_url: r.facebook_url,
+              instagram_url: r.instagram_url,
+              latitude: r.latitude,
+              longitude: r.longitude,
+              confidence_score: r.confidence_score || 0,
+              extraction_notes: r.extraction_notes,
+              status: (r.confidence_score || 0) >= 70 ? "approved" : "pending",
+              verification_status: (r.confidence_score || 0) >= 70 ? "approved" : "pending",
+              created_by_agent: "orchestrator",
+            }));
+
+            await supabaseAdmin.from("businesses").upsert(upserts, { onConflict: "name_en,city,phone" });
+          }
+
+          for (const log of result.logs) {
+            await supabaseAdmin.from("agent_logs").insert({
+              agent_id: "orchestrator",
+              action: "discovery_run",
+              result: log.ok ? "success" : "failed",
+              type: log.ok ? "info" : "warning",
+              message: `${log.adapter} ${log.ok ? "ok" : "failed"} count=${log.count}${log.error ? ` error=${log.error}` : ""}`,
+            });
           }
         } finally {
           activeDiscoveryRun = null;
@@ -156,11 +141,18 @@ async function startServer() {
     }
   });
 
+  app.get("/api/discovery/search", async (req, res) => {
+    const city = String(req.query.city || "Baghdad");
+    const category = String(req.query.category || "restaurants");
+    const query = String(req.query.query || `${category} in ${city}`);
+    const includeGoogleFallback = String(req.query.includeGoogleFallback || "false") === "true";
+
+    const result = await runDiscoveryOrchestrator({ query, city, governorate: city, category, includeGoogleFallback, limit: 20 });
+    res.json(result);
+  });
+
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
+    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
     app.use(vite.middlewares);
   } else {
     app.use(express.static("dist"));
