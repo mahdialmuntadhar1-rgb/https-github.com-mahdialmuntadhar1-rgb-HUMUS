@@ -1,0 +1,27 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+
+/**
+ * Example App component showing how to integrate the HUMUS HomePage
+ * with React Router.
+ * 
+ * Note: You may need to install react-router-dom:
+ * npm install react-router-dom
+ */
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        {/* 
+          Example of other routes you might have:
+          <Route path="/business/:id" element={<BusinessProfile />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/login" element={<LoginPage />} />
+        */}
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
