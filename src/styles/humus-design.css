@@ -1,0 +1,182 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+/* HUMUS Premium Redesign: Modern Iraqi Business Directory */
+
+/* Color Palette */
+:root {
+  /* Primary Colors */
+  --humus-primary: #8B1A1A;    /* Deep Red / Maroon */
+  --humus-secondary: #FDECEC;  /* Soft Pinkish Sand */
+  --humus-accent: #8B1A1A;     /* Same as primary for strong branding */
+  --humus-bg: #FFF5F5;         /* Light Pinkish Background from Image */
+  --humus-text: #2B2F33;       /* Deep Charcoal Text */
+  
+  /* Derived Colors */
+  --humus-primary-light: #a63232;
+  --humus-primary-dark: #6b1414;
+  --humus-accent-light: #f09a6e;
+  --humus-gray-100: #fce8e8;
+  --humus-gray-200: #f5dada;
+  --humus-gray-300: #e5c5c5;
+  --humus-gray-500: #64748b;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(139, 26, 26, 0.05);
+  --shadow-md: 0 4px 12px rgba(139, 26, 26, 0.08);
+  --shadow-lg: 0 12px 24px rgba(139, 26, 26, 0.06), 0 4px 8px rgba(139, 26, 26, 0.04);
+  --shadow-premium: 0 20px 40px rgba(139, 26, 26, 0.05);
+  
+  /* Radius */
+  --radius-card: 16px;
+}
+
+/* Typography */
+.poppins-bold {
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.poppins-semibold {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+}
+
+/* Global Styles */
+body {
+  font-family: "Inter", sans-serif;
+  background-color: var(--humus-bg);
+  color: var(--humus-text);
+  line-height: 1.6;
+}
+
+/* Premium Card System */
+.category-card {
+  background: linear-gradient(135deg, #ffffff 0%, #fcfdfe 100%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.category-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(44, 166, 164, 0.2), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.category-card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--humus-primary);
+}
+
+.category-card:hover::before {
+  opacity: 1;
+}
+
+.category-card:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+/* Button Styles */
+.btn-premium {
+  background-color: var(--humus-primary);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(44, 166, 164, 0.2);
+}
+
+.btn-premium:hover {
+  background-color: var(--humus-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(44, 166, 164, 0.3);
+}
+
+.btn-sand {
+  background-color: var(--humus-secondary);
+  color: var(--humus-text);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.btn-orange {
+  background-color: var(--humus-accent);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+/* Hero Overlay */
+.hero-gradient {
+  background: linear-gradient(to bottom, rgba(43, 47, 51, 0.2) 0%, rgba(43, 47, 51, 0.7) 100%);
+}
+
+/* Scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Responsive Grid */
+@media (max-width: 768px) {
+  .container-humus {
+    padding: 1rem;
+  }
+}
+
+/* Animation Classes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInLeft 0.4s ease-in-out;
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background-color: white;
+  }
+
+  .no-print {
+    display: none;
+  }
+}
