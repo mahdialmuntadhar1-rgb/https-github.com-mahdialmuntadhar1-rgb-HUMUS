@@ -1,3 +1,4 @@
+import React from 'react';
 import { useHomeStore } from "@/stores/homeStore";
 
 const GOVERNORATES = [
@@ -21,32 +22,91 @@ const GOVERNORATES = [
   { name: "Tikrit", nameAr: "تكريت" },
 ];
 
+const CITIES_BY_GOVERNORATE: Record<string, string[]> = {
+  Baghdad: ["Central", "Kadhimiya", "Adhamiyah", "Mansour", "Karada", "Sadr City"],
+  Erbil: ["Erbil Center", "Ankawa", "Shaqlawa", "Soran"],
+  Basra: ["Basra City", "Zubair", "Qurna", "Fao"],
+  Mosul: ["Mosul Center", "Hamdaniya", "Tel Kaif"],
+  Sulaymaniyah: ["Suli Center", "Halabja", "Ranya", "Chamchamal"],
+  Duhok: ["Duhok Center", "Zakho", "Amedi"],
+  Kirkuk: ["Kirkuk Center", "Hawija", "Daquq"],
+  Najaf: ["Najaf Center", "Kufa", "Manathera"],
+  Karbala: ["Karbala Center", "Hindiya", "Ain al-Tamur"],
+  Nasiriyah: ["Nasiriyah Center", "Shatra", "Rifa'i"],
+  Amarah: ["Amarah Center", "Maimouna", "Qalat Saleh"],
+  Hilla: ["Hilla Center", "Mahawil", "Musayib"],
+  Kut: ["Kut Center", "Suwaira", "Aziziya"],
+  Diwaniyah: ["Diwaniyah Center", "Afak", "Shamiya"],
+  Ramadi: ["Ramadi Center", "Fallujah", "Hit", "Haditha"],
+  Baqubah: ["Baqubah Center", "Muqdadiya", "Khanaqin"],
+  Samawah: ["Samawah Center", "Rumaitha", "Khidhir"],
+  Tikrit: ["Tikrit Center", "Samarra", "Balad", "Dujail"],
+};
+
 export default function LocationFilter() {
-  const { selectedGovernorate, setGovernorate } = useHomeStore();
+  const { selectedGovernorate, setGovernorate, selectedCity, setCity } = useHomeStore();
+
+  const handleGovernorateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newGov = e.target.value;
+    setGovernorate(newGov);
+    // Reset city to the first one in the new governorate
+    if (CITIES_BY_GOVERNORATE[newGov]) {
+      setCity(CITIES_BY_GOVERNORATE[newGov][0]);
+    }
+  };
 
   return (
     <div className="bg-transparent mb-12">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 sm:gap-3">
-          {GOVERNORATES.map((gov) => {
-            const isActive = selectedGovernorate === gov.name;
-            return (
-              <button
-                key={gov.name}
-                onClick={() => setGovernorate(gov.name)}
-                className={`px-2 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-full text-[10px] sm:text-sm font-bold transition-all duration-300 shadow-sm border-2 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 ${
-                  isActive
-                    ? "bg-[#8B1A1A] text-white border-[#8B1A1A] shadow-md scale-105 z-10"
-                    : "bg-white text-[#2B2F33] border-[#f5dada] hover:border-[#8B1A1A]/30 hover:bg-[#FDECEC]/50"
-                }`}
+        <div className="flex flex-col md:flex-row gap-8 items-start md:items-end">
+          {/* Governorate Dropdown */}
+          <div className="w-full md:w-1/2">
+            <p className="text-sm font-bold text-[#8B1A1A] mb-3 poppins-semibold">
+              Please first choose your governorate.
+            </p>
+            <div className="relative group">
+              <select
+                value={selectedGovernorate}
+                onChange={handleGovernorateChange}
+                className="w-full appearance-none bg-white border-2 border-[#f5dada] focus:border-[#8B1A1A] rounded-2xl px-6 py-4 text-[#2B2F33] font-bold text-lg shadow-sm focus:outline-none transition-all cursor-pointer"
               >
-                <span className="whitespace-nowrap">{gov.name}</span>
-                <span className={`text-[8px] sm:text-[10px] opacity-60 ${isActive ? "text-white/80" : "text-gray-400"}`}>
-                  {gov.nameAr}
-                </span>
-              </button>
-            );
-          })}
+                {GOVERNORATES.map((gov) => (
+                  <option key={gov.name} value={gov.name}>
+                    {gov.name} - {gov.nameAr}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-[#8B1A1A]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+            </div>
+            <p className="text-xs font-bold text-[#8B1A1A]/60 mt-3 uppercase tracking-widest">
+              And beneath that, the governorates.
+            </p>
+          </div>
+
+          {/* City Dropdown */}
+          <div className="w-full md:w-1/2">
+            <p className="text-sm font-bold text-[#2B2F33] mb-3 poppins-semibold">
+              Choose the city
+            </p>
+            <div className="relative group">
+              <select
+                value={selectedCity}
+                onChange={(e) => setCity(e.target.value)}
+                className="w-full appearance-none bg-white border-2 border-[#f5dada] focus:border-[#8B1A1A] rounded-2xl px-6 py-4 text-[#2B2F33] font-bold text-lg shadow-sm focus:outline-none transition-all cursor-pointer"
+              >
+                {CITIES_BY_GOVERNORATE[selectedGovernorate]?.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-[#8B1A1A]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
