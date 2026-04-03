@@ -5,9 +5,10 @@ import { Business } from '@/lib/supabase';
 
 interface HeroSectionProps {
   businesses: Business[];
+  onBusinessClick?: (business: Business) => void;
 }
 
-export default function HeroSection({ businesses }: HeroSectionProps) {
+export default function HeroSection({ businesses, onBusinessClick }: HeroSectionProps) {
   const featured = businesses.filter(b => b.isFeatured).slice(0, 5);
   
   if (featured.length === 0) return null;
@@ -22,6 +23,7 @@ export default function HeroSection({ businesses }: HeroSectionProps) {
           >
             <motion.div
               whileTap={{ scale: 0.97 }}
+              onClick={() => onBusinessClick?.(biz)}
               className="relative h-[280px] w-full rounded-[20px] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.12)] group cursor-pointer"
             >
               {/* Background Image */}

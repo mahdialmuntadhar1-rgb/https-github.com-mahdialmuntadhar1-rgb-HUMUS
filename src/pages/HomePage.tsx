@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Search, User, PlusCircle } from "lucide-react";
 import HeroSection from "@/components/home/HeroSection";
 import LocationFilter from "@/components/home/LocationFilter";
@@ -6,33 +6,30 @@ import StoryRow from "@/components/home/StoryRow";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import TrendingSection from "@/components/home/TrendingSection";
 import BusinessGrid from "@/components/home/BusinessGrid";
+import AuthModal from "@/components/auth/AuthModal";
+import BusinessDetailModal from "@/components/home/BusinessDetailModal";
 import { useHomeStore } from "@/stores/homeStore";
 import type { Business } from "@/lib/supabase";
 
 export default function HomePage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
+
   const { selectedGovernorate, selectedCategory, selectedCity } = useHomeStore();
 
   useEffect(() => {
     const loadBusinesses = async () => {
       setLoading(true);
+      // Reset page when filters change
+      setPage(1);
       try {
         const mockData = generateMockBusinesses();
-        
-        // Filter logic
-        let filtered = mockData;
-        if (selectedGovernorate) {
-          filtered = filtered.filter(b => b.governorate === selectedGovernorate);
-        }
-        if (selectedCity) {
-          filtered = filtered.filter(b => b.city === selectedCity);
-        }
-        if (selectedCategory) {
-          filtered = filtered.filter(b => b.category === selectedCategory);
-        }
-        
-        setBusinesses(filtered);
+        setBusinesses(mockData);
       } finally {
         setLoading(false);
       }
@@ -41,17 +38,50 @@ export default function HomePage() {
     loadBusinesses();
   }, [selectedGovernorate, selectedCategory, selectedCity]);
 
+  const filteredBusinesses = useMemo(() => {
+    let filtered = businesses;
+    
+    if (selectedGovernorate) {
+      filtered = filtered.filter(b => b.governorate === selectedGovernorate);
+    }
+    if (selectedCity) {
+      filtered = filtered.filter(b => b.city === selectedCity);
+    }
+    if (selectedCategory) {
+      filtered = filtered.filter(b => b.category === selectedCategory);
+    }
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(b => 
+        b.name.toLowerCase().includes(query) || 
+        b.category.toLowerCase().includes(query) ||
+        b.city.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [businesses, selectedGovernorate, selectedCity, selectedCategory, searchQuery]);
+
+  const paginatedBusinesses = useMemo(() => {
+    return filteredBusinesses.slice(0, page * ITEMS_PER_PAGE);
+  }, [filteredBusinesses, page]);
+
+  const hasMore = paginatedBusinesses.length < filteredBusinesses.length;
+
   return (
     <div className="min-h-screen bg-[#F5F7F9]">
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <BusinessDetailModal business={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#E5E7EB] shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-2 group cursor-pointer">
+          <div className="flex items-center space-x-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="w-10 h-10 bg-[#2CA6A4] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-              <span className="text-white font-bold text-xl poppins-bold">H</span>
+              <span className="text-white font-bold text-xl poppins-bold">B</span>
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-lg font-bold text-[#2B2F33] poppins-bold tracking-tight">HUMUS</h1>
+              <h1 className="text-lg font-bold text-[#2B2F33] poppins-bold tracking-tight">BELIVE</h1>
               <p className="text-[8px] text-[#2CA6A4] font-bold uppercase tracking-[0.2em] -mt-1">Iraqi Directory</p>
             </div>
           </div>
@@ -63,18 +93,26 @@ export default function HomePage() {
             </div>
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search places, food, services..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-[#2CA6A4] rounded-full focus:outline-none transition-all duration-300 text-sm"
             />
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <button className="hidden md:flex items-center gap-1.5 text-xs font-bold text-[#2CA6A4] hover:text-[#1e7a78] transition-colors">
+            <button 
+              onClick={() => setIsAuthModalOpen(true)}
+              className="hidden md:flex items-center gap-1.5 text-xs font-bold text-[#2CA6A4] hover:text-[#1e7a78] transition-colors"
+            >
               <PlusCircle className="w-4 h-4" />
               List Business
             </button>
-            <button className="w-9 h-9 rounded-full bg-[#F5F7F9] border border-[#E5E7EB] flex items-center justify-center transition-all hover:scale-105">
+            <button 
+              onClick={() => setIsAuthModalOpen(true)}
+              className="w-9 h-9 rounded-full bg-[#F5F7F9] border border-[#E5E7EB] flex items-center justify-center transition-all hover:scale-105"
+            >
               <User className="w-4 h-4 text-[#6B7280]" />
             </button>
           </div>
@@ -83,7 +121,10 @@ export default function HomePage() {
 
       <main className="pb-20">
         {/* HERO / FEATURED CAROUSEL */}
-        <HeroSection businesses={businesses} />
+        <HeroSection 
+          businesses={businesses.filter(b => b.isFeatured)} 
+          onBusinessClick={setSelectedBusiness}
+        />
 
         {/* Governorate & City Filters */}
         <LocationFilter />
@@ -96,14 +137,25 @@ export default function HomePage() {
           <CategoryGrid />
 
           {/* FEATURED BUSINESSES (Vertical Cards) */}
-          <TrendingSection businesses={businesses} loading={loading} />
+          <TrendingSection 
+            businesses={businesses} 
+            loading={loading} 
+            onBusinessClick={setSelectedBusiness}
+          />
 
           {/* MAIN BUSINESS GRID (Compact Cards) */}
           <div className="px-4 mb-4 mt-12">
             <h2 className="text-xl font-bold text-[#2B2F33] poppins-bold">Explore Businesses</h2>
             <p className="text-sm text-[#6B7280]">Discover top-rated places in your area</p>
           </div>
-          <BusinessGrid businesses={businesses} loading={loading} />
+          
+          <BusinessGrid 
+            businesses={paginatedBusinesses} 
+            loading={loading} 
+            hasMore={hasMore}
+            onLoadMore={() => setPage(prev => prev + 1)}
+            onBusinessClick={setSelectedBusiness}
+          />
         </div>
       </main>
 

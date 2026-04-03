@@ -6,9 +6,10 @@ import { Business } from '@/lib/supabase';
 interface TrendingSectionProps {
   businesses: Business[];
   loading?: boolean;
+  onBusinessClick?: (business: Business) => void;
 }
 
-export default function TrendingSection({ businesses, loading }: TrendingSectionProps) {
+export default function TrendingSection({ businesses, loading, onBusinessClick }: TrendingSectionProps) {
   const featured = businesses.filter(b => b.isFeatured).slice(0, 6);
 
   if (loading) return (
@@ -19,7 +20,10 @@ export default function TrendingSection({ businesses, loading }: TrendingSection
     <div className="w-full mb-12">
       <div className="flex items-center justify-between px-4 mb-6">
         <h2 className="text-xl font-bold text-[#2B2F33] poppins-bold">Featured Businesses</h2>
-        <button className="text-sm font-bold text-[#2CA6A4] flex items-center gap-1">
+        <button 
+          onClick={() => document.getElementById('explore-section')?.scrollIntoView({ behavior: 'smooth' })}
+          className="text-sm font-bold text-[#2CA6A4] flex items-center gap-1"
+        >
           See All <ArrowRight className="w-4 h-4" />
         </button>
       </div>
@@ -29,6 +33,7 @@ export default function TrendingSection({ businesses, loading }: TrendingSection
           <motion.div
             key={biz.id}
             whileHover={{ y: -5 }}
+            onClick={() => onBusinessClick?.(biz)}
             className="flex-shrink-0 w-[240px] h-[320px] bg-white rounded-[18px] overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.1)] border border-[#E5E7EB] flex flex-col group cursor-pointer"
           >
             {/* Image Section (60%) */}
@@ -64,7 +69,13 @@ export default function TrendingSection({ businesses, loading }: TrendingSection
                 </div>
               </div>
 
-              <button className="w-full py-2 bg-[#F5F7F9] hover:bg-[#2CA6A4] hover:text-white text-[#2CA6A4] text-xs font-bold rounded-xl transition-all duration-300">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBusinessClick?.(biz);
+                }}
+                className="w-full py-2 bg-[#F5F7F9] hover:bg-[#2CA6A4] hover:text-white text-[#2CA6A4] text-xs font-bold rounded-xl transition-all duration-300"
+              >
                 View Details
               </button>
             </div>

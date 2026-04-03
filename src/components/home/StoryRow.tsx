@@ -13,6 +13,12 @@ const STORIES = [
 ];
 
 export default function StoryRow() {
+  const handleStoryClick = (name: string) => {
+    // For now, just scroll to the explore section and maybe set a search query
+    document.getElementById('explore-section')?.scrollIntoView({ behavior: 'smooth' });
+    console.log(`Story clicked: ${name}`);
+  };
+
   return (
     <div className="w-full overflow-hidden mb-8">
       <div className="max-w-6xl mx-auto px-4">
@@ -22,6 +28,7 @@ export default function StoryRow() {
               key={story.id}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => handleStoryClick(story.name)}
               className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
             >
               <div className="relative p-1 rounded-full border-2 border-[#8B1A1A] bg-white shadow-md">

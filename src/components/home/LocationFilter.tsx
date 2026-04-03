@@ -54,6 +54,16 @@ export default function LocationFilter() {
       {/* Governorate Filter (Horizontal Scroll) */}
       <div className="w-full overflow-hidden">
         <div className="flex gap-2 overflow-x-auto px-4 no-scrollbar pb-2">
+          <button
+            onClick={() => setGovernorate(null)}
+            className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold transition-all border-2 ${
+              selectedGovernorate === null
+                ? "bg-[#2CA6A4] text-white border-[#2CA6A4] shadow-md"
+                : "bg-white text-[#2B2F33] border-[#E5E7EB] hover:border-[#2CA6A4]/30"
+            }`}
+          >
+            All Iraq
+          </button>
           {GOVERNORATES.map((gov) => (
             <button
               key={gov.name}
