@@ -5,22 +5,22 @@ import type { Business } from '@/lib/supabase';
 
 const HERO_SLOGANS = [
   {
-    en: "Discover Iraq's Best Businesses",
-    ar: "اكتشف أفضل الشركات في العراق",
-    ku: "Baştirîn karsaziyên Iraqê kifş bikin",
-    image: "https://picsum.photos/seed/iraq1/1200/600"
+    en: "Celebrate Iraqi Business",
+    ar: "احتفل بالأعمال العراقية",
+    ku: "Karsaziya Iraqê pîroz bikin",
+    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&h=600&fit=crop"
   },
   {
-    en: "Connect with Local Services",
-    ar: "تواصل مع الخدمات المحلية",
-    ku: "Bi xizmetên herêmî re têkilî daynin",
-    image: "https://picsum.photos/seed/iraq2/1200/600"
+    en: "Offers & Events",
+    ar: "عروض وفعاليات",
+    ku: "Pêşniyar û rûdawên nû",
+    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&h=600&fit=crop"
   },
   {
-    en: "Grow Your Business with HUMUS",
-    ar: "نمِ عملك مع هوموس",
-    ku: "Karsaziya xwe bi HUMUS re mezin bikin",
-    image: "https://picsum.photos/seed/iraq3/1200/600"
+    en: "Discover Local Gems",
+    ar: "اكتشف الجواهر المحلية",
+    ku: "Cewherên herêmî kifş bikin",
+    image: "https://images.unsplash.com/photo-1504674900759-b58551b1efc8?w=1200&h=600&fit=crop"
   }
 ];
 
@@ -42,7 +42,7 @@ export default function HeroSection({ businesses }: HeroSectionProps) {
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + HERO_SLOGANS.length) % HERO_SLOGANS.length);
 
   return (
-    <section className="relative h-[400px] md:h-[500px] w-full overflow-hidden">
+    <section className="relative h-[400px] md:h-[500px] w-full overflow-hidden mb-12">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
@@ -52,66 +52,61 @@ export default function HeroSection({ businesses }: HeroSectionProps) {
           transition={{ duration: 0.8 }}
           className="absolute inset-0"
         >
-          <div 
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${HERO_SLOGANS[currentSlide].image})` }}
-          >
-            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white px-4 text-center">
+          <div className="absolute inset-0 bg-[#8B1A1A] flex items-center justify-center overflow-hidden">
+            {/* Abstract background pattern */}
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
+            
+            <div className="relative z-10 max-w-5xl mx-auto px-6 text-center text-white">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="mb-6 inline-block p-4 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20"
+              >
+                <span className="text-4xl md:text-5xl">🎉</span>
+              </motion.div>
+
               <motion.h1 
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className="text-3xl md:text-5xl font-bold mb-4 font-poppins"
+                transition={{ delay: 0.2 }}
+                className="text-4xl md:text-7xl font-bold mb-8 poppins-bold tracking-tight"
               >
                 {HERO_SLOGANS[currentSlide].en}
               </motion.h1>
-              <motion.p 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-xl md:text-2xl mb-2 font-arabic"
-                dir="rtl"
-              >
-                {HERO_SLOGANS[currentSlide].ar}
-              </motion.p>
-              <motion.p 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="text-lg md:text-xl mb-8"
-              >
-                {HERO_SLOGANS[currentSlide].ku}
-              </motion.p>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-primary text-lg px-8 py-3"
-              >
-                Explore Now
-              </motion.button>
+              
+              <div className="flex flex-wrap justify-center gap-4">
+                {[
+                  { text: HERO_SLOGANS[currentSlide].en, lang: 'en' },
+                  { text: HERO_SLOGANS[currentSlide].ar, lang: 'ar' },
+                  { text: HERO_SLOGANS[currentSlide].ku, lang: 'ku' }
+                ].map((btn, i) => (
+                  <motion.button
+                    key={i}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 + (i * 0.1) }}
+                    className="px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl text-sm font-bold transition-all"
+                    dir={btn.lang === 'ar' ? 'rtl' : 'ltr'}
+                  >
+                    {btn.text}
+                  </motion.button>
+                ))}
+              </div>
             </div>
           </div>
         </motion.div>
       </AnimatePresence>
 
-      <button 
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white backdrop-blur-sm transition-colors"
-      >
-        <ChevronLeft size={32} />
-      </button>
-      <button 
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white backdrop-blur-sm transition-colors"
-      >
-        <ChevronRight size={32} />
-      </button>
-
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+      {/* Progress Indicators */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-20">
         {HERO_SLOGANS.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setCurrentSlide(idx)}
-            className={`w-3 h-3 rounded-full transition-all ${idx === currentSlide ? 'bg-white w-8' : 'bg-white/50'}`}
+            className={`h-1.5 rounded-full transition-all duration-500 ${
+              idx === currentSlide ? 'bg-white w-10' : 'bg-white/30 w-4 hover:bg-white/50'
+            }`}
           />
         ))}
       </div>

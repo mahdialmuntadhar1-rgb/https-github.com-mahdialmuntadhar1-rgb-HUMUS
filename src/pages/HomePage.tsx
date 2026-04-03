@@ -11,7 +11,7 @@ import type { Business } from "@/lib/supabase";
 export default function HomePage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
-  const { selectedGovernorate, selectedCity } = useHomeStore();
+  const { selectedGovernorate } = useHomeStore();
 
   useEffect(() => {
     // Simulate loading businesses from Supabase
@@ -28,90 +28,155 @@ export default function HomePage() {
     };
 
     loadBusinesses();
-  }, [selectedGovernorate, selectedCity]);
+  }, [selectedGovernorate]);
 
   return (
-    <div className="min-h-screen bg-humus-off-white">
+    <div className="min-h-screen bg-[#F5F7F9]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-full mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#FF6B35] to-[#004E89] rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">H</span>
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5dada] shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3 group cursor-pointer">
+            <div className="w-11 h-11 bg-gradient-to-br from-[#8B1A1A] to-[#6b1414] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <span className="text-white font-bold text-xl poppins-bold">H</span>
             </div>
-            <h1 className="text-xl font-bold text-humus-dark hidden sm:block poppins-bold">HUMUS</h1>
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-bold text-[#2B2F33] poppins-bold tracking-tight">HUMUS</h1>
+              <p className="text-[9px] text-[#8B1A1A] font-bold uppercase tracking-[0.2em] -mt-1">Iraqi Directory</p>
+            </div>
           </div>
 
-          {/* Search Bar - Minimal */}
-          <div className="flex-1 mx-4 max-w-xs hidden md:block">
+          {/* Search Bar - Premium */}
+          <div className="flex-1 mx-8 max-w-md hidden md:block relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8B1A1A]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </div>
             <input
               type="text"
-              placeholder="Search businesses..."
-              className="w-full px-3 py-2 text-sm border-2 border-humus-deep-blue rounded-lg focus:outline-none focus:border-humus-cyan transition-all"
+              placeholder="Search businesses, services, or places..."
+              className="w-full pl-12 pr-4 py-3 bg-[#FFF5F5] border-2 border-transparent focus:border-[#8B1A1A] rounded-2xl focus:outline-none transition-all duration-300 text-sm font-medium shadow-inner"
             />
           </div>
 
-          {/* Account Icon */}
-          <button className="w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors">
-            <span className="text-gray-600">👤</span>
-          </button>
+          {/* Account Actions */}
+          <div className="flex items-center gap-4">
+            <button className="hidden sm:flex items-center gap-2 text-sm font-bold text-[#8B1A1A] hover:text-[#6b1414] transition-colors">
+              List Your Business
+            </button>
+            <button className="w-11 h-11 rounded-xl bg-[#FFF5F5] hover:bg-[#fce8e8] border border-[#f5dada] flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-sm">
+              <span className="text-xl">👤</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Hero Section with Carousel */}
-      <HeroSection businesses={businesses} />
+      <main>
+        {/* Hero Section with Carousel */}
+        <HeroSection businesses={businesses} />
 
-      {/* Location Filter Bar */}
-      <LocationFilter />
+        {/* Location Filter Bar */}
+        <LocationFilter />
 
-      {/* Category Chips Grid */}
-      <CategoryGrid />
-
-      {/* Trending Section */}
-      {businesses.length > 0 && (
-        <TrendingSection businesses={businesses.filter(b => b.isFeatured).slice(0, 5)} />
-      )}
-
-      {/* Main Feed */}
-      <div className="max-w-full">
-        <FeedComponent businesses={businesses} loading={loading} />
-      </div>
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-8 mt-8">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-sm text-gray-600">
-            <div>
-              <h3 className="font-bold text-humus-dark mb-4 poppins-semibold">HUMUS</h3>
-              <p className="text-xs leading-relaxed">Iraq's most comprehensive business directory. Connecting you with the best local services across all governorates.</p>
+          {/* Category Chips Grid */}
+          <CategoryGrid />
+
+          {/* Trending Section */}
+          {businesses.length > 0 && (
+            <div className="my-12 rounded-[32px] overflow-hidden shadow-premium">
+              <TrendingSection businesses={businesses.filter(b => b.isFeatured).slice(0, 5)} />
             </div>
+          )}
+
+          {/* Main Feed Header */}
+          <div className="flex items-center justify-between mt-16 mb-2">
             <div>
-              <p className="font-bold text-humus-dark mb-4 poppins-semibold">Company</p>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:text-humus-coral transition-colors">About Us</a></li>
-                <li><a href="#" className="hover:text-humus-coral transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-humus-coral transition-colors">Press</a></li>
-              </ul>
+              <h2 className="text-2xl font-bold text-[#2B2F33] poppins-bold">Local Feed</h2>
+              <p className="text-sm text-[#8B1A1A]/60">Discover what's happening around you</p>
             </div>
-            <div>
-              <p className="font-bold text-humus-dark mb-4 poppins-semibold">Support</p>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:text-humus-coral transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-humus-coral transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-humus-coral transition-colors">Safety Center</a></li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-bold text-humus-dark mb-4 poppins-semibold">Legal</p>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:text-humus-coral transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-humus-coral transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-humus-coral transition-colors">Cookie Policy</a></li>
-              </ul>
+            <div className="flex gap-2">
+              <button className="p-2.5 bg-white border border-[#f5dada] rounded-xl text-[#8B1A1A] hover:bg-[#8B1A1A] hover:text-white transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>
+              </button>
             </div>
           </div>
-          <div className="border-t border-gray-200 mt-8 pt-8 text-center text-xs text-gray-500">
-            <p>&copy; {new Date().getFullYear()} HUMUS. All rights reserved.</p>
+
+          {/* Main Feed */}
+          <FeedComponent businesses={businesses} loading={loading} />
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-[#2B2F33] text-white py-20 mt-20">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            <div className="col-span-1 md:col-span-1">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-[#8B1A1A] rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-lg poppins-bold">H</span>
+                </div>
+                <h3 className="text-2xl font-bold poppins-bold tracking-tight">HUMUS</h3>
+              </div>
+              <p className="text-sm text-gray-400 leading-relaxed mb-8">
+                Iraq's premier business discovery platform. We bridge the gap between local businesses and their community across all 18 governorates.
+              </p>
+              <div className="flex gap-4">
+                {['fb', 'tw', 'ig', 'li'].map(social => (
+                  <div key={social} className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#8B1A1A] transition-all cursor-pointer">
+                    <span className="text-xs font-bold uppercase">{social}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <p className="font-bold text-white mb-6 poppins-semibold uppercase tracking-widest text-xs">Company</p>
+              <ul className="space-y-4 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">About HUMUS</a></li>
+                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">How it Works</a></li>
+                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Business Solutions</a></li>
+                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Careers</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-bold text-white mb-6 poppins-semibold uppercase tracking-widest text-xs">Support</p>
+              <ul className="space-y-4 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Contact Support</a></li>
+                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Safety Guidelines</a></li>
+                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Community Standards</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-bold text-white mb-6 poppins-semibold uppercase tracking-widest text-xs">Download App</p>
+              <p className="text-xs text-gray-500 mb-6">Experience HUMUS on the go. Available on all major platforms.</p>
+              <div className="space-y-3">
+                <div className="bg-white/5 border border-white/10 p-3 rounded-xl flex items-center gap-3 hover:bg-white/10 transition-all cursor-pointer">
+                  <div className="text-2xl">🍎</div>
+                  <div>
+                    <p className="text-[8px] uppercase font-bold text-gray-500">Download on the</p>
+                    <p className="text-xs font-bold">App Store</p>
+                  </div>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-3 rounded-xl flex items-center gap-3 hover:bg-white/10 transition-all cursor-pointer">
+                  <div className="text-2xl">🤖</div>
+                  <div>
+                    <p className="text-[8px] uppercase font-bold text-gray-500">Get it on</p>
+                    <p className="text-xs font-bold">Google Play</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-white/5 mt-20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+            <p>&copy; {new Date().getFullYear()} HUMUS IRAQ. ALL RIGHTS RESERVED.</p>
+            <div className="flex gap-8">
+              <a href="#" className="hover:text-white transition-colors">Privacy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms</a>
+              <a href="#" className="hover:text-white transition-colors">Cookies</a>
+            </div>
           </div>
         </div>
       </footer>
