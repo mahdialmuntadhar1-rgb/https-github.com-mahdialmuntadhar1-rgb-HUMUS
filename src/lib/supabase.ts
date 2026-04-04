@@ -11,8 +11,18 @@ export interface Business {
   rating?: number;
   reviewCount?: number;
   isFeatured?: boolean;
+  isVerified?: boolean;
   image?: string;
   website?: string;
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+    whatsapp?: string;
+  };
+  description?: string;
+  descriptionAr?: string;
+  openingHours?: string;
   createdAt: Date;
   updatedAt: Date;
 }

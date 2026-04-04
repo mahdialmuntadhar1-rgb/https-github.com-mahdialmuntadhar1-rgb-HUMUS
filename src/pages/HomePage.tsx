@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { Search, User, PlusCircle } from "lucide-react";
+import { useState } from "react";
+import { Search, User, PlusCircle, MapPin, LayoutGrid, Sparkles, Compass } from "lucide-react";
 import HeroSection from "@/components/home/HeroSection";
 import LocationFilter from "@/components/home/LocationFilter";
 import StoryRow from "@/components/home/StoryRow";
@@ -8,273 +8,227 @@ import TrendingSection from "@/components/home/TrendingSection";
 import BusinessGrid from "@/components/home/BusinessGrid";
 import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
-import { useHomeStore } from "@/stores/homeStore";
+import { useBusinesses } from "@/hooks/useBusinesses";
 import type { Business } from "@/lib/supabase";
 
 export default function HomePage() {
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
-  const [page, setPage] = useState(1);
-  const ITEMS_PER_PAGE = 8;
 
-  const { selectedGovernorate, selectedCategory, selectedCity } = useHomeStore();
+  const { 
+    businesses, 
+    loading, 
+    error, 
+    hasMore, 
+    loadMore 
+  } = useBusinesses(searchQuery);
 
-  useEffect(() => {
-    const loadBusinesses = async () => {
-      setLoading(true);
-      // Reset page when filters change
-      setPage(1);
-      try {
-        const mockData = generateMockBusinesses();
-        setBusinesses(mockData);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadBusinesses();
-  }, [selectedGovernorate, selectedCategory, selectedCity]);
-
-  const filteredBusinesses = useMemo(() => {
-    let filtered = businesses;
-    
-    if (selectedGovernorate) {
-      filtered = filtered.filter(b => b.governorate === selectedGovernorate);
-    }
-    if (selectedCity) {
-      filtered = filtered.filter(b => b.city === selectedCity);
-    }
-    if (selectedCategory) {
-      filtered = filtered.filter(b => b.category === selectedCategory);
-    }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(b => 
-        b.name.toLowerCase().includes(query) || 
-        b.category.toLowerCase().includes(query) ||
-        b.city.toLowerCase().includes(query)
-      );
-    }
-    
-    return filtered;
-  }, [businesses, selectedGovernorate, selectedCity, selectedCategory, searchQuery]);
-
-  const paginatedBusinesses = useMemo(() => {
-    return filteredBusinesses.slice(0, page * ITEMS_PER_PAGE);
-  }, [filteredBusinesses, page]);
-
-  const hasMore = paginatedBusinesses.length < filteredBusinesses.length;
+  const featuredBusinesses = businesses.filter(b => b.isFeatured);
 
   return (
-    <div className="min-h-screen bg-[#F5F7F9]">
+    <div className="min-h-screen bg-[#F5F7F9] selection:bg-[#2CA6A4]/30">
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <BusinessDetailModal business={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#E5E7EB] shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="w-10 h-10 bg-[#2CA6A4] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-              <span className="text-white font-bold text-xl poppins-bold">B</span>
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-xl border-b border-[#E5E7EB] shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          {/* Logo */}
+          <div 
+            className="flex items-center space-x-3 group cursor-pointer flex-shrink-0" 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
+            <div className="w-11 h-11 bg-gradient-to-br from-[#2CA6A4] to-[#1e7a78] rounded-[14px] flex items-center justify-center shadow-lg shadow-[#2CA6A4]/20 group-hover:scale-105 transition-all duration-500">
+              <span className="text-white font-black text-2xl poppins-bold">B</span>
             </div>
-            <div className="hidden sm:block">
-              <h1 className="text-lg font-bold text-[#2B2F33] poppins-bold tracking-tight">BELIVE</h1>
-              <p className="text-[8px] text-[#2CA6A4] font-bold uppercase tracking-[0.2em] -mt-1">Iraqi Directory</p>
+            <div className="hidden md:block">
+              <h1 className="text-xl font-black text-[#2B2F33] poppins-bold tracking-tight leading-none">BELIVE</h1>
+              <p className="text-[9px] text-[#2CA6A4] font-black uppercase tracking-[0.3em] mt-1">Iraqi Directory</p>
             </div>
           </div>
 
           {/* Search Bar */}
-          <div className="flex-1 mx-4 max-w-md relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280]">
+          <div className="flex-1 max-w-2xl relative group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#2CA6A4] transition-colors">
               <Search className="w-4 h-4" />
             </div>
             <input
               type="text"
-              placeholder="Search places, food, services..."
+              placeholder="Search businesses, services, or locations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-[#2CA6A4] rounded-full focus:outline-none transition-all duration-300 text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-[#F5F7F9] border-2 border-transparent focus:border-[#2CA6A4] focus:bg-white rounded-2xl focus:outline-none transition-all duration-300 text-sm font-medium shadow-inner"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             <button 
               onClick={() => setIsAuthModalOpen(true)}
-              className="hidden md:flex items-center gap-1.5 text-xs font-bold text-[#2CA6A4] hover:text-[#1e7a78] transition-colors"
+              className="hidden lg:flex items-center gap-2 px-5 py-2.5 bg-[#2CA6A4] text-white text-xs font-black rounded-xl shadow-lg shadow-[#2CA6A4]/20 hover:bg-[#1e7a78] hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
             >
               <PlusCircle className="w-4 h-4" />
               List Business
             </button>
             <button 
               onClick={() => setIsAuthModalOpen(true)}
-              className="w-9 h-9 rounded-full bg-[#F5F7F9] border border-[#E5E7EB] flex items-center justify-center transition-all hover:scale-105"
+              className="w-11 h-11 rounded-xl bg-white border-2 border-[#E5E7EB] flex items-center justify-center transition-all hover:border-[#2CA6A4] hover:text-[#2CA6A4] shadow-sm"
             >
-              <User className="w-4 h-4 text-[#6B7280]" />
+              <User className="w-5 h-5" />
             </button>
           </div>
         </div>
       </header>
 
-      <main className="pb-20">
-        {/* HERO / FEATURED CAROUSEL */}
+      <main className="pb-24">
+        {/* 1. HERO / FEATURED SECTION */}
         <HeroSection 
-          businesses={businesses.filter(b => b.isFeatured)} 
+          businesses={featuredBusinesses} 
           onBusinessClick={setSelectedBusiness}
         />
 
-        {/* STORY ROW - Moved above filtering */}
-        <StoryRow />
+        {/* 2. STORY ROW */}
+        <div className="mt-8">
+          <StoryRow />
+        </div>
 
-        {/* Governorate Selection */}
-        <LocationFilter />
+        {/* 3. GOVERNORATE & CITY FILTERS */}
+        <div className="mt-12">
+          <LocationFilter />
+        </div>
 
-        <div className="max-w-6xl mx-auto">
-          {/* CATEGORY GRID */}
-          <CategoryGrid />
-
-          {/* FEATURED BUSINESSES (Vertical Cards) */}
-          <TrendingSection 
-            businesses={businesses} 
-            loading={loading} 
-            onBusinessClick={setSelectedBusiness}
-          />
-
-          {/* MAIN BUSINESS GRID (Compact Cards) */}
-          <div className="px-4 mb-4 mt-12">
-            <h2 className="text-xl font-bold text-[#2B2F33] poppins-bold">Explore Businesses</h2>
-            <p className="text-sm text-[#6B7280]">Discover top-rated places in your area</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          {/* 4. CATEGORY GRID */}
+          <div className="mt-8">
+            <CategoryGrid />
           </div>
-          
-          <BusinessGrid 
-            businesses={paginatedBusinesses} 
-            loading={loading} 
-            hasMore={hasMore}
-            onLoadMore={() => setPage(prev => prev + 1)}
-            onBusinessClick={setSelectedBusiness}
-          />
+
+          {/* 5. TRENDING / FEATURED BUSINESSES */}
+          <div className="mt-16">
+            <TrendingSection 
+              businesses={businesses} 
+              loading={loading} 
+              onBusinessClick={setSelectedBusiness}
+            />
+          </div>
+
+          {/* 6. MAIN EXPLORE SECTION */}
+          <div className="mt-20">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+              <div>
+                <div className="flex items-center gap-2 text-[#2CA6A4] mb-2">
+                  <Compass className="w-5 h-5" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em]">Directory</span>
+                </div>
+                <h2 className="text-3xl font-black text-[#2B2F33] poppins-bold tracking-tight">Explore Businesses</h2>
+                <p className="text-base text-[#6B7280] mt-1">Discover the best local services across Iraq</p>
+              </div>
+              
+              <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-[#E5E7EB] shadow-sm">
+                <button className="px-4 py-2 bg-[#2CA6A4] text-white text-[10px] font-black rounded-lg uppercase tracking-widest shadow-md">Grid</button>
+                <button className="px-4 py-2 text-[#6B7280] text-[10px] font-black rounded-lg uppercase tracking-widest hover:bg-[#F5F7F9]">Map</button>
+              </div>
+            </div>
+            
+            {error && (
+              <div className="p-8 bg-red-50 border-2 border-red-100 rounded-[32px] text-center mb-12">
+                <p className="text-red-600 font-bold mb-4">{error}</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-2 bg-red-600 text-white font-bold rounded-xl text-sm"
+                >
+                  Retry Loading
+                </button>
+              </div>
+            )}
+
+            <BusinessGrid 
+              businesses={businesses} 
+              loading={loading} 
+              hasMore={hasMore}
+              onLoadMore={loadMore}
+              onBusinessClick={setSelectedBusiness}
+            />
+          </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#2B2F33] text-white py-20 mt-20">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            <div className="col-span-1 md:col-span-1">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-[#8B1A1A] rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-lg poppins-bold">H</span>
+      <footer className="bg-[#1A1D1F] text-white pt-24 pb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+            <div className="lg:col-span-4">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 bg-[#2CA6A4] rounded-2xl flex items-center justify-center shadow-xl shadow-[#2CA6A4]/20">
+                  <span className="text-white font-black text-2xl poppins-bold">B</span>
                 </div>
-                <h3 className="text-2xl font-bold poppins-bold tracking-tight">HUMUS</h3>
+                <h3 className="text-3xl font-black poppins-bold tracking-tighter">BELIVE</h3>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed mb-8">
-                Iraq's premier business discovery platform. We bridge the gap between local businesses and their community across all 18 governorates.
+              <p className="text-gray-400 leading-relaxed mb-10 text-base max-w-sm">
+                Iraq's most trusted business discovery platform. Connecting millions of users with local businesses across all 19 governorates.
               </p>
               <div className="flex gap-4">
-                {['fb', 'tw', 'ig', 'li'].map(social => (
-                  <div key={social} className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#8B1A1A] transition-all cursor-pointer">
-                    <span className="text-xs font-bold uppercase">{social}</span>
-                  </div>
+                {['facebook', 'instagram', 'twitter', 'linkedin'].map(social => (
+                  <a key={social} href="#" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#2CA6A4] hover:border-[#2CA6A4] transition-all duration-500 group">
+                    <span className="text-[10px] font-black uppercase tracking-tighter group-hover:scale-110 transition-transform">{social.slice(0, 2)}</span>
+                  </a>
                 ))}
               </div>
             </div>
             
-            <div>
-              <p className="font-bold text-white mb-6 poppins-semibold uppercase tracking-widest text-xs">Company</p>
-              <ul className="space-y-4 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">About HUMUS</a></li>
-                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">How it Works</a></li>
-                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Business Solutions</a></li>
-                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Careers</a></li>
+            <div className="lg:col-span-2">
+              <h4 className="text-xs font-black text-[#2CA6A4] uppercase tracking-[0.3em] mb-8">Directory</h4>
+              <ul className="space-y-4 text-sm font-bold text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Browse Categories</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Popular Cities</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Featured Listings</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">New Businesses</a></li>
               </ul>
             </div>
 
-            <div>
-              <p className="font-bold text-white mb-6 poppins-semibold uppercase tracking-widest text-xs">Support</p>
-              <ul className="space-y-4 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Contact Support</a></li>
-                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Safety Guidelines</a></li>
-                <li><a href="#" className="hover:text-[#8B1A1A] transition-colors">Community Standards</a></li>
+            <div className="lg:col-span-2">
+              <h4 className="text-xs font-black text-[#2CA6A4] uppercase tracking-[0.3em] mb-8">For Business</h4>
+              <ul className="space-y-4 text-sm font-bold text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Claim Listing</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Advertise</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Business Blog</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Success Stories</a></li>
               </ul>
             </div>
 
-            <div>
-              <p className="font-bold text-white mb-6 poppins-semibold uppercase tracking-widest text-xs">Download App</p>
-              <p className="text-xs text-gray-500 mb-6">Experience HUMUS on the go. Available on all major platforms.</p>
-              <div className="space-y-3">
-                <div className="bg-white/5 border border-white/10 p-3 rounded-xl flex items-center gap-3 hover:bg-white/10 transition-all cursor-pointer">
-                  <div className="text-2xl">🍎</div>
+            <div className="lg:col-span-4">
+              <h4 className="text-xs font-black text-[#2CA6A4] uppercase tracking-[0.3em] mb-8">Mobile App</h4>
+              <p className="text-sm text-gray-500 mb-8 font-medium">Download the BELIVE app for the best experience on the go.</p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <a href="#" className="flex-1 bg-white/5 border border-white/10 p-4 rounded-[20px] flex items-center gap-4 hover:bg-white/10 transition-all group">
+                  <div className="text-3xl group-hover:scale-110 transition-transform">🍎</div>
                   <div>
-                    <p className="text-[8px] uppercase font-bold text-gray-500">Download on the</p>
-                    <p className="text-xs font-bold">App Store</p>
+                    <p className="text-[8px] uppercase font-black text-gray-500 tracking-widest">Available on</p>
+                    <p className="text-sm font-black">App Store</p>
                   </div>
-                </div>
-                <div className="bg-white/5 border border-white/10 p-3 rounded-xl flex items-center gap-3 hover:bg-white/10 transition-all cursor-pointer">
-                  <div className="text-2xl">🤖</div>
+                </a>
+                <a href="#" className="flex-1 bg-white/5 border border-white/10 p-4 rounded-[20px] flex items-center gap-4 hover:bg-white/10 transition-all group">
+                  <div className="text-3xl group-hover:scale-110 transition-transform">🤖</div>
                   <div>
-                    <p className="text-[8px] uppercase font-bold text-gray-500">Get it on</p>
-                    <p className="text-xs font-bold">Google Play</p>
+                    <p className="text-[8px] uppercase font-black text-gray-500 tracking-widest">Get it on</p>
+                    <p className="text-sm font-black">Google Play</p>
                   </div>
-                </div>
+                </a>
               </div>
             </div>
           </div>
           
-          <div className="border-t border-white/5 mt-20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-            <p>&copy; {new Date().getFullYear()} HUMUS IRAQ. ALL RIGHTS RESERVED.</p>
-            <div className="flex gap-8">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Cookies</a>
+          <div className="border-t border-white/5 mt-24 pt-12 flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">
+            <p>&copy; {new Date().getFullYear()} BELIVE IRAQ. ALL RIGHTS RESERVED.</p>
+            <div className="flex gap-12">
+              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
             </div>
           </div>
         </div>
       </footer>
     </div>
   );
-}
-
-// Mock data generator
-function generateMockBusinesses(): Business[] {
-  const categories = [
-    'dining_cuisine', 'cafe_coffee', 'shopping_retail', 
-    'entertainment_events', 'accommodation_stays', 'culture_heritage',
-    'business_services', 'health_wellness', 'doctors', 'hospitals',
-    'clinics', 'transport_mobility', 'public_essential', 'lawyers', 'education'
-  ];
-  
-  const governorates = ["Baghdad", "Erbil", "Basra", "Mosul", "Sulaymaniyah"];
-  const cities: Record<string, string[]> = {
-    Baghdad: ["Central", "Kadhimiya", "Adhamiyah"],
-    Erbil: ["Erbil Center", "Ankawa", "Shaqlawa"],
-    Basra: ["Basra City", "Zubair"],
-    Mosul: ["Mosul Center", "Hamdaniya"],
-    Sulaymaniyah: ["Suli Center", "Halabja"]
-  };
-
-  return Array.from({ length: 24 }, (_, i) => {
-    const gov = governorates[i % governorates.length];
-    const cityList = cities[gov];
-    const city = cityList[i % cityList.length];
-    
-    return {
-      id: `biz-${i}`,
-      name: `${['Al-Mansour', 'Babylon', 'Tigris', 'Euphrates', 'Mesopotamia'][i % 5]} ${['Plaza', 'Garden', 'Center', 'Hub', 'Lounge'][i % 5]}`,
-      category: categories[i % categories.length],
-      rating: 4 + (i % 10) / 10,
-      reviewCount: 10 + i * 5,
-      governorate: gov,
-      city: city,
-      address: `${city}, Iraq`,
-      image: `https://picsum.photos/seed/biz${i}/600/400`,
-      isFeatured: i < 8,
-      phone: "+964 770 123 4567",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-  });
 }

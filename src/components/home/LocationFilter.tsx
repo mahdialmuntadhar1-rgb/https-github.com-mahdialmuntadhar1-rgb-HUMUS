@@ -22,91 +22,139 @@ const GOVERNORATES = [
   { name: "Baqubah", nameAr: "بعقوبة" },
   { name: "Samawah", nameAr: "السماوة" },
   { name: "Tikrit", nameAr: "تكريت" },
+  { name: "Halabja", nameAr: "حلبجة" },
 ];
 
+const CITIES: Record<string, string[]> = {
+  Baghdad: ["Mansour", "Karrada", "Adhamiyah", "Yarmouk", "Zayouna"],
+  Erbil: ["Center", "Ankawa", "Bakhtiari", "Empire", "Dream City"],
+  Basra: ["Ashar", "Jaza'ir", "Abul Khasib", "Zubair"],
+  Mosul: ["Zuhour", "Muthanna", "Sukkar", "Hadba"],
+  Sulaymaniyah: ["Center", "Bakhtiari", "Sarchinar", "Raperin"],
+};
+
 export default function LocationFilter() {
-  const { selectedGovernorate, setGovernorate } = useHomeStore();
-  const [isOpen, setIsOpen] = useState(false);
+  const { selectedGovernorate, setGovernorate, selectedCity, setCity } = useHomeStore();
+
+  // Duplicate the list for seamless looping
+  const duplicatedGovernorates = [...GOVERNORATES, ...GOVERNORATES];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 mb-8">
-      <div className="flex items-center gap-3 py-4 border-y border-[#E5E7EB]">
-        <div className="flex items-center gap-2 text-[#2B2F33] font-bold">
-          <MapPin className="w-5 h-5 text-[#2CA6A4]" />
-          <span className="text-sm uppercase tracking-wider">Choose your governor first</span>
-        </div>
-        
-        <button 
-          onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#F5F7F9] hover:bg-[#E5E7EB] rounded-full transition-all border border-[#E5E7EB] text-[#2CA6A4] font-bold text-sm"
-        >
-          {selectedGovernorate || "Select Governorate"}
-          <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
-
+    <div className="w-full mb-10">
+      {/* All Iraq / Reset Header */}
+      <div className="max-w-6xl mx-auto px-4 mb-4 flex items-center justify-between">
+        <h3 className="text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em]">Select Location</h3>
         {selectedGovernorate && (
           <button 
-            onClick={() => setGovernorate(null)}
-            className="text-xs font-bold text-[#6B7280] hover:text-red-500 transition-colors uppercase tracking-widest"
+            onClick={() => {
+              setGovernorate(null);
+              setCity(null);
+            }}
+            className="text-[10px] font-black text-[#2CA6A4] uppercase tracking-widest flex items-center gap-1 hover:underline"
           >
-            Clear
+            <X className="w-3 h-3" /> Clear Filters
           </button>
         )}
       </div>
 
-      {/* Governorate Selection Modal */}
-      <AnimatePresence>
-        {isOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="absolute inset-0 bg-[#2B2F33]/40 backdrop-blur-sm"
-            />
-            
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden"
+      {/* Governorate Marquee */}
+      <div className="w-full overflow-hidden relative group">
+        <div className="flex animate-marquee whitespace-nowrap py-2">
+          {duplicatedGovernorates.map((gov, idx) => (
+            <button
+              key={`${gov.name}-${idx}`}
+              onClick={() => {
+                setGovernorate(gov.name);
+                setCity(null);
+              }}
+              className={`mx-2 px-6 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border-2 ${
+                selectedGovernorate === gov.name
+                  ? "bg-[#2CA6A4] text-white border-[#2CA6A4] shadow-lg shadow-[#2CA6A4]/20"
+                  : "bg-white text-[#2B2F33] border-[#E5E7EB] hover:border-[#2CA6A4]/30"
+              }`}
             >
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl font-bold text-[#2B2F33] poppins-bold">Select Governorate</h2>
-                  <button 
-                    onClick={() => setIsOpen(false)}
-                    className="p-2 rounded-full hover:bg-[#F5F7F9] transition-colors"
-                  >
-                    <X className="w-6 h-6 text-[#6B7280]" />
-                  </button>
-                </div>
+              {gov.name}
+            </button>
+          ))}
+        </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {GOVERNORATES.map((gov) => (
-                    <button
-                      key={gov.name}
-                      onClick={() => {
-                        setGovernorate(gov.name);
-                        setIsOpen(false);
-                      }}
-                      className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all border-2 ${
-                        selectedGovernorate === gov.name
-                          ? "bg-[#2CA6A4] text-white border-[#2CA6A4] shadow-lg"
-                          : "bg-[#F5F7F9] text-[#2B2F33] border-transparent hover:border-[#2CA6A4]/30"
-                      }`}
-                    >
-                      <span className="text-sm font-bold">{gov.name}</span>
-                      <span className="text-xs opacity-60">{gov.nameAr}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </div>
+        <div className="absolute top-0 flex animate-marquee2 whitespace-nowrap py-2">
+          {duplicatedGovernorates.map((gov, idx) => (
+            <button
+              key={`${gov.name}-loop-${idx}`}
+              onClick={() => {
+                setGovernorate(gov.name);
+                setCity(null);
+              }}
+              className={`mx-2 px-6 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border-2 ${
+                selectedGovernorate === gov.name
+                  ? "bg-[#2CA6A4] text-white border-[#2CA6A4] shadow-lg shadow-[#2CA6A4]/20"
+                  : "bg-white text-[#2B2F33] border-[#E5E7EB] hover:border-[#2CA6A4]/30"
+              }`}
+            >
+              {gov.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* City Selection (Conditional) */}
+      <AnimatePresence>
+        {selectedGovernorate && CITIES[selectedGovernorate] && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="max-w-6xl mx-auto px-4 mt-6"
+          >
+            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
+              <button
+                onClick={() => setCity(null)}
+                className={`flex-shrink-0 px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
+                  selectedCity === null
+                    ? "bg-[#2B2F33] text-white"
+                    : "bg-[#F5F7F9] text-[#6B7280] hover:bg-[#E5E7EB]"
+                }`}
+              >
+                All {selectedGovernorate}
+              </button>
+              {CITIES[selectedGovernorate].map((city) => (
+                <button
+                  key={city}
+                  onClick={() => setCity(city)}
+                  className={`flex-shrink-0 px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    selectedCity === city
+                      ? "bg-[#2B2F33] text-white"
+                      : "bg-[#F5F7F9] text-[#6B7280] hover:bg-[#E5E7EB]"
+                  }`}
+                >
+                  {city}
+                </button>
+              ))}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
+      
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-100%); }
+        }
+        @keyframes marquee2 {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(0%); }
+        }
+        .animate-marquee {
+          animation: marquee 60s linear infinite;
+        }
+        .animate-marquee2 {
+          animation: marquee2 60s linear infinite;
+        }
+        .group:hover .animate-marquee, .group:hover .animate-marquee2 {
+          animation-play-state: paused;
+        }
+      `}} />
     </div>
   );
 }

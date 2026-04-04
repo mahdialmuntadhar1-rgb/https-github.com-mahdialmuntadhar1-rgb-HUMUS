@@ -34,10 +34,10 @@ export default function CategoryGrid() {
   const { selectedCategory, setCategory } = useHomeStore();
 
   return (
-    <div className="w-full bg-[#1A222E] p-6 sm:p-8 rounded-[32px] mb-12 shadow-2xl border border-[#2D3748]">
+    <div className="w-full bg-white p-6 sm:p-8 rounded-[32px] mb-12 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-[#E5E7EB]">
       <div className="flex items-center gap-3 mb-10">
-        <Tag className="w-6 h-6 text-amber-500 fill-amber-500/20" />
-        <h2 className="text-white font-bold text-xl poppins-bold">
+        <Tag className="w-6 h-6 text-[#2CA6A4] fill-[#2CA6A4]/10" />
+        <h2 className="text-[#2B2F33] font-bold text-xl poppins-bold">
           Categories ({selectedCategory ? '1' : '0'} selected)
         </h2>
       </div>
@@ -50,43 +50,43 @@ export default function CategoryGrid() {
           return (
             <motion.button
               key={cat.id}
-              whileHover={{ scale: 1.03, backgroundColor: '#242F3E' }}
+              whileHover={{ scale: 1.03, backgroundColor: isActive ? '#242F3E' : '#F9FAFB' }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setCategory(isActive ? null : cat.id)}
               className={`relative flex flex-col items-center justify-center p-6 rounded-[24px] transition-all duration-300 border-2 aspect-[1.4/1] ${
                 isActive
-                  ? "bg-[#242F3E] border-amber-500 shadow-[0_0_25px_rgba(245,158,11,0.25)]"
-                  : "bg-[#1F2937]/50 border-[#2D3748] hover:border-[#4B5563]"
+                  ? "bg-[#2B2F33] border-[#2CA6A4] shadow-[0_10px_25px_rgba(44,166,164,0.2)]"
+                  : "bg-[#F5F7F9] border-transparent hover:border-[#2CA6A4]/30"
               }`}
             >
               {/* Hot Badge */}
               {cat.isHot && (
-                <div className="absolute -top-2.5 -left-1 bg-amber-500 text-[#111827] text-[9px] font-black px-2.5 py-1 rounded-lg z-10 shadow-lg uppercase tracking-tighter">
+                <div className="absolute -top-2.5 -left-1 bg-[#E87A41] text-white text-[9px] font-black px-2.5 py-1 rounded-lg z-10 shadow-lg uppercase tracking-tighter">
                   HOT
                 </div>
               )}
 
               {/* Red Dot */}
               {cat.hasDot && (
-                <div className="absolute top-5 right-5 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                <div className="absolute top-5 right-5 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.4)]" />
               )}
 
               {/* Selected Checkmark */}
               {isActive && (
-                <div className="absolute top-3 right-3 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center shadow-lg border-2 border-[#1A222E]">
-                  <Check className="w-3.5 h-3.5 text-[#111827] stroke-[4]" />
+                <div className="absolute top-3 right-3 w-6 h-6 bg-[#2CA6A4] rounded-full flex items-center justify-center shadow-lg border-2 border-[#2B2F33]">
+                  <Check className="w-3.5 h-3.5 text-white stroke-[4]" />
                 </div>
               )}
 
-              <div className={`mb-4 p-3.5 rounded-2xl transition-all duration-300 ${isActive ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]' : 'bg-[#1A222E]'}`}>
-                <Icon className={`w-6 h-6 ${isActive ? 'text-[#111827]' : 'text-amber-500'}`} />
+              <div className={`mb-4 p-3.5 rounded-2xl transition-all duration-300 ${isActive ? 'bg-[#2CA6A4] shadow-[0_0_15px_rgba(44,166,164,0.4)]' : 'bg-white shadow-sm'}`}>
+                <Icon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-[#2CA6A4]'}`} />
               </div>
 
               <div className="text-center">
-                <h3 className={`text-[10px] font-black tracking-widest mb-1.5 uppercase leading-tight ${isActive ? 'text-white' : 'text-gray-200'}`}>
+                <h3 className={`text-[10px] font-black tracking-widest mb-1.5 uppercase leading-tight ${isActive ? 'text-white' : 'text-[#2B2F33]'}`}>
                   {cat.name}
                 </h3>
-                <p className="text-[8px] font-bold text-gray-500 uppercase tracking-[0.2em]">
+                <p className={`text-[8px] font-bold uppercase tracking-[0.2em] ${isActive ? 'text-gray-400' : 'text-gray-500'}`}>
                   {cat.types} TYPES
                 </p>
               </div>
