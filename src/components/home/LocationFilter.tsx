@@ -1,6 +1,7 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useHomeStore } from "@/stores/homeStore";
+import { ChevronDown, MapPin, X } from 'lucide-react';
 
 const GOVERNORATES = [
   { name: "Baghdad", nameAr: "بغداد" },
@@ -23,91 +24,89 @@ const GOVERNORATES = [
   { name: "Tikrit", nameAr: "تكريت" },
 ];
 
-const CITIES_BY_GOVERNORATE: Record<string, string[]> = {
-  Baghdad: ["Central", "Kadhimiya", "Adhamiyah", "Mansour", "Karada", "Sadr City"],
-  Erbil: ["Erbil Center", "Ankawa", "Shaqlawa", "Soran"],
-  Basra: ["Basra City", "Zubair", "Qurna", "Fao"],
-  Mosul: ["Mosul Center", "Hamdaniya", "Tel Kaif"],
-  Sulaymaniyah: ["Suli Center", "Halabja", "Ranya", "Chamchamal"],
-  Duhok: ["Duhok Center", "Zakho", "Amedi"],
-  Kirkuk: ["Kirkuk Center", "Hawija", "Daquq"],
-  Najaf: ["Najaf Center", "Kufa", "Manathera"],
-  Karbala: ["Karbala Center", "Hindiya", "Ain al-Tamur"],
-  Nasiriyah: ["Nasiriyah Center", "Shatra", "Rifa'i"],
-  Amarah: ["Amarah Center", "Maimouna", "Qalat Saleh"],
-  Hilla: ["Hilla Center", "Mahawil", "Musayib"],
-  Kut: ["Kut Center", "Suwaira", "Aziziya"],
-  Diwaniyah: ["Diwaniyah Center", "Afak", "Shamiya"],
-  Ramadi: ["Ramadi Center", "Fallujah", "Hit", "Haditha"],
-  Baqubah: ["Baqubah Center", "Muqdadiya", "Khanaqin"],
-  Samawah: ["Samawah Center", "Rumaitha", "Khidhir"],
-  Tikrit: ["Tikrit Center", "Samarra", "Balad", "Dujail"],
-};
-
 export default function LocationFilter() {
-  const { selectedGovernorate, setGovernorate, selectedCity, setCity } = useHomeStore();
-
-  const cities = CITIES_BY_GOVERNORATE[selectedGovernorate] || [];
+  const { selectedGovernorate, setGovernorate } = useHomeStore();
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="space-y-4 mb-6">
-      {/* Governorate Filter (Horizontal Scroll) */}
-      <div className="w-full overflow-hidden">
-        <div className="flex gap-2 overflow-x-auto px-4 no-scrollbar pb-2">
-          <button
-            onClick={() => setGovernorate(null)}
-            className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold transition-all border-2 ${
-              selectedGovernorate === null
-                ? "bg-[#2CA6A4] text-white border-[#2CA6A4] shadow-md"
-                : "bg-white text-[#2B2F33] border-[#E5E7EB] hover:border-[#2CA6A4]/30"
-            }`}
-          >
-            All Iraq
-          </button>
-          {GOVERNORATES.map((gov) => (
-            <button
-              key={gov.name}
-              onClick={() => setGovernorate(gov.name)}
-              className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold transition-all border-2 ${
-                selectedGovernorate === gov.name
-                  ? "bg-[#2CA6A4] text-white border-[#2CA6A4] shadow-md"
-                  : "bg-white text-[#2B2F33] border-[#E5E7EB] hover:border-[#2CA6A4]/30"
-              }`}
-            >
-              {gov.name}
-            </button>
-          ))}
+    <div className="max-w-6xl mx-auto px-4 mb-8">
+      <div className="flex items-center gap-3 py-4 border-y border-[#E5E7EB]">
+        <div className="flex items-center gap-2 text-[#2B2F33] font-bold">
+          <MapPin className="w-5 h-5 text-[#2CA6A4]" />
+          <span className="text-sm uppercase tracking-wider">Choose your governor first</span>
         </div>
+        
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-[#F5F7F9] hover:bg-[#E5E7EB] rounded-full transition-all border border-[#E5E7EB] text-[#2CA6A4] font-bold text-sm"
+        >
+          {selectedGovernorate || "Select Governorate"}
+          <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {selectedGovernorate && (
+          <button 
+            onClick={() => setGovernorate(null)}
+            className="text-xs font-bold text-[#6B7280] hover:text-red-500 transition-colors uppercase tracking-widest"
+          >
+            Clear
+          </button>
+        )}
       </div>
 
-      {/* City Filter (Chips) */}
-      <div className="w-full overflow-hidden">
-        <div className="flex gap-2 overflow-x-auto px-4 no-scrollbar pb-2">
-          <button
-            onClick={() => setCity(null)}
-            className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-              selectedCity === null
-                ? "bg-[#E87A41] text-white border-[#E87A41]"
-                : "bg-white text-[#6B7280] border-[#E5E7EB]"
-            }`}
-          >
-            All Cities
-          </button>
-          {cities.map((city) => (
-            <button
-              key={city}
-              onClick={() => setCity(city)}
-              className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                selectedCity === city
-                  ? "bg-[#E87A41] text-white border-[#E87A41]"
-                  : "bg-white text-[#6B7280] border-[#E5E7EB]"
-              }`}
+      {/* Governorate Selection Modal */}
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="absolute inset-0 bg-[#2B2F33]/40 backdrop-blur-sm"
+            />
+            
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden"
             >
-              {city}
-            </button>
-          ))}
-        </div>
-      </div>
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-bold text-[#2B2F33] poppins-bold">Select Governorate</h2>
+                  <button 
+                    onClick={() => setIsOpen(false)}
+                    className="p-2 rounded-full hover:bg-[#F5F7F9] transition-colors"
+                  >
+                    <X className="w-6 h-6 text-[#6B7280]" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {GOVERNORATES.map((gov) => (
+                    <button
+                      key={gov.name}
+                      onClick={() => {
+                        setGovernorate(gov.name);
+                        setIsOpen(false);
+                      }}
+                      className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all border-2 ${
+                        selectedGovernorate === gov.name
+                          ? "bg-[#2CA6A4] text-white border-[#2CA6A4] shadow-lg"
+                          : "bg-[#F5F7F9] text-[#2B2F33] border-transparent hover:border-[#2CA6A4]/30"
+                      }`}
+                    >
+                      <span className="text-sm font-bold">{gov.name}</span>
+                      <span className="text-xs opacity-60">{gov.nameAr}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

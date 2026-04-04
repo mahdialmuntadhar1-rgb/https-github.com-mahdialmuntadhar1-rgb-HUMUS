@@ -126,11 +126,11 @@ export default function HomePage() {
           onBusinessClick={setSelectedBusiness}
         />
 
-        {/* Governorate & City Filters */}
-        <LocationFilter />
-
-        {/* STORY ROW */}
+        {/* STORY ROW - Moved above filtering */}
         <StoryRow />
+
+        {/* Governorate Selection */}
+        <LocationFilter />
 
         <div className="max-w-6xl mx-auto">
           {/* CATEGORY GRID */}
