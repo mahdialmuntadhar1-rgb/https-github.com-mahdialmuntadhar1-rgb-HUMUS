@@ -18,9 +18,9 @@ export function useBusinessManagement() {
     try {
       const { error: updateError } = await supabase
         .from('businesses')
-        .update({ owner_id: user.id })
+        .update({ ownerId: user.id })
         .eq('id', businessId)
-        .is('owner_id', null); // Only allow claiming if it has no owner
+        .is('ownerId', null); // Only allow claiming if it has no owner
 
       if (updateError) throw updateError;
       
@@ -40,24 +40,23 @@ export function useBusinessManagement() {
     setLoading(true);
     setError(null);
     try {
+      // businesses table uses camelCase column names
       const { error: updateError } = await supabase
         .from('businesses')
         .update({
           name: updates.name,
-          name_ar: updates.nameAr,
-          name_ku: updates.nameKu,
+          nameAr: updates.nameAr,
+          nameKu: updates.nameKu,
           description: updates.description,
-          description_ar: updates.descriptionAr,
+          descriptionAr: updates.descriptionAr,
           phone: updates.phone,
           website: updates.website,
           address: updates.address,
-          image_url: updates.image,
-          social_links: updates.socialLinks,
-          opening_hours: updates.openingHours,
-          updated_at: new Date().toISOString()
+          imageUrl: updates.image,
+          openHours: updates.openingHours,
         })
         .eq('id', businessId)
-        .eq('owner_id', user.id); // Ensure the user owns it
+        .eq('ownerId', user.id);
 
       if (updateError) throw updateError;
       
@@ -83,29 +82,30 @@ export function useBusinessManagement() {
 
       if (fetchError) throw fetchError;
       
+      // businesses table uses camelCase — handle both for safety
       return data.map((item: any) => ({
         id: item.id,
         name: item.name,
-        nameAr: item.name_ar,
-        nameKu: item.name_ku,
+        nameAr: item.nameAr || item.name_ar,
+        nameKu: item.nameKu || item.name_ku,
         category: item.category,
         governorate: item.governorate,
         city: item.city,
         address: item.address,
         phone: item.phone,
         rating: item.rating || 0,
-        reviewCount: item.review_count || 0,
-        isFeatured: item.is_featured || false,
-        isVerified: item.is_verified || false,
-        image: item.image_url || item.image,
+        reviewCount: item.reviewCount || item.review_count || 0,
+        isFeatured: item.isFeatured ?? item.is_featured ?? false,
+        isVerified: item.isVerified ?? item.is_verified ?? false,
+        image: item.imageUrl || item.image_url || item.image,
         website: item.website,
-        socialLinks: item.social_links || {},
+        socialLinks: item.socialLinks || item.social_links || {},
         description: item.description,
-        descriptionAr: item.description_ar,
-        openingHours: item.opening_hours,
-        ownerId: item.owner_id,
-        createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at || item.created_at)
+        descriptionAr: item.descriptionAr || item.description_ar,
+        openingHours: item.openHours || item.opening_hours,
+        ownerId: item.ownerId || item.owner_id,
+        createdAt: new Date(item.createdAt || item.created_at),
+        updatedAt: new Date(item.createdAt || item.created_at),
       })) as Business[];
     } catch (err) {
       console.error('Error fetching owned businesses:', err);

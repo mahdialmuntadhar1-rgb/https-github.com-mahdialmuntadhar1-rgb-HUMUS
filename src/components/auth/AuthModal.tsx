@@ -129,20 +129,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         });
         if (signUpError) throw signUpError;
 
-        if (signUpData.user) {
-          // Create profile in profiles table
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: signUpData.user.id,
-                email: email,
-                full_name: name,
-                role: role,
-              },
-            ]);
-          if (profileError) throw profileError;
-        }
+        // Profile is auto-created by the handle_new_user DB trigger.
+        // No manual insert needed here — the trigger inserts id, full_name, role.
       }
       onClose();
     } catch (err) {
