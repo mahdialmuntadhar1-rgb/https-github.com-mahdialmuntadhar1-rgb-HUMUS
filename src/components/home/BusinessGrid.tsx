@@ -12,6 +12,19 @@ interface BusinessGridProps {
 }
 
 export default function BusinessGrid({ businesses, loading, hasMore, onLoadMore, onBusinessClick }: BusinessGridProps) {
+  console.log('🎨 [UI] BusinessGrid rendering with:', {
+    businessesCount: businesses.length,
+    loading,
+    hasMore,
+    sampleBusiness: businesses[0] ? {
+      name: businesses[0].name,
+      nameAr: businesses[0].nameAr,
+      category: businesses[0].category,
+      governorate: businesses[0].governorate,
+      phone: businesses[0].phone,
+      rating: businesses[0].rating
+    } : null
+  });
   // Initial loading state (skeleton)
   if (loading && businesses.length === 0) return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4 mb-12">

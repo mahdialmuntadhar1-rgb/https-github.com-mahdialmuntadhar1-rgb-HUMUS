@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Search, User, PlusCircle, MapPin, LayoutGrid, Sparkles, Compass, LogOut, Settings } from "lucide-react";
 import HeroSection from "@/components/home/HeroSection";
-import LocationFilter from "@/components/home/LocationFilter";
+import LocationFilterDynamic from "@/components/home/LocationFilterDynamic";
 import StoryRow from "@/components/home/StoryRow";
-import CategoryGrid from "@/components/home/CategoryGrid";
+import CategoryGridDynamic from "@/components/home/CategoryGridDynamic";
 import TrendingSection from "@/components/home/TrendingSection";
 import BusinessGrid from "@/components/home/BusinessGrid";
 import AuthModal from "@/components/auth/AuthModal";
@@ -28,6 +28,15 @@ export default function HomePage() {
   } = useBusinesses(searchQuery);
 
   const featuredBusinesses = businesses.filter(b => b.isFeatured);
+
+  console.log('🏠 [UI] HomePage rendering with:', {
+    businessesCount: businesses.length,
+    businessesLoading,
+    error,
+    hasMore,
+    featuredBusinessesCount: featuredBusinesses.length,
+    searchQuery
+  });
 
   return (
     <div className="min-h-screen bg-[#F5F7F9] selection:bg-[#2CA6A4]/30">
@@ -152,13 +161,13 @@ export default function HomePage() {
 
         {/* 3. GOVERNORATE & CITY FILTERS */}
         <div className="mt-12">
-          <LocationFilter />
+          <LocationFilterDynamic />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
           {/* 4. CATEGORY GRID SECTION */}
           <section className="bg-[#0f172a] rounded-[48px] p-4 sm:p-8 shadow-2xl shadow-black/20 border border-white/5">
-            <CategoryGrid />
+            <CategoryGridDynamic />
           </section>
 
           {/* 5. TRENDING SECTION */}
