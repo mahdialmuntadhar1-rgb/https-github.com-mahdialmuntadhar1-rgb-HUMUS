@@ -54,29 +54,34 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
       if (fetchError) throw fetchError;
       
       if (data) {
-        // Map database columns to frontend interface if they differ
+        // Map database columns to frontend interface using actual schema
         const mappedBusinesses: Business[] = data.map((item: any) => ({
           id: item.id,
           name: item.name,
-          nameAr: item.name_ar,
-          nameKu: item.name_ku,
+          nameAr: item.nameAr,
+          nameKu: item.nameKu,
           category: item.category,
           governorate: item.governorate,
           city: item.city,
           address: item.address,
           phone: item.phone,
           rating: item.rating || 0,
-          reviewCount: item.review_count || 0,
-          isFeatured: item.is_featured || false,
-          isVerified: item.is_verified || false,
-          image: item.image_url || item.image || `https://picsum.photos/seed/${item.id}/600/400`,
+          reviewCount: item.reviewCount || 0,
+          isFeatured: item.isFeatured || false,
+          isVerified: item.isVerified || false,
+          image: item.imageUrl || item.image || `https://picsum.photos/seed/${item.id}/600/400`,
           website: item.website,
-          socialLinks: item.social_links || {},
+          socialLinks: {
+            facebook: item.facebook,
+            instagram: item.instagram,
+            twitter: item.twitter,
+            whatsapp: item.whatsapp
+          },
           description: item.description,
-          descriptionAr: item.description_ar,
-          openingHours: item.opening_hours,
-          createdAt: new Date(item.created_at),
-          updatedAt: new Date(item.updated_at || item.created_at)
+          descriptionAr: item.descriptionAr,
+          openingHours: item.openHours,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.createdAt)
         }));
 
         setBusinesses(prev => isRefresh ? mappedBusinesses : [...prev, ...mappedBusinesses]);
