@@ -1,179 +1,147 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Business } from '@/lib/supabase';
-import { useHomeStore } from '@/stores/homeStore';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, Business, FilterState, QueryResult } from '@/lib/supabaseClient';
 
-interface UseBusinessesResult {
-  businesses: Business[];
-  loading: boolean;
-  error: string | null;
-  hasMore: boolean;
-  loadMore: () => void;
-  refresh: () => void;
-}
+const ITEMS_PER_PAGE = 24;
 
-const ITEMS_PER_PAGE = 12;
-
-export function useBusinesses(searchQuery: string): UseBusinessesResult {
+export function useBusinesses(filters: FilterState, page: number = 1): QueryResult {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableGovernortes, setAvailableGovernortes] = useState<string[]>([]);
 
-  const { selectedGovernorate, selectedCategory, selectedCity } = useHomeStore();
-
-  const fetchBusinesses = useCallback(async (isRefresh = false) => {
-    console.log(' [FRONTEND] Starting business fetch...');
-    console.log(' [FRONTEND] Query parameters:', {
-      page: isRefresh ? 1 : page,
-      selectedGovernorate,
-      selectedCategory,
-      selectedCity,
-      searchQuery,
-      isRefresh
-    });
-    
+  // Fetch businesses with applied filters
+  const fetchBusinesses = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
-    const currentPage = isRefresh ? 1 : page;
-    
+
+    try {
+      // Build query
+      let query = supabase
+        .from('businesses')
+        .select('*', { count: 'exact' });
+
+      // Apply governorate filter
+      if (filters.governorate && filters.governorate !== 'All') {
+        query = query.eq('governorate', filters.governorate);
+      }
+
+      // Apply category filter
+      if (filters.category && filters.category !== 'All') {
+        query = query.eq('category', filters.category);
+      }
+
+      // Apply pagination
+      const offset = (page - 1) * ITEMS_PER_PAGE;
+      query = query
+        .range(offset, offset + ITEMS_PER_PAGE - 1)
+        .order('createdAt', { ascending: false });
+
+      // Execute query
+      const { data, count, error: queryError } = await query;
+
+      if (queryError) {
+        throw queryError;
+      }
+
+      console.log(`Business Query:`, {
+        governorate: filters.governorate,
+        category: filters.category,
+        page,
+        offset,
+        returned: data?.length || 0,
+        total: count,
+      });
+
+      setBusinesses(data || []);
+      setTotal(count || 0);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch businesses';
+      setError(errorMessage);
+      console.error('Error fetching businesses:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters.governorate, filters.category, page]);
+
+  // Fetch available governorates
+  const fetchGovernortes = useCallback(async () => {
+    try {
+      const { data, error: queryError } = await supabase
+        .from('businesses')
+        .select('governorate', { count: 'exact' })
+        .not('governorate', 'is', null);
+
+      if (queryError) throw queryError;
+
+      // Extract unique governorates
+      const govs = Array.from(new Set(
+        (data || [])
+          .map(b => b.governorate)
+          .filter((g): g is string => Boolean(g))
+          .map(g => g.trim())
+      )).sort();
+
+      setAvailableGovernortes(govs);
+    } catch (err) {
+      console.error('Error fetching governorates:', err);
+    }
+  }, []);
+
+  // Fetch available categories (scoped to selected governorate)
+  const fetchCategories = useCallback(async () => {
     try {
       let query = supabase
         .from('businesses')
-        .select('*', { count: 'exact' })
-        .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
+        .select('category', { count: 'exact' })
+        .not('category', 'is', null);
 
-      if (selectedGovernorate) {
-        query = query.eq('governorate', selectedGovernorate);
-        console.log(` [FRONTEND] Filtering by governorate: ${selectedGovernorate}`);
-      }
-      if (selectedCity) {
-        query = query.eq('city', selectedCity);
-        console.log(` [FRONTEND] Filtering by city: ${selectedCity}`);
-      }
-      if (selectedCategory) {
-        // Map frontend categories to database values if needed
-        query = query.eq('category', selectedCategory);
-        console.log(` [FRONTEND] Filtering by category: ${selectedCategory}`);
-      }
-      if (searchQuery) {
-        query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
-        console.log(` [FRONTEND] Searching for: ${searchQuery}`);
+      // If governorate is selected, filter by it
+      if (filters.governorate && filters.governorate !== 'All') {
+        query = query.eq('governorate', filters.governorate);
       }
 
-      console.log(` [FRONTEND] Fetching page ${currentPage} (${ITEMS_PER_PAGE} items)...`);
-      const { data, count, error: fetchError } = await query;
-      
-      if (fetchError) throw fetchError;
-      
-      console.log(` [FRONTEND] Raw rows fetched from Supabase: ${data?.length || 0}`);
-      console.log(` [FRONTEND] Total count from Supabase: ${count}`);
-      
-      if (data) {
-        console.log(' [FRONTEND] Sample raw data:', data[0]);
-        
-        // Map database columns to frontend interface using actual schema
-        const mappedBusinesses: Business[] = data.map((item: any) => {
-          const mapped = {
-            id: item.id,
-            name: item.name,
-            nameAr: item.nameAr,
-            nameKu: item.nameKu,
-            category: item.category,
-            governorate: item.governorate,
-            city: item.city,
-            address: item.address,
-            phone: item.phone,
-            rating: item.rating || 0,
-            reviewCount: item.reviewCount || 0,
-            isFeatured: item.isFeatured || false,
-            isVerified: item.isVerified || false,
-            image: item.imageUrl || item.image || `https://picsum.photos/seed/${item.id}/600/400`,
-            website: item.website,
-            socialLinks: {
-              facebook: item.facebook,
-              instagram: item.instagram,
-              twitter: item.twitter,
-              whatsapp: item.whatsapp
-            },
-            description: item.description,
-            descriptionAr: item.descriptionAr,
-            openingHours: item.openHours,
-            createdAt: new Date(item.createdAt),
-            updatedAt: new Date(item.createdAt)
-          };
-          
-          // Log any potential issues with mapping
-          if (!mapped.name) console.warn(' [FRONTEND] Business missing name:', item.id);
-          if (!mapped.nameAr) console.log(' [FRONTEND] Business missing Arabic name:', item.id);
-          if (!mapped.phone) console.log(' [FRONTEND] Business missing phone:', item.id);
-          if (!mapped.rating) console.log(' [FRONTEND] Business missing rating:', item.id);
-          if (!mapped.isVerified) console.log(' [FRONTEND] Business not verified:', item.id);
-          
-          return mapped;
-        });
+      const { data, error: queryError } = await query;
 
-        console.log(` [FRONTEND] Rows after mapping: ${mappedBusinesses.length}`);
-        console.log(' [FRONTEND] Sample mapped business:', mappedBusinesses[0]);
+      if (queryError) throw queryError;
 
-        // Apply any additional filtering logic
-        const filteredBusinesses = mappedBusinesses.filter(biz => {
-          // No additional filtering needed - all businesses should be shown
-          return true;
-        });
+      // Extract unique categories
+      const cats = Array.from(new Set(
+        (data || [])
+          .map(b => b.category)
+          .filter((c): c is string => Boolean(c))
+          .map(c => c.trim())
+      )).sort();
 
-        console.log(` [FRONTEND] Rows after filtering: ${filteredBusinesses.length}`);
-
-        setBusinesses(prev => {
-          const newBusinesses = isRefresh ? filteredBusinesses : [...prev, ...filteredBusinesses];
-          console.log(` [FRONTEND] Total businesses in state: ${newBusinesses.length}`);
-          return newBusinesses;
-        });
-        
-        const totalCount = count || 0;
-        const currentTotal = isRefresh ? filteredBusinesses.length : businesses.length + filteredBusinesses.length;
-        setHasMore(currentTotal < totalCount);
-        
-        console.log(` [FRONTEND] Pagination status: ${currentTotal}/${totalCount} (hasMore: ${currentTotal < totalCount})`);
-      }
+      setAvailableCategories(cats);
     } catch (err) {
-      console.error(' [FRONTEND] Error fetching businesses:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch businesses');
-    } finally {
-      setLoading(false);
-      console.log(' [FRONTEND] Business fetch completed');
+      console.error('Error fetching categories:', err);
     }
-  }, [page, selectedGovernorate, selectedCity, selectedCategory, searchQuery, businesses.length]);
+  }, [filters.governorate]);
 
+  // Fetch data when filters or page changes
   useEffect(() => {
-    console.log(' [FRONTEND] Resetting page and fetching businesses...');
-    setPage(1);
-    fetchBusinesses(true);
-  }, [selectedGovernorate, selectedCity, selectedCategory, searchQuery]);
+    fetchBusinesses();
+  }, [fetchBusinesses]);
 
+  // Fetch governorates once
   useEffect(() => {
-    if (page > 1) {
-      console.log(` [FRONTEND] Loading page ${page}...`);
-      fetchBusinesses(false);
-    }
-  }, [page]);
+    fetchGovernortes();
+  }, [fetchGovernortes]);
 
-  const loadMore = () => {
-    if (!loading && hasMore) {
-      console.log(' [FRONTEND] Loading more businesses...');
-      setPage(prev => prev + 1);
-    } else {
-      console.log(' [FRONTEND] Cannot load more:', { loading, hasMore });
-    }
+  // Fetch categories when governorate changes
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  return {
+    businesses,
+    total,
+    loading,
+    error,
+    availableCategories,
+    availableGovernortes,
+    hasMore: (page - 1) * ITEMS_PER_PAGE + ITEMS_PER_PAGE < total,
   };
-
-  const refresh = () => {
-    console.log(' [FRONTEND] Refreshing businesses...');
-    setPage(1);
-    fetchBusinesses(true);
-  };
-
-  return { businesses, loading, error, hasMore, loadMore, refresh };
 }

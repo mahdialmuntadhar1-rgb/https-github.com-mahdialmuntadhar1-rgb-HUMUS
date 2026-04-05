@@ -12,6 +12,7 @@ export function useFilterState() {
   const [selectedGovernorate, setSelectedGovernorate] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -46,30 +47,40 @@ export function useFilterState() {
     setSelectedGovernorate(governorate);
     // Reset city when governorate changes
     setSelectedCity(null);
+    setPage(1); // Reset to first page
   }, []);
 
   const setCategory = useCallback((category: string | null) => {
     setSelectedCategory(category);
+    setPage(1); // Reset to first page
   }, []);
 
   const setCity = useCallback((city: string | null) => {
     setSelectedCity(city);
+    setPage(1); // Reset to first page
   }, []);
 
   const resetFilters = useCallback(() => {
     setSelectedGovernorate(null);
     setSelectedCategory(null);
     setSelectedCity(null);
+    setPage(1);
     localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  const nextPage = useCallback(() => {
+    setPage(prev => prev + 1);
   }, []);
 
   return {
     selectedGovernorate,
     selectedCategory,
     selectedCity,
+    page,
     setGovernorate,
     setCategory,
     setCity,
-    resetFilters
+    resetFilters,
+    nextPage
   };
 }
