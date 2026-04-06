@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { CATEGORIES as FALLBACK_CATEGORIES } from '@/constants';
+import { CATEGORIES as FALLBACK_CATEGORIES, GOVERNORATES as FALLBACK_GOVERNORATES } from '@/constants';
 
 export interface Category {
   id: string;
@@ -28,7 +28,7 @@ export interface City {
 
 export function useMetadata() {
   const [categories, setCategories] = useState<any[]>([]);
-  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [governorates, setGovernorates] = useState<any[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -63,8 +63,20 @@ export function useMetadata() {
           .select('*')
           .order('name_en', { ascending: true });
 
-        if (!govError && govData) {
-          setGovernorates(govData);
+        if (!govError && govData && govData.length > 0) {
+          setGovernorates(govData.map(gov => ({
+            id: gov.id,
+            name_en: gov.name_en,
+            name_ar: gov.name_ar,
+            name_ku: gov.name_ku
+          })));
+        } else {
+          setGovernorates(FALLBACK_GOVERNORATES.map(gov => ({
+            id: gov.id,
+            name_en: gov.name.en,
+            name_ar: gov.name.ar,
+            name_ku: gov.name.ku
+          })));
         }
 
         // Fetch cities
@@ -79,6 +91,12 @@ export function useMetadata() {
       } catch (err) {
         console.error('Error fetching metadata:', err);
         setCategories(FALLBACK_CATEGORIES);
+        setGovernorates(FALLBACK_GOVERNORATES.map(gov => ({
+          id: gov.id,
+          name_en: gov.name.en,
+          name_ar: gov.name.ar,
+          name_ku: gov.name.ku
+        })));
       } finally {
         setLoading(false);
       }
