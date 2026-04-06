@@ -48,7 +48,7 @@ Never expose the service_role key in frontend code.
 | `business_claims` | — | Owner claim requests |
 | `reviews` | — | User star ratings and comments |
 | `categories` | 10 | Category display names with translations |
-| `governorates` | 17 | Governorate names with translations |
+| `governorates` | 18 | Governorate names with translations (incl. Halabja) |
 | `cities` | — | City names per governorate |
 
 ### Pipeline tables (scraper system — not used by frontend)
@@ -80,28 +80,30 @@ supabase/migrations/
 ├── 002_businesses.sql      ← businesses table schema (DO NOT run on live)
 ├── 003_content_tables.sql  ← posts, stories, events, deals, postcards
 ├── 004_claim_reviews.sql   ← business_claims, reviews
-├── 005_metadata_tables.sql ← categories, governorates, cities (APPLY TO LIVE)
+├── 005_metadata_tables.sql ← categories, governorates, cities ✅ applied
 ├── 006_rls_policies.sql    ← RLS reference documentation
-└── 007_functions.sql       ← increment_likes + other functions (APPLY TO LIVE)
+├── 007_functions.sql       ← increment_likes + other functions ✅ applied
+└── 008_add_halabja_governorate.sql ← Halabja (18th governorate) ✅ applied
 
 supabase/seed/
-├── 001_categories.sql      ← 10 categories with AR/KU translations (APPLY TO LIVE)
-└── 002_governorates.sql    ← 17 governorates with AR/KU translations (APPLY TO LIVE)
+├── 001_categories.sql      ← 10 categories with AR/KU translations ✅ applied
+└── 002_governorates.sql    ← 17 governorates with AR/KU translations ✅ applied
 ```
 
-### Which files to apply to the live DB
+### Status of live DB migrations
 
-| File | Apply to live? | Notes |
-|------|---------------|-------|
-| `001_profiles.sql` | NO | table exists |
-| `002_businesses.sql` | NO | 1,800 rows exist, do not recreate |
-| `003_content_tables.sql` | NO | tables exist with sample data |
-| `004_claim_reviews.sql` | NO | tables exist |
-| `005_metadata_tables.sql` | **YES** | tables are missing, needed for filters |
-| `006_rls_policies.sql` | NO | reference only |
-| `007_functions.sql` | **YES** | `increment_likes` is missing, needed by usePosts |
-| `seed/001_categories.sql` | **YES** | needed for category filter UI |
-| `seed/002_governorates.sql` | **YES** | needed for governorate filter UI |
+| File | Status | Notes |
+|------|--------|-------|
+| `001_profiles.sql` | ✅ exists | do not re-run |
+| `002_businesses.sql` | ✅ exists | 1,800 rows, do not recreate |
+| `003_content_tables.sql` | ✅ exists | do not re-run |
+| `004_claim_reviews.sql` | ✅ exists | do not re-run |
+| `005_metadata_tables.sql` | ✅ applied | categories + governorates live |
+| `006_rls_policies.sql` | reference only | do not run |
+| `007_functions.sql` | ✅ applied | increment_likes live |
+| `008_add_halabja_governorate.sql` | ✅ applied | 18 governorates now |
+| `seed/001_categories.sql` | ✅ applied | 10 categories live |
+| `seed/002_governorates.sql` | ✅ applied | 17 base governorates live |
 
 ---
 
@@ -137,17 +139,13 @@ Works out of the box. Supabase Auth handles it.
 4. Add redirect URL to Google Console: `https://hsadukhmcclwixuntqwu.supabase.co/auth/v1/callback`
 5. Add site URL in Supabase: your production domain
 
-If Google OAuth is not configured, the button in `AuthModal.tsx` will show  
-a user-friendly error. Do not remove the UI — configure it properly or  
-disable it cleanly (Phase 3 work).
+If `VITE_GOOGLE_CLIENT_ID` is not set in `.env.local`, the Google login button  
+renders as disabled (grey + tooltip). Email/password auth always works.
 
 ### Profile auto-creation
 The `handle_new_user` trigger on `auth.users` automatically creates a row in  
-`profiles` on signup. The trigger is already active on the live DB.
-
-**Known issue**: `authStore.ts` also tries to insert `email` into `profiles`  
-during signup, but `profiles` has no `email` column. This causes a silent  
-error. The trigger-created profile is correct. Fix tracked in Phase 3.
+`profiles` on signup. The trigger is active on the live DB.  
+`authStore.ts` does NOT manually insert profiles — the trigger handles it.
 
 ---
 
@@ -160,16 +158,27 @@ error. The trigger-created profile is correct. Fix tracked in Phase 3.
 
 ---
 
-## Known Issues (to fix in later phases)
+## Resolved Issues (all phases complete)
 
-| Issue | Phase |
-|-------|-------|
-| `usePosts.ts` queries wrong column names (snake_case vs camelCase) | Phase 5 |
-| `authStore.ts` inserts `email` into `profiles` (column missing) | Phase 3 |
-| `useBusinessManagement.ts` writes snake_case to camelCase businesses table | Phase 6 |
-| `business_claims.business_id` is uuid but `businesses.id` is text | Phase 6 |
-| `increment_likes` RPC missing from live DB | Phase 1 (apply 007_functions.sql) |
-| No `categories`/`governorates`/`cities` tables | Phase 1 (apply 005 + seeds) |
+| Issue | Resolved in |
+|-------|-------------|
+| `usePosts.ts` queried wrong column names (snake_case vs camelCase) | Phase 2 |
+| `authStore.ts` inserted `email` into `profiles` (column missing) | Phase 2 |
+| `authStore.ts` Profile interface declared non-existent email/avatar_url fields | Phase 3 |
+| `/dashboard` route had no auth protection | Phase 3 |
+| Google OAuth button was always active even when not configured | Phase 3 |
+| `useBusinessManagement.ts` used snake_case writes on camelCase businesses table | Phase 2 |
+| `getOwnedBusinesses` queried `owner_id` instead of camelCase `ownerId` | Phase 6 |
+| `claimBusiness` bypassed `business_claims` table (direct ownerId update) | Phase 6 |
+| `increment_likes` RPC missing from live DB | Phase 1 |
+| No `categories`/`governorates` tables | Phase 1 |
+| Governorate filter defaulted to "Baghdad" showing only 100/1,800 businesses | Phase 0 |
+| Category filter used internal IDs instead of DB English names | Phase 0 |
+| Changing governorate did not reset selected category | Phase 4 |
+| Halabja (Iraq's 18th governorate) missing from DB | Phase 4 |
+| StoryRow used hardcoded mock data | Phase 5 |
+| TrendingSection getCategoryName used wrong ID mapping | Phase 5 |
+| FeedComponent filtered out posts without matching loaded business | Phase 5 |
 
 ---
 

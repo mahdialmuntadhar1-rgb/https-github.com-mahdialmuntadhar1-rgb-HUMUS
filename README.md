@@ -3,7 +3,7 @@
 A production-ready, Supabase-backed Iraqi business directory app.  
 Multilingual (English / Arabic / Kurdish), mobile-first, PWA-enabled.
 
-**Live data**: 1,800 verified businesses across 17 Iraqi governorates  
+**Live data**: 1,800 verified businesses across 18 Iraqi governorates  
 **Tech**: React 19 · TypeScript · Vite · TailwindCSS 4 · Supabase · Zustand
 
 ---
@@ -11,7 +11,7 @@ Multilingual (English / Arabic / Kurdish), mobile-first, PWA-enabled.
 ## Features
 
 - Browse 1,800 real Iraqi businesses
-- Filter by governorate (17) and category (10)
+- Filter by governorate (18) and category (10)
 - Bilingual business names (English, Arabic, Kurdish)
 - Business owner dashboard — claim listing, publish posts
 - Supabase Auth — email/password + Google OAuth
@@ -102,6 +102,7 @@ Supabase PostgreSQL — see [`supabase/README.md`](supabase/README.md) for:
 | `npm run build` | Production build |
 | `npm run preview` | Preview production build |
 | `npm run lint` | TypeScript type-check |
+| `npm run verify` | Check DB connectivity and table existence |
 
 ---
 
@@ -125,12 +126,27 @@ Supabase Dashboard → Auth → URL Configuration → Site URL
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 0 | Safety — migration branch, snapshot, collision check | ✅ Done |
-| 1 | Backend contract — schema docs, missing tables | ✅ Done |
-| 2 | Shared data layer — hooks, typed queries | 🔜 Next |
-| 3 | Auth — fix profile creation, Google OAuth | 🔜 |
-| 4 | Business directory — filters, pagination, null safety | 🔜 |
-| 5 | Feed system — posts, stories, events, deals | 🔜 |
-| 6 | Owner dashboard — claim flow, post publishing | 🔜 |
-| 7 | Multilingual UI | 🔜 |
-| 8 | Scripts / public assets / docs | 🔜 |
-| 9 | Documentation cleanup | 🔜 |
+| 1 | Backend contract — schema docs, missing tables, seeds applied | ✅ Done |
+| 2 | Shared data layer — hooks, typed queries, camelCase fixes | ✅ Done |
+| 3 | Auth — Profile interface fixed, /dashboard protected, Google OAuth guarded | ✅ Done |
+| 4 | Business directory — all 4 filter combos, category reset on governorate change, Halabja added | ✅ Done |
+| 5 | Feed system — StoryRow → live categories, FeedComponent → live posts, TrendingSection category names fixed | ✅ Done |
+| 6 | Owner dashboard — claim flow uses business_claims table, getOwnedBusinesses camelCase fix, Manage Business link wired | ✅ Done |
+| 7 | Multilingual UI — centralized src/i18n/ui.ts with t() and useT() | ✅ Done |
+| 8 | Scripts — verify-setup.js, README 18 governorates update | ✅ Done |
+| 9 | Documentation cleanup | ✅ Done |
+
+---
+
+## i18n System
+
+UI translations live in `src/i18n/ui.ts`.  
+Import `t(key, lang)` for static usage or `useT()` hook for React components.  
+Categories and governorates are translated at the DB level (useMetadata returns multilingual objects).
+
+---
+
+## Route Protection
+
+`/dashboard` requires `business_owner` role (via `ProtectedRoute` component).  
+Unauthenticated users and non-owner users are redirected to `/`.
