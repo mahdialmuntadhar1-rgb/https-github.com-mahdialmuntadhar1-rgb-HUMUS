@@ -1,5 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
-
 export interface Business {
   id: string;
   name: string;
@@ -13,19 +11,30 @@ export interface Business {
   rating?: number;
   reviewCount?: number;
   isFeatured?: boolean;
+  isVerified?: boolean;
   image?: string;
   website?: string;
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+    whatsapp?: string;
+  };
+  description?: string;
+  descriptionAr?: string;
+  openingHours?: string;
+  ownerId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
-  );
+export interface Post {
+  id: string;
+  businessId: string;
+  content: string;
+  image?: string;
+  likes: number;
+  createdAt: Date;
+  authorName?: string;
+  authorAvatar?: string;
 }
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
