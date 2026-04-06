@@ -67,6 +67,7 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
           city: item.city,
           address: item.address,
           phone: item.phone,
+          whatsapp: item.whatsapp,
           rating: item.rating || 0,
           reviewCount: item.review_count || 0,
           isFeatured: item.is_featured || false,

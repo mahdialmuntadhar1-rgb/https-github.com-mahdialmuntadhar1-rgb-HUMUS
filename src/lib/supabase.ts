@@ -8,6 +8,7 @@ export interface Business {
   city: string;
   address: string;
   phone: string;
+  whatsapp?: string;
   rating?: number;
   reviewCount?: number;
   isFeatured?: boolean;
