@@ -314,8 +314,13 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                         </a>
                       )}
                       {business.socialLinks?.whatsapp && (
-                        <a href={`https://wa.me/${business.socialLinks.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="w-12 h-12 bg-white rounded-2xl border border-[#E5E7EB] flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all shadow-sm">
-                          <MessageCircle className="w-5 h-5" />
+                        <a 
+                          href={`https://wa.me/${business.socialLinks.whatsapp.replace(/\D/g, '')}`} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="w-12 h-12 bg-white rounded-2xl border border-[#E5E7EB] flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all shadow-sm group"
+                        >
+                          <MessageCircle className="w-5 h-5 transition-transform group-hover:scale-110" />
                         </a>
                       )}
                     </div>
@@ -335,7 +340,7 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                     </a>
                     {business.website && (
                       <a 
-                        href={business.website}
+                        href={business.website.startsWith('http') ? business.website : `https://${business.website}`}
                         target="_blank"
                         rel="noreferrer"
                         className="w-full py-4 border-2 border-[#E5E7EB] text-[#2B2F33] font-black rounded-2xl hover:border-[#2CA6A4] hover:text-[#2CA6A4] transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
@@ -347,27 +352,20 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                     <div className="grid grid-cols-2 gap-3">
                       <button 
                         onClick={handleShare}
-                        className="py-4 border border-[#E5E7EB] text-[#2B2F33] font-bold rounded-2xl hover:bg-[#F5F7F9] transition-all flex items-center justify-center gap-2 text-xs"
+                        className="py-4 border border-[#E5E7EB] text-[#2B2F33] font-bold rounded-2xl hover:bg-[#F5F7F9] transition-all flex items-center justify-center gap-2 text-xs group"
                       >
-                        <Share2 className="w-4 h-4" />
+                        <Share2 className="w-4 h-4 transition-transform group-hover:rotate-12" />
                         {translations.share[language]}
                       </button>
-                      <button className="py-4 border border-[#E5E7EB] text-[#2B2F33] font-bold rounded-2xl hover:bg-[#F5F7F9] transition-all flex items-center justify-center gap-2 text-xs">
-                        <Heart className="w-4 h-4" />
+                      <button className="py-4 border border-[#E5E7EB] text-[#2B2F33] font-bold rounded-2xl hover:bg-[#F5F7F9] transition-all flex items-center justify-center gap-2 text-xs group">
+                        <Heart className="w-4 h-4 transition-transform group-hover:scale-110 text-red-500" />
                         {translations.save[language]}
                       </button>
                     </div>
 
                     {!business.ownerId && profile?.role === 'business_owner' && (
                       <button 
-                        onClick={async () => {
-                          try {
-                            await claimBusiness(business.id);
-                            setClaimSuccess(true);
-                          } catch (err: any) {
-                            setClaimError(err.message);
-                          }
-                        }}
+                        onClick={handleClaim}
                         disabled={claimLoading}
                         className="w-full py-4 bg-secondary text-white font-black rounded-2xl shadow-xl shadow-secondary/20 hover:bg-secondary/90 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs disabled:opacity-50"
                       >

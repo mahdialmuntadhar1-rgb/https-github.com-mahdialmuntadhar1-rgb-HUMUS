@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search, Briefcase, LayoutDashboard } from "lucide-react";
 import debounce from "lodash/debounce";
+import { motion, AnimatePresence } from "motion/react";
 import HeroSection from "@/components/home/HeroSection";
 import StorySection from "@/components/home/StorySection";
 import LocationFilter from "@/components/home/LocationFilter";
@@ -214,7 +215,7 @@ export default function HomePage() {
                     className="hidden lg:flex items-center gap-2 px-4 py-2 bg-secondary text-bg-dark text-[10px] font-black rounded-xl shadow-lg shadow-secondary/20 hover:bg-secondary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
                   >
                     <Briefcase className="w-4 h-4" />
-                    <span>Dashboard</span>
+                    <span>{translations.dashboard[language]}</span>
                   </Link>
                 )}
 
@@ -237,7 +238,7 @@ export default function HomePage() {
                       }}
                       className="px-4 py-2 text-text-muted text-[10px] font-black rounded-xl hover:text-primary transition-all uppercase tracking-widest"
                     >
-                      Login
+                      {language === 'ar' ? 'دخول' : language === 'ku' ? 'چوونەژوورەوە' : 'Login'}
                     </button>
                     <button 
                       onClick={() => {
@@ -247,7 +248,7 @@ export default function HomePage() {
                       className="flex items-center gap-2 px-4 py-2 bg-primary text-bg-dark text-[10px] font-black rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
                     >
                       <User className="w-4 h-4" />
-                      <span className="hidden sm:inline">Register</span>
+                      <span className="hidden sm:inline">{language === 'ar' ? 'تسجيل' : language === 'ku' ? 'تۆمارکردن' : 'Register'}</span>
                     </button>
                   </div>
                 ) : (
@@ -262,38 +263,53 @@ export default function HomePage() {
                       <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
                     </button>
 
-                    {showUserMenu && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-[70]">
-                        <div className="px-4 py-2 border-b border-slate-200 mb-2">
-                          <p className="text-[10px] font-black text-text-main truncate">{user.email}</p>
-                          {profile?.role === 'business_owner' && (
-                            <p className="text-[8px] font-black text-secondary uppercase tracking-widest mt-0.5">Business Owner</p>
-                          )}
-                        </div>
-                        
-                        {profile?.role === 'business_owner' && (
-                          <Link 
-                            to="/dashboard"
-                            className="w-full px-4 py-2 text-left text-xs font-bold text-text-muted hover:bg-slate-50 hover:text-secondary flex items-center gap-2 transition-colors"
-                          >
-                            <LayoutDashboard className="w-4 h-4" /> {translations.dashboard[language]}
-                          </Link>
-                        )}
-
-                        <button className="w-full px-4 py-2 text-left text-xs font-bold text-text-muted hover:bg-slate-50 hover:text-primary flex items-center gap-2 transition-colors">
-                          <Settings className="w-4 h-4" /> {translations.settings[language]}
-                        </button>
-                        <button 
-                          onClick={() => {
-                            signOut();
-                            setShowUserMenu(false);
-                          }}
-                          className="w-full px-4 py-2 text-left text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                    <AnimatePresence>
+                      {showUserMenu && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-[70] overflow-hidden"
                         >
-                          <LogOut className="w-4 h-4" /> {translations.signOut[language]}
-                        </button>
-                      </div>
-                    )}
+                          <div className="px-4 py-3 border-b border-slate-100 mb-2 bg-slate-50/50">
+                            <p className="text-[10px] font-black text-text-main truncate">{profile?.full_name || user.email}</p>
+                            <p className="text-[8px] font-bold text-text-muted truncate mt-0.5 opacity-60">{user.email}</p>
+                            {profile?.role === 'business_owner' && (
+                              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 bg-secondary/10 text-secondary rounded-full">
+                                <Briefcase className="w-2.5 h-2.5" />
+                                <span className="text-[7px] font-black uppercase tracking-widest">{translations.owner[language]}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {profile?.role === 'business_owner' && (
+                            <Link 
+                              to="/dashboard"
+                              onClick={() => setShowUserMenu(false)}
+                              className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-text-muted hover:bg-slate-50 hover:text-secondary flex items-center gap-3 transition-colors"
+                            >
+                              <LayoutDashboard className="w-4 h-4" /> {translations.dashboard[language]}
+                            </Link>
+                          )}
+
+                          <button className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-text-muted hover:bg-slate-50 hover:text-primary flex items-center gap-3 transition-colors">
+                            <Settings className="w-4 h-4" /> {translations.settings[language]}
+                          </button>
+                          
+                          <div className="h-px bg-slate-100 my-1" />
+                          
+                          <button 
+                            onClick={() => {
+                              signOut();
+                              setShowUserMenu(false);
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" /> {translations.signOut[language]}
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
               </>
