@@ -8,7 +8,7 @@ export function useBusinessManagement() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const claimBusiness = async (businessId: string, note?: string) => {
+  const claimBusiness = async (businessId: string) => {
     if (!user || profile?.role !== 'business_owner') {
       throw new Error('Only business owners can claim businesses.');
     }
@@ -16,22 +16,18 @@ export function useBusinessManagement() {
     setLoading(true);
     setError(null);
     try {
-      // Insert into business_claims as pending — admin approves and sets ownerId separately
-      const { error: claimError } = await supabase
-        .from('business_claims')
-        .insert({
-          business_id: businessId,
-          user_id: user.id,
-          status: 'pending',
-          note: note || null,
-        });
+      const { error: updateError } = await supabase
+        .from('businesses')
+        .update({ owner_id: user.id })
+        .eq('id', businessId)
+        .is('owner_id', null); // Only allow claiming if it has no owner
 
-      if (claimError) throw claimError;
-
+      if (updateError) throw updateError;
+      
       return true;
     } catch (err) {
       console.error('Error claiming business:', err);
-      setError(err instanceof Error ? err.message : 'Failed to submit claim');
+      setError(err instanceof Error ? err.message : 'Failed to claim business');
       throw err;
     } finally {
       setLoading(false);
@@ -44,23 +40,24 @@ export function useBusinessManagement() {
     setLoading(true);
     setError(null);
     try {
-      // businesses table uses camelCase column names
       const { error: updateError } = await supabase
         .from('businesses')
         .update({
           name: updates.name,
-          nameAr: updates.nameAr,
-          nameKu: updates.nameKu,
+          name_ar: updates.nameAr,
+          name_ku: updates.nameKu,
           description: updates.description,
-          descriptionAr: updates.descriptionAr,
+          description_ar: updates.descriptionAr,
           phone: updates.phone,
           website: updates.website,
           address: updates.address,
-          imageUrl: updates.image,
-          openHours: updates.openingHours,
+          image_url: updates.image,
+          social_links: updates.socialLinks,
+          opening_hours: updates.openingHours,
+          updated_at: new Date().toISOString()
         })
         .eq('id', businessId)
-        .eq('ownerId', user.id);
+        .eq('owner_id', user.id); // Ensure the user owns it
 
       if (updateError) throw updateError;
       
@@ -79,38 +76,36 @@ export function useBusinessManagement() {
     
     setLoading(true);
     try {
-      // businesses table uses camelCase ownerId column
       const { data, error: fetchError } = await supabase
         .from('businesses')
         .select('*')
-        .eq('ownerId', user.id);
+        .eq('owner_id', user.id);
 
       if (fetchError) throw fetchError;
       
-      // businesses table uses camelCase — handle both for safety
       return data.map((item: any) => ({
         id: item.id,
         name: item.name,
-        nameAr: item.nameAr || item.name_ar,
-        nameKu: item.nameKu || item.name_ku,
+        nameAr: item.name_ar,
+        nameKu: item.name_ku,
         category: item.category,
         governorate: item.governorate,
         city: item.city,
         address: item.address,
         phone: item.phone,
         rating: item.rating || 0,
-        reviewCount: item.reviewCount || item.review_count || 0,
-        isFeatured: item.isFeatured ?? item.is_featured ?? false,
-        isVerified: item.isVerified ?? item.is_verified ?? false,
-        image: item.imageUrl || item.image_url || item.image,
+        reviewCount: item.review_count || 0,
+        isFeatured: item.is_featured || false,
+        isVerified: item.is_verified || false,
+        image: item.image_url || item.image,
         website: item.website,
-        socialLinks: item.socialLinks || item.social_links || {},
+        socialLinks: item.social_links || {},
         description: item.description,
-        descriptionAr: item.descriptionAr || item.description_ar,
-        openingHours: item.openHours || item.opening_hours,
-        ownerId: item.ownerId || item.owner_id,
-        createdAt: new Date(item.createdAt || item.created_at),
-        updatedAt: new Date(item.createdAt || item.created_at),
+        descriptionAr: item.description_ar,
+        openingHours: item.opening_hours,
+        ownerId: item.owner_id,
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.updated_at || item.created_at)
       })) as Business[];
     } catch (err) {
       console.error('Error fetching owned businesses:', err);

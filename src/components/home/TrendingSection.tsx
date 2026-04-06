@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Star, MapPin, ArrowRight, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { Business } from '@/lib/supabase';
 import { useHomeStore } from '@/stores/homeStore';
-import { useMetadata } from '@/hooks/useMetadata';
+import { CATEGORIES } from '@/constants';
 
 interface TrendingSectionProps {
   businesses: Business[];
@@ -14,7 +14,6 @@ interface TrendingSectionProps {
 export default function TrendingSection({ businesses, loading, onBusinessClick }: TrendingSectionProps) {
   const featured = businesses.filter(b => b.isFeatured).slice(0, 6);
   const { language } = useHomeStore();
-  const { categories } = useMetadata();
 
   const translations = {
     featured: {
@@ -45,12 +44,27 @@ export default function TrendingSection({ businesses, loading, onBusinessClick }
     return biz.name;
   };
 
-  const getCategoryName = (catValue: string) => {
-    // DB stores full English name e.g. "Restaurants & Dining"
-    // Match against live categories by English name
-    const cat = categories.find(c => c.name?.en === catValue);
-    if (cat) return cat.name[language] || catValue;
-    return catValue;
+  const getBusinessImage = (biz: Business) => {
+    if (biz.image) return biz.image;
+    
+    const category = biz.category.toLowerCase();
+    if (category.includes('dining') || category.includes('restaurant') || category.includes('food')) {
+      return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=400&auto=format&fit=crop';
+    }
+    if (category.includes('furniture') || category.includes('home')) {
+      return 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=400&auto=format&fit=crop';
+    }
+    if (category.includes('doctor') || category.includes('medical') || category.includes('clinic')) {
+      return 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=400&auto=format&fit=crop';
+    }
+    if (category.includes('cafe') || category.includes('coffee')) {
+      return 'https://images.unsplash.com/photo-1501339819398-ed495197ff21?q=80&w=400&auto=format&fit=crop';
+    }
+    if (category.includes('gym') || category.includes('fitness')) {
+      return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=400&auto=format&fit=crop';
+    }
+    
+    return `https://picsum.photos/seed/${biz.id}/400/400`;
   };
 
   if (loading && businesses.length === 0) return (
@@ -61,12 +75,8 @@ export default function TrendingSection({ businesses, loading, onBusinessClick }
       </div>
       <div className="flex gap-4 overflow-x-auto px-4 no-scrollbar pb-6">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="flex-shrink-0 w-[260px] h-[340px] bg-white rounded-[24px] border border-[#E5E7EB] overflow-hidden shadow-sm">
-            <div className="h-[60%] bg-gray-100 animate-pulse" />
-            <div className="p-4 space-y-3">
-              <div className="h-5 bg-gray-100 animate-pulse rounded w-3/4" />
-              <div className="h-4 bg-gray-100 animate-pulse rounded w-1/2" />
-            </div>
+          <div key={i} className="flex-shrink-0 w-40 h-40 bg-white rounded-3xl border border-[#E5E7EB] overflow-hidden shadow-sm">
+            <div className="h-full bg-gray-100 animate-pulse" />
           </div>
         ))}
       </div>
@@ -79,29 +89,29 @@ export default function TrendingSection({ businesses, loading, onBusinessClick }
     <div className="w-full mb-16">
       <div className="flex items-center justify-between px-4 mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-text-main poppins-bold tracking-tight">{translations.featured[language]}</h2>
-          <p className="text-sm text-text-muted">{translations.featuredDesc[language]}</p>
+          <h2 className="text-xl font-black text-text-main poppins-bold tracking-tight uppercase">{translations.featured[language]}</h2>
+          <p className="text-xs text-text-muted font-bold uppercase tracking-widest">{translations.featuredDesc[language]}</p>
         </div>
         <button 
           onClick={() => document.getElementById('explore-section')?.scrollIntoView({ behavior: 'smooth' })}
-          className="group flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-xs font-black rounded-full hover:bg-primary hover:text-white transition-all duration-500 uppercase tracking-widest"
+          className="group flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-[10px] font-black rounded-full hover:bg-primary hover:text-white transition-all duration-500 uppercase tracking-widest"
         >
           {translations.seeAll[language]} <ArrowRight className={`w-4 h-4 group-hover:translate-x-1 transition-transform ${language === 'en' ? '' : 'rotate-180'}`} />
         </button>
       </div>
 
-      <div className="flex gap-6 overflow-x-auto px-4 no-scrollbar pb-8 snap-x snap-mandatory">
+      <div className="flex gap-4 overflow-x-auto px-4 no-scrollbar pb-8 snap-x snap-mandatory">
         {featured.map((biz) => (
           <motion.div
             key={biz.id}
-            whileHover={{ y: -8 }}
+            whileHover={{ scale: 1.05 }}
             onClick={() => onBusinessClick?.(biz)}
-            className="flex-shrink-0 w-[300px] aspect-square bg-bg-dark rounded-[40px] overflow-hidden shadow-2xl shadow-black/5 flex flex-col group cursor-pointer transition-all duration-500 snap-start border-4 border-transparent hover:border-primary"
+            className="flex-shrink-0 w-44 aspect-square bg-bg-dark rounded-[32px] overflow-hidden shadow-xl shadow-black/5 flex flex-col group cursor-pointer transition-all duration-500 snap-start border-2 border-transparent hover:border-primary relative"
           >
             {/* Background Image */}
             <div className="absolute inset-0">
               <img 
-                src={biz.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop'} 
+                src={getBusinessImage(biz)} 
                 alt={biz.name}
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                 referrerPolicy="no-referrer"
@@ -110,40 +120,22 @@ export default function TrendingSection({ businesses, loading, onBusinessClick }
             </div>
 
             {/* Content */}
-            <div className="relative h-full p-8 flex flex-col justify-end items-start text-left">
-              {/* Badges */}
-              <div className="absolute top-6 left-6 flex flex-col gap-2">
-                <span className="px-3 py-1.5 bg-primary text-white text-[10px] font-black rounded-xl shadow-xl uppercase tracking-widest border border-white/20">
-                  {getCategoryName(biz.category)}
-                </span>
-                {biz.isVerified && (
-                  <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md text-white px-3 py-1.5 rounded-xl shadow-xl border border-white/20 w-fit">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-[9px] font-black uppercase tracking-widest">{translations.verified[language]}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="absolute top-6 right-6">
-                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-xl border border-white/20">
-                  <Star className="w-3.5 h-3.5 text-secondary fill-secondary" />
-                  <span className="text-[11px] font-black text-white">{biz.rating?.toFixed(1) || 'N/A'}</span>
+            <div className="relative h-full p-4 flex flex-col justify-end items-start text-left">
+              {/* Rating Badge */}
+              <div className="absolute top-3 right-3">
+                <div className="flex items-center gap-1 bg-white/10 backdrop-blur-md px-2 py-1 rounded-lg shadow-xl border border-white/20">
+                  <Star className="w-2.5 h-2.5 text-secondary fill-secondary" />
+                  <span className="text-[10px] font-black text-white">{biz.rating?.toFixed(1) || 'N/A'}</span>
                 </div>
               </div>
 
-              <h3 className="text-2xl font-black text-white mb-2 poppins-bold leading-tight tracking-tight group-hover:text-primary transition-colors">
+              <h3 className="text-sm font-black text-white mb-1 poppins-bold leading-tight tracking-tight group-hover:text-primary transition-colors line-clamp-2 uppercase">
                 {getBusinessName(biz)}
               </h3>
               
-              <div className="flex items-center gap-2 text-white/70 text-sm font-medium mb-6">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span className="line-clamp-1">{biz.city}, {biz.governorate}</span>
-              </div>
-
-              <div className="flex items-center justify-between w-full pt-4 border-t border-white/10">
-                <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white group-hover:bg-primary group-hover:border-primary transition-all duration-500 ml-auto">
-                  <ArrowRight className="w-5 h-5" />
-                </div>
+              <div className="flex items-center gap-1 text-white/70 text-[9px] font-bold uppercase tracking-tighter">
+                <MapPin className="w-3 h-3 text-primary" />
+                <span className="line-clamp-1">{biz.city}</span>
               </div>
             </div>
           </motion.div>

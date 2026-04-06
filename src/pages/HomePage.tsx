@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Search, User, PlusCircle, MapPin, LayoutGrid, Sparkles, Compass, LogOut, Settings } from "lucide-react";
-import { Link } from 'react-router-dom';
+import { Search, User, PlusCircle, MapPin, LogOut, Settings } from "lucide-react";
 import HeroSection from "@/components/home/HeroSection";
+import CategoryShowcase from "@/components/home/CategoryShowcase";
 import LocationFilter from "@/components/home/LocationFilter";
-import StoryRow from "@/components/home/StoryRow";
 import CategoryGrid from "@/components/home/CategoryGrid";
-import FeedComponent from "@/components/home/FeedComponent";
 import TrendingSection from "@/components/home/TrendingSection";
+import FeedComponent from "@/components/home/FeedComponent";
 import BusinessGrid from "@/components/home/BusinessGrid";
 import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
@@ -30,15 +29,10 @@ export default function HomePage() {
   const { 
     businesses, 
     loading: businessesLoading, 
-    error, 
-    hasMore, 
-    totalCount,
-    loadMore 
+    error
   } = useBusinesses(searchQuery);
 
   const isRTL = language === 'ar' || language === 'ku';
-
-  const featuredBusinesses = businesses.filter(b => b.isFeatured);
 
   const translations = {
     explore: {
@@ -167,20 +161,19 @@ export default function HomePage() {
             <h2 className="text-2xl font-black text-primary poppins-bold tracking-tight">شکو ماکو؟</h2>
           </div>
 
-          {/* Center Actions (Optional, but keeping them here for now) */}
+          {/* Center Actions */}
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             {authLoading ? (
               <div className="w-11 h-11 rounded-xl bg-slate-100 animate-pulse" />
             ) : (
               <>
                 {profile?.role === 'business_owner' && (
-                  <Link
-                    to="/dashboard"
+                  <button 
                     className="hidden lg:flex items-center gap-2 px-5 py-2.5 bg-secondary text-white text-xs font-black rounded-xl shadow-lg shadow-secondary/20 hover:bg-secondary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
                   >
                     <PlusCircle className="w-4 h-4" />
                     {translations.manage[language]}
-                  </Link>
+                  </button>
                 )}
                 
                 {!user ? (
@@ -251,75 +244,61 @@ export default function HomePage() {
       </header>
 
       <main className="pb-24">
-        {/* 2. HERO / FEATURED SECTION */}
-        <HeroSection 
-          businesses={featuredBusinesses} 
-          onBusinessClick={setSelectedBusiness}
-        />
+        {/* 1. Hero Section */}
+        <HeroSection businesses={businesses} onBusinessClick={setSelectedBusiness} />
 
-        {/* 3. GOVERNORATE & CITY FILTERS */}
-        <div className="mt-12">
-          <LocationFilter />
-        </div>
+        <div className="max-w-7xl mx-auto">
+          {/* 2. Horizontal Category Showcase */}
+          <CategoryShowcase />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
-          {/* 4. CATEGORY GRID SECTION */}
-          <section className="bg-[#0f172a] rounded-[48px] p-4 sm:p-8 shadow-2xl shadow-black/20 border border-white/5">
-            <CategoryGrid />
-          </section>
+          <div className="max-w-xl mx-auto">
+            {/* 3. Dropdown Filters */}
+            <LocationFilter />
 
-          {/* 4.5 FEED SECTION */}
-          <FeedComponent businesses={businesses} loading={businessesLoading} />
-
-          {/* 5. TRENDING SECTION */}
-          <section className="bg-white rounded-[48px] p-8 sm:p-12 border border-slate-200 shadow-sm">
-            <TrendingSection 
-              businesses={businesses} 
-              loading={businessesLoading} 
-              onBusinessClick={setSelectedBusiness}
-            />
-          </section>
-
-          {/* 6. MAIN EXPLORE SECTION */}
-          <section className="bg-white rounded-[48px] p-8 sm:p-12 shadow-xl shadow-slate-200/50 border border-slate-200">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
-              <div>
-                <div className="flex items-center gap-2 text-primary mb-2">
-                  <Compass className="w-5 h-5" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em]">{translations.directory[language]}</span>
-                </div>
-                <h2 className="text-3xl font-black text-text-main poppins-bold tracking-tight">{translations.explore[language]}</h2>
-                <p className="text-base text-text-muted mt-1">
-                  {translations.showing[language]} {businesses.length} {translations.of[language]} {totalCount} {translations.services[language]}
-                </p>
+            {/* 4. Compact Category Grid (2x3) */}
+            <div className="px-4">
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
+                  {language === 'ar' ? 'التصنيفات' : language === 'ku' ? 'پۆلەکان' : 'Categories'}
+                </h2>
               </div>
-              
-              <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
-                <button className="px-4 py-2 bg-primary text-white text-[10px] font-black rounded-lg uppercase tracking-widest shadow-md shadow-primary/20">{translations.grid[language]}</button>
-                <button className="px-4 py-2 text-text-muted text-[10px] font-black rounded-lg uppercase tracking-widest hover:bg-white">{translations.map[language]}</button>
-              </div>
+              <CategoryGrid />
             </div>
-            
-            {error && (
-              <div className="p-8 bg-red-50 border-2 border-red-100 rounded-[32px] text-center mb-12">
-                <p className="text-red-600 font-bold mb-4">{error}</p>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="px-6 py-2 bg-red-600 text-white font-bold rounded-xl text-sm"
-                >
-                  Retry Loading
-                </button>
-              </div>
-            )}
+          </div>
 
-            <BusinessGrid 
-              businesses={businesses} 
-              loading={businessesLoading} 
-              hasMore={hasMore}
-              onLoadMore={loadMore}
-              onBusinessClick={setSelectedBusiness}
-            />
-          </section>
+          {/* 5. Featured Businesses Row */}
+          <TrendingSection 
+            businesses={businesses} 
+            loading={businessesLoading} 
+            onBusinessClick={setSelectedBusiness} 
+          />
+
+          <div className="max-w-xl mx-auto">
+            {/* 6. Normal Business Cards */}
+            <div className="px-4 mb-12">
+              <div className="flex items-center justify-between mb-6 px-1">
+                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
+                  {language === 'ar' ? 'أماكن مميزة' : language === 'ku' ? 'شوێنە تایبەتەکان' : 'Featured Places'}
+                </h2>
+              </div>
+              <BusinessGrid 
+                businesses={businesses} 
+                loading={businessesLoading}
+                onBusinessClick={setSelectedBusiness}
+              />
+            </div>
+
+            {/* 7. Latest Feed */}
+            <div className="px-4">
+              <div className="flex items-center gap-2 mb-6 px-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
+                  {language === 'ar' ? 'آخر الأخبار' : language === 'ku' ? 'دوایین هەواڵەکان' : 'Latest Feed'}
+                </h2>
+              </div>
+              <FeedComponent businesses={businesses} loading={businessesLoading} />
+            </div>
+          </div>
         </div>
       </main>
 

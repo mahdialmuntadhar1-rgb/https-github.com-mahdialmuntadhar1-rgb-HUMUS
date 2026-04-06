@@ -2,14 +2,12 @@ import { create } from 'zustand';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 
-// Matches the actual `profiles` table schema: id, full_name, phone, city, role, created_at
 interface Profile {
   id: string;
+  email: string;
   full_name?: string;
-  phone?: string;
-  city?: string;
   role: 'user' | 'business_owner';
-  created_at?: string;
+  avatar_url?: string;
 }
 
 interface AuthState {
@@ -68,24 +66,25 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       if (!error && data) {
         store.setProfile(data as Profile);
       } else if (error && error.code === 'PGRST116') {
-        console.log('Profile not found for user:', user.id, '— attempting upsert');
-        // Profile may not exist yet (e.g. Google OAuth, delayed trigger)
-        // profiles table: id, full_name, phone, city, role, created_at (no email column)
-        const { data: newProfile, error: insertError } = await supabase
-          .from('profiles')
-          .upsert(
-            {
-              id: user.id,
-              full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-              role: user.user_metadata?.role || 'user',
-            },
-            { onConflict: 'id' }
-          )
-          .select()
-          .single();
-
-        if (!insertError && newProfile) {
-          store.setProfile(newProfile as Profile);
+        console.log('Profile not found for user:', user.id);
+        // Might need to create profile if it was a Google signup
+        if (event === 'SIGNED_IN') {
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: user.id,
+                email: user.email,
+                full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+                role: user.user_metadata?.role || 'user',
+              },
+            ])
+            .select()
+            .single();
+          
+          if (!insertError && newProfile) {
+            store.setProfile(newProfile as Profile);
+          }
         }
       }
     } catch (err) {

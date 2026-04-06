@@ -3,7 +3,7 @@ import {
   GraduationCap, Clapperboard, Plane, Stethoscope, Scale, 
   Hospital, HeartPulse, Home, PartyPopper, 
   Pill, Dumbbell, Sparkles, Store, Armchair, ShieldCheck,
-  Smartphone, Shirt
+  Smartphone, Shirt, MoreHorizontal
 } from 'lucide-react';
 
 export const ICON_MAP: Record<string, any> = {
@@ -11,7 +11,7 @@ export const ICON_MAP: Record<string, any> = {
   GraduationCap, Clapperboard, Plane, Stethoscope, Scale, 
   Hospital, HeartPulse, Home, PartyPopper, 
   Pill, Dumbbell, Sparkles, Store, Armchair, ShieldCheck,
-  Smartphone, Shirt
+  Smartphone, Shirt, MoreHorizontal
 };
 
 export const GOVERNORATES = [
@@ -56,24 +56,24 @@ export const CITIES: Record<string, { id: string, name: { en: string, ar: string
 };
 
 export const CATEGORIES = [
-  { id: 'dining', name: { en: 'Restaurants', ar: 'المطاعم', ku: 'چێشتخانەکان' }, icon: Utensils },
-  { id: 'cafe', name: { en: 'Cafes', ar: 'المقاهي', ku: 'کافێکان' }, icon: Coffee },
-  { id: 'beauty', name: { en: 'Beauty', ar: 'الجمال', ku: 'جوانی' }, icon: Sparkles },
-  { id: 'clinics', name: { en: 'Clinics', ar: 'العيادات', ku: 'کلینیکەکان' }, icon: Hospital },
-  { id: 'pharmacy', name: { en: 'Pharmacies', ar: 'الصيدليات', ku: 'دەرمانخانەکان' }, icon: Pill },
-  { id: 'gym', name: { en: 'Gyms', ar: 'الجيم', ku: 'هۆڵە وەرزشییەکان' }, icon: Dumbbell },
-  { id: 'supermarkets', name: { en: 'Markets', ar: 'الأسواق', ku: 'بازاڕەکان' }, icon: Store },
-  { id: 'hotels', name: { en: 'Hotels', ar: 'الفنادق', ku: 'هوتێلەکان' }, icon: Hotel },
-  { id: 'electronics', name: { en: 'Electronics', ar: 'الإلكترونيات', ku: 'ئەلکترۆنیات' }, icon: Smartphone },
-  { id: 'fashion', name: { en: 'Fashion', ar: 'الأزياء', ku: 'فاشن' }, icon: Shirt },
-  { id: 'shopping', name: { en: 'Shopping', ar: 'التسوق', ku: 'بازاڕکردن' }, icon: ShoppingBag },
-  { id: 'banks', name: { en: 'Banks', ar: 'البنوك', ku: 'بانکەکان' }, icon: Landmark },
-  { id: 'education', name: { en: 'Education', ar: 'التعليم', ku: 'پەروەردە' }, icon: GraduationCap },
-  { id: 'entertainment', name: { en: 'Entertainment', ar: 'الترفيه', ku: 'کات بەسەربردن' }, icon: Clapperboard },
-  { id: 'tourism', name: { en: 'Tourism', ar: 'السياحة', ku: 'گەشتیاری' }, icon: Plane },
-  { id: 'lawyers', name: { en: 'Lawyers', ar: 'المحامون', ku: 'پارێزەران' }, icon: Scale },
-  { id: 'realestate', name: { en: 'Real Estate', ar: 'العقارات', ku: 'خانووبەرە' }, icon: Home },
-  { id: 'events', name: { en: 'Events', ar: 'الفعاليات', ku: 'بۆنەکان' }, icon: PartyPopper },
-  { id: 'furniture', name: { en: 'Furniture', ar: 'الأثاث', ku: 'کەلوپەلی ناوماڵ' }, icon: Armchair },
-  { id: 'automotive', name: { en: 'Automotive', ar: 'السيارات', ku: 'ئۆتۆمبێل' }, icon: ShieldCheck },
+  { id: 'dining', name: { en: 'RESTAURANTS & DINING', ar: 'المطاعم والمأكولات', ku: 'چێشتخانە و نانخواردن' }, icon: Utensils, types: 4 },
+  { id: 'cafe', name: { en: 'CAFES & COFFEE', ar: 'المقاهي والقهوة', ku: 'کافێ و قاوە' }, icon: Coffee, types: 3 },
+  { id: 'hotels', name: { en: 'HOTELS & STAYS', ar: 'الفنادق والإقامة', ku: 'هوتێل و مانەوە' }, icon: Hotel, types: 3 },
+  { id: 'shopping', name: { en: 'SHOPPING & RETAIL', ar: 'التسوق والتجزئة', ku: 'بازاڕکردن و فرۆشتن' }, icon: ShoppingBag, types: 3 },
+  { id: 'banks', name: { en: 'BANKS & FINANCE', ar: 'البنوك والمالية', ku: 'بانک و دارایی' }, icon: Landmark, types: 3 },
+  { id: 'education', name: { en: 'EDUCATION', ar: 'التعليم', ku: 'پەروەردە' }, icon: GraduationCap, types: 3 },
+  { id: 'entertainment', name: { en: 'ENTERTAINMENT', ar: 'الترفيه', ku: 'کات بەسەربردن' }, icon: Clapperboard, types: 3 },
+  { id: 'tourism', name: { en: 'TOURISM & TRAVEL', ar: 'السياحة والسفر', ku: 'گەشتیاری و سەفەر' }, icon: Plane, types: 3 },
+  { id: 'doctors', name: { en: 'DOCTORS & PHYSICIANS', ar: 'الأطباء والجراحون', ku: 'دکتۆر و پزیشکەکان' }, icon: Stethoscope, types: 6 },
+  { id: 'lawyers', name: { en: 'LAWYERS & LEGAL', ar: 'المحامون والقانون', ku: 'پارێزەر و یاسا' }, icon: Scale, types: 3 },
+  { id: 'hospitals', name: { en: 'HOSPITALS & CLINICS', ar: 'المستشفيات والعيادات', ku: 'نەخۆشخانە و کلینیکەکان' }, icon: Hospital, types: 4 },
+  { id: 'medical', name: { en: 'MEDICAL CLINICS', ar: 'العيادات الطبية', ku: 'کلینیکە پزیشکییەکان' }, icon: HeartPulse, types: 5 },
+  { id: 'realestate', name: { en: 'REAL ESTATE', ar: 'العقارات', ku: 'خانووبەرە' }, icon: Home, types: 4 },
+  { id: 'events', name: { en: 'EVENTS & VENUES', ar: 'الفعاليات والقاعات', ku: 'بۆنە و هۆڵەکان' }, icon: PartyPopper, types: 4, isHot: true },
+  { id: 'general', name: { en: 'OTHERS & GENERAL', ar: 'أخرى وعام', ku: 'ئەوانی تر و گشتی' }, icon: MoreHorizontal, types: 4 },
+  { id: 'pharmacy', name: { en: 'PHARMACY & DRUGS', ar: 'الصيدليات والأدوية', ku: 'دەرمانخانە و دەرمان' }, icon: Pill, types: 3 },
+  { id: 'gym', name: { en: 'GYM & FITNESS', ar: 'الجيم واللياقة', ku: 'هۆڵە وەرزشییەکان' }, icon: Dumbbell, types: 4 },
+  { id: 'beauty', name: { en: 'BEAUTY & SALONS', ar: 'الجمال والصالونات', ku: 'جوانی و ساڵۆنەکان' }, icon: Sparkles, types: 4 },
+  { id: 'supermarkets', name: { en: 'SUPERMARKETS', ar: 'الأسواق المركزية', ku: 'سوپەرمارکێتەکان' }, icon: Store, types: 4 },
+  { id: 'furniture', name: { en: 'FURNITURE & HOME', ar: 'الأثاث والمنزل', ku: 'کەلوپەلی ناوماڵ' }, icon: Armchair, types: 4 },
 ];
