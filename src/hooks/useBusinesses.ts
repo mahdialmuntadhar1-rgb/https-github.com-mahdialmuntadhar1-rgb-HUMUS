@@ -34,28 +34,59 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
     
     const currentPage = isRefresh ? 1 : page;
     
+    // DEBUG: Log query inputs
+    console.log('[useBusinesses] Query inputs:', {
+      selectedGovernorate,
+      selectedCity,
+      searchQuery,
+      currentPage,
+      rangeStart: (currentPage - 1) * ITEMS_PER_PAGE,
+      rangeEnd: currentPage * ITEMS_PER_PAGE - 1
+    });
+    
     try {
       if (!supabase) {
         throw new Error('Supabase client is not initialized. Please check your environment variables.');
       }
       
+      // Start query from businesses table
       let query = supabase
         .from('businesses')
-        .select('*', { count: 'exact' })
-        .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
+        .select('*', { count: 'exact' });
 
+      // Apply governorate filter ONLY if not "all"
       if (selectedGovernorate && selectedGovernorate !== 'all') {
+        console.log('[useBusinesses] Applying governorate filter:', selectedGovernorate);
         query = query.eq('governorate', selectedGovernorate);
+      } else {
+        console.log('[useBusinesses] No governorate filter (showing all)');
       }
+      
+      // Apply city filter if present
       if (selectedCity) {
+        console.log('[useBusinesses] Applying city filter:', selectedCity);
         query = query.eq('city', selectedCity);
       }
+      
       // LAUNCH MODE: Category filtering disabled - visual only
+      
+      // Apply search filter if present
       if (searchQuery) {
+        console.log('[useBusinesses] Applying search filter:', searchQuery);
         query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
+      
+      // Apply pagination range
+      query = query.range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
 
+      console.log('[useBusinesses] Executing query...');
       const { data, count, error: fetchError } = await query;
+      
+      console.log('[useBusinesses] Query results:', { 
+        dataLength: data?.length || 0, 
+        count, 
+        error: fetchError?.message 
+      });
       
       if (fetchError) throw fetchError;
       
