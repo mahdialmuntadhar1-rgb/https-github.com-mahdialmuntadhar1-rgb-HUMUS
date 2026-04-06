@@ -319,6 +319,14 @@ export default function HomePage() {
       </header>
 
       <main className="pb-24">
+        {error && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">
+              Failed to load businesses: {error}
+            </div>
+          </div>
+        )}
+
         {/* 1. Hero Section */}
         <HeroSection businesses={businesses} onBusinessClick={setSelectedBusiness} />
 
