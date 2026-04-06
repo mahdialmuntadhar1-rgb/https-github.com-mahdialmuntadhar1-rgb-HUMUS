@@ -3,7 +3,7 @@
 A production-ready, Supabase-backed Iraqi business directory app.  
 Multilingual (English / Arabic / Kurdish), mobile-first, PWA-enabled.
 
-**Live data**: 1,800 verified businesses across 17 Iraqi governorates  
+**Live data**: 1,800 verified businesses across 18 Iraqi governorates  
 **Tech**: React 19 · TypeScript · Vite · TailwindCSS 4 · Supabase · Zustand
 
 ---
@@ -11,7 +11,7 @@ Multilingual (English / Arabic / Kurdish), mobile-first, PWA-enabled.
 ## Features
 
 - Browse 1,800 real Iraqi businesses
-- Filter by governorate (17) and category (10)
+- Filter by governorate (18) and category (10)
 - Bilingual business names (English, Arabic, Kurdish)
 - Business owner dashboard — claim listing, publish posts
 - Supabase Auth — email/password + Google OAuth
