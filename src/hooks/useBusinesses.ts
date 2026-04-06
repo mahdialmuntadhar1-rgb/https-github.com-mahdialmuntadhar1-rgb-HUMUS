@@ -13,29 +13,27 @@ interface UseBusinessesResult {
   refresh: () => void;
 }
 
-const ITEMS_PER_PAGE = 24;
+const ITEMS_PER_PAGE = 100;
 
 export function useBusinesses(searchQuery: string): UseBusinessesResult {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
 
   const { selectedGovernorate, selectedCategory, selectedCity } = useHomeStore();
 
-  const fetchBusinesses = useCallback(async (isRefresh = false) => {
+  const fetchBusinesses = useCallback(async (pageToLoad: number, isRefresh = false) => {
     setLoading(true);
     setError(null);
-    
-    const currentPage = isRefresh ? 1 : page;
-    
+
     try {
       let query = supabase
         .from('businesses')
         .select('*', { count: 'exact' })
-        .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
+        .range(pageToLoad * ITEMS_PER_PAGE, (pageToLoad + 1) * ITEMS_PER_PAGE - 1);
 
       if (selectedGovernorate) {
         query = query.eq('governorate', selectedGovernorate);
@@ -83,11 +81,15 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
         }));
 
         setBusinesses(prev => {
-          const newBusinesses = isRefresh ? mappedBusinesses : [...prev, ...mappedBusinesses];
+          const source = isRefresh ? [] : prev;
+          const mergedBusinesses = [...source, ...mappedBusinesses];
+          const uniqueBusinesses = Array.from(new Map(mergedBusinesses.map((business) => [business.id, business])).values());
+
           const countVal = count || 0;
           setTotalCount(countVal);
-          setHasMore(newBusinesses.length < countVal);
-          return newBusinesses;
+          setHasMore(uniqueBusinesses.length < countVal);
+
+          return uniqueBusinesses;
         });
       }
     } catch (err) {
@@ -96,16 +98,17 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
     } finally {
       setLoading(false);
     }
-  }, [page, selectedGovernorate, selectedCity, selectedCategory, searchQuery]);
-
-  useEffect(() => {
-    setPage(1);
-    fetchBusinesses(true);
   }, [selectedGovernorate, selectedCity, selectedCategory, searchQuery]);
 
   useEffect(() => {
-    if (page > 1) {
-      fetchBusinesses(false);
+    setPage(0);
+    setBusinesses([]);
+    fetchBusinesses(0, true);
+  }, [selectedGovernorate, selectedCity, selectedCategory, searchQuery]);
+
+  useEffect(() => {
+    if (page > 0) {
+      fetchBusinesses(page, false);
     }
   }, [page]);
 
@@ -116,8 +119,9 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
   };
 
   const refresh = () => {
-    setPage(1);
-    fetchBusinesses(true);
+    setPage(0);
+    setBusinesses([]);
+    fetchBusinesses(0, true);
   };
 
   return { businesses, loading, error, hasMore, totalCount, loadMore, refresh };

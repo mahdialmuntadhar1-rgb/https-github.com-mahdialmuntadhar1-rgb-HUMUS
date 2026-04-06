@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Star, MapPin, Loader2, SearchX, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Star, MapPin, Loader2, SearchX, CheckCircle2 } from 'lucide-react';
 import { Business } from '@/lib/supabase';
 import { useHomeStore } from '@/stores/homeStore';
 import { CATEGORIES } from '@/constants';
@@ -15,7 +15,6 @@ interface BusinessGridProps {
 
 export default function BusinessGrid({ businesses, loading, hasMore, onLoadMore, onBusinessClick }: BusinessGridProps) {
   const { language } = useHomeStore();
-  const [isExpanded, setIsExpanded] = useState(false);
 
   const translations = {
     noResults: { en: 'No results found', ar: 'لم يتم العثور على نتائج', ku: 'هیچ ئەنجامێک نەدۆزرایەوە' },
@@ -24,8 +23,8 @@ export default function BusinessGrid({ businesses, loading, hasMore, onLoadMore,
       ar: 'لم نتمكن من العثور على أي شركات تطابق الفلاتر الحالية. حاول توسيع نطاق بحثك.',
       ku: 'نەمانتوانی هیچ کارێک بدۆزینەوە کە لەگەڵ فلتەرەکانتدا بگونجێت.'
     },
-    seeMore: { en: 'See more', ar: 'عرض المزيد', ku: 'بینینی زیاتر' },
-    seeLess: { en: 'See less', ar: 'عرض أقل', ku: 'بینینی کەمتر' },
+    loadMore: { en: 'Load more businesses', ar: 'تحميل المزيد من الشركات', ku: 'زیاتر باربکە' },
+    loading: { en: 'Loading...', ar: 'جاري التحميل...', ku: 'بارکردن...' },
     verified: { en: 'Verified', ar: 'موثق', ku: 'پشتڕاستکراوە' }
   };
 
@@ -74,13 +73,11 @@ export default function BusinessGrid({ businesses, loading, hasMore, onLoadMore,
     </div>
   );
 
-  const displayedBusinesses = isExpanded ? businesses : businesses.slice(0, 6);
-
   return (
     <div className="w-full mb-12">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 px-1">
         <AnimatePresence mode="popLayout">
-          {displayedBusinesses.map((biz) => (
+          {businesses.map((biz) => (
             <motion.div
               key={biz.id}
               layout
@@ -122,23 +119,15 @@ export default function BusinessGrid({ businesses, loading, hasMore, onLoadMore,
         </AnimatePresence>
       </div>
 
-      {businesses.length > 6 && (
+      {(hasMore || loading) && (
         <div className="mt-6 flex justify-center">
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-2 px-6 py-2.5 bg-slate-50 border border-slate-200 text-text-main text-[10px] font-black rounded-full hover:bg-white hover:border-primary hover:text-primary transition-all uppercase tracking-widest"
+            onClick={() => onLoadMore?.()}
+            disabled={loading || !hasMore}
+            className="flex items-center gap-2 px-6 py-2.5 bg-slate-50 border border-slate-200 text-text-main text-[10px] font-black rounded-full hover:bg-white hover:border-primary hover:text-primary transition-all uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {isExpanded ? (
-              <>
-                <ChevronUp className="w-3.5 h-3.5" />
-                {translations.seeLess[language]}
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-3.5 h-3.5" />
-                {translations.seeMore[language]}
-              </>
-            )}
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+            {loading ? translations.loading[language] : translations.loadMore[language]}
           </button>
         </div>
       )}

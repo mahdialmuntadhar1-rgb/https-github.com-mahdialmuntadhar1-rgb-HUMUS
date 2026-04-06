@@ -29,7 +29,10 @@ export default function HomePage() {
   const { 
     businesses, 
     loading: businessesLoading, 
-    error
+    error,
+    hasMore,
+    totalCount,
+    loadMore
   } = useBusinesses(searchQuery);
 
   const isRTL = language === 'ar' || language === 'ku';
@@ -64,6 +67,16 @@ export default function HomePage() {
       en: 'local services across Iraq',
       ar: 'خدمة محلية في العراق',
       ku: 'خزمەتگوزاری ناوخۆیی لە عێراق'
+    },
+    businesses: {
+      en: 'businesses',
+      ar: 'شركة',
+      ku: 'کار'
+    },
+    failedToLoad: {
+      en: 'Failed to load businesses.',
+      ar: 'فشل تحميل الشركات.',
+      ku: 'بارکردنی کارەکان سەرکەوتوو نەبوو.'
     },
     grid: {
       en: 'Grid',
@@ -280,10 +293,20 @@ export default function HomePage() {
                 <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
                   {language === 'ar' ? 'أماكن مميزة' : language === 'ku' ? 'شوێنە تایبەتەکان' : 'Featured Places'}
                 </h2>
+                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
+                  {translations.showing[language]} {businesses.length} {translations.of[language]} {totalCount} {translations.businesses[language]}
+                </p>
               </div>
+              {error ? (
+                <p className="mb-4 px-1 text-[11px] font-semibold text-red-500">
+                  {translations.failedToLoad[language]} {error}
+                </p>
+              ) : null}
               <BusinessGrid 
                 businesses={businesses} 
                 loading={businessesLoading}
+                hasMore={hasMore}
+                onLoadMore={loadMore}
                 onBusinessClick={setSelectedBusiness}
               />
             </div>
