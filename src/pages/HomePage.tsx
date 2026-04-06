@@ -27,7 +27,10 @@ export default function HomePage() {
   const { 
     businesses, 
     loading: businessesLoading, 
-    error
+    error,
+    hasMore,
+    totalCount,
+    loadMore
   } = useBusinesses(searchQuery);
 
   const isRTL = language === 'ar' || language === 'ku';
@@ -277,13 +280,20 @@ export default function HomePage() {
             {/* 4. Normal Business Cards (Directory) */}
             <div id="business-grid" className="px-4 mb-12">
               <div className="flex items-center justify-between mb-6 px-1">
-                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
-                  {language === 'ar' ? 'جميع الأماكن' : language === 'ku' ? 'هەموو شوێنەکان' : 'All Places'}
-                </h2>
+                <div>
+                  <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
+                    {language === 'ar' ? 'جميع الأماكن' : language === 'ku' ? 'هەموو شوێنەکان' : 'All Places'}
+                  </h2>
+                  <p className="text-[10px] text-text-muted font-bold mt-1">
+                    {error ? error : `${businesses.length} / ${totalCount} loaded`}
+                  </p>
+                </div>
               </div>
               <BusinessGrid 
                 businesses={businesses} 
                 loading={businessesLoading}
+                hasMore={hasMore}
+                onLoadMore={loadMore}
                 onBusinessClick={setSelectedBusiness}
               />
             </div>
