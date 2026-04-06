@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/services/supabase';
 import { useAuth } from '@/hooks/useAuth';
 
 export interface BusinessSubmission {

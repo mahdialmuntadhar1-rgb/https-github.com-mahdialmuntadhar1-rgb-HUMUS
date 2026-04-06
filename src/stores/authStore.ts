@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/services/supabase';
 import type { User } from '@supabase/supabase-js';
 
 interface Profile {

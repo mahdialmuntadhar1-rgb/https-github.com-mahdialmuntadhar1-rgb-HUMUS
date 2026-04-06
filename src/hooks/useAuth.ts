@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { supabase, signUp, signIn, signOut, getCurrentUser, onAuthStateChange } from '@/lib/supabaseClient';
+import { supabase, signUp, signIn, signOut, getCurrentUser, onAuthStateChange } from '@/services/supabase';
 
 export interface AuthUser {
   id: string;

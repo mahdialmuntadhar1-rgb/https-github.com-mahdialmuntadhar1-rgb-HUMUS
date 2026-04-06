@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/services/supabase';
 import type { Post } from '@/lib/supabase';
 
 export function usePosts(businessId?: string) {
@@ -11,6 +11,10 @@ export function usePosts(businessId?: string) {
     setLoading(true);
     setError(null);
     try {
+      if (!supabase) {
+        throw new Error('Supabase client is not initialized. Please check your environment variables.');
+      }
+      
       let query = supabase
         .from('posts')
         .select(`
