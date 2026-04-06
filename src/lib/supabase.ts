@@ -8,15 +8,22 @@ export interface Business {
   category: string;
   governorate: string;
   city: string;
-  address: string;
+  address?: string;
   phone: string;
   rating?: number;
   reviewCount?: number;
   isFeatured?: boolean;
+  isVerified?: boolean;
   image?: string;
+  imageUrl?: string;
   website?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  whatsapp?: string;
+  description?: string;
+  openHours?: string;
+  lat?: number;
+  lng?: number;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;

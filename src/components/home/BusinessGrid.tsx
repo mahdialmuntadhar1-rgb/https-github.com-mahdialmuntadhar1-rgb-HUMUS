@@ -28,7 +28,7 @@ export default function BusinessGrid({ businesses, loading }: BusinessGridProps)
           {/* Image Section (60%) */}
           <div className="relative aspect-[4/3] overflow-hidden">
             <img 
-              src={biz.image} 
+              src={biz.imageUrl || biz.image || `https://picsum.photos/seed/${biz.id}/400/300`} 
               alt={biz.name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               referrerPolicy="no-referrer"
