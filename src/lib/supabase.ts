@@ -6,22 +6,26 @@ export interface Business {
   category: string;
   governorate: string;
   city: string;
-  address?: string;
+  address: string;
   phone: string;
   rating?: number;
   reviewCount?: number;
   isFeatured?: boolean;
   isVerified?: boolean;
   image?: string;
-  imageUrl?: string;
   website?: string;
-  whatsapp?: string;
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+    whatsapp?: string;
+  };
   description?: string;
-  openHours?: string;
-  lat?: number;
-  lng?: number;
-  createdAt: string;
-  updatedAt?: string;
+  descriptionAr?: string;
+  openingHours?: string;
+  ownerId?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Post {
