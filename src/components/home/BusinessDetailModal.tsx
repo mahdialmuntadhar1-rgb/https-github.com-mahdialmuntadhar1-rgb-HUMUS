@@ -287,7 +287,7 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                       </div>
                       <div>
                         <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest mb-0.5">{translations.contact[language]}</p>
-                        <p className="text-sm font-bold text-[#2B2F33]">{business.phone}</p>
+                        <p className="text-sm font-bold text-[#2B2F33]">{business.phone || 'N/A'}</p>
                       </div>
                     </div>
                   </section>
@@ -325,7 +325,7 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                   <div className="p-8 bg-white rounded-[32px] border border-[#E5E7EB] shadow-xl space-y-4">
                     <h4 className="text-sm font-black text-[#2B2F33] uppercase tracking-widest mb-4">{translations.quickActions[language]}</h4>
                     <a 
-                      href={`tel:${business.phone}`}
+                      href={`tel:${business.phone || '#'}`}
                       className="w-full py-4 bg-[#2CA6A4] text-white font-black rounded-2xl shadow-xl shadow-[#2CA6A4]/20 hover:bg-[#1e7a78] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
                     >
                       <Phone className="w-4 h-4" />

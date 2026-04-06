@@ -102,6 +102,8 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
           const business = businesses.find(b => b.id === post.businessId);
           const category = business?.category || "Featured";
           const phone = business?.phone;
+          const authorName = post.authorName || business?.name || "Unknown Business";
+          const authorAvatar = post.authorAvatar || business?.image;
 
             return (
               <motion.div
@@ -138,21 +140,21 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl p-[1px] bg-gradient-to-tr from-primary via-secondary to-accent">
                         <div className="w-full h-full rounded-xl bg-white flex items-center justify-center text-primary font-bold border border-white shadow-inner overflow-hidden">
-                          {post.authorAvatar ? (
+                          {authorAvatar ? (
                             <img
-                              src={post.authorAvatar}
-                              alt={post.authorName}
+                              src={authorAvatar}
+                              alt={authorName}
                               className="w-full h-full object-cover"
                               referrerPolicy="no-referrer"
                             />
                           ) : (
-                            <span className="text-lg font-black">{post.authorName?.charAt(0)}</span>
+                            <span className="text-lg font-black">{authorName?.charAt(0)}</span>
                           )}
                         </div>
                       </div>
                       <div>
                         <h3 className="font-black text-text-main text-sm poppins-bold group-hover:text-primary transition-colors tracking-tight">
-                          {post.authorName}
+                          {authorName}
                         </h3>
                         <p className="text-[8px] text-text-muted flex items-center gap-1 mt-0.5 font-black uppercase tracking-widest">
                           <Clock size={10} className="text-primary" /> {formatTimestamp(post.createdAt)}
