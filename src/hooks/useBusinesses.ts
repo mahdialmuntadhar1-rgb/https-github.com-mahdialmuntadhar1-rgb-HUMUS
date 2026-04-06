@@ -37,15 +37,16 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
         .select('*', { count: 'exact' })
         .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
 
-      if (selectedGovernorate) {
-        query = query.eq('governorate', selectedGovernorate);
+      if (selectedGovernorate && selectedGovernorate !== 'all') {
+        query = query.ilike('governorate', `%${selectedGovernorate}%`);
       }
       if (selectedCity) {
         query = query.eq('city', selectedCity);
       }
-      if (selectedCategory) {
+      console.log('Filter:', selectedCategory);
+      if (selectedCategory && selectedCategory !== 'all') {
         // Map frontend categories to database values if needed
-        query = query.eq('category', selectedCategory);
+        query = query.ilike('category', `%${selectedCategory}%`);
       }
       if (searchQuery) {
         query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
