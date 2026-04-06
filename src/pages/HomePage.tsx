@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search } from "lucide-react";
+import { Link } from "react-router-dom";
+import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search, Briefcase, LayoutDashboard } from "lucide-react";
 import debounce from "lodash/debounce";
+import { motion, AnimatePresence } from "motion/react";
 import HeroSection from "@/components/home/HeroSection";
 import StorySection from "@/components/home/StorySection";
 import LocationFilter from "@/components/home/LocationFilter";
@@ -9,6 +11,7 @@ import FeedComponent from "@/components/home/FeedComponent";
 import BusinessGrid from "@/components/home/BusinessGrid";
 import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
+import AddBusinessModal from "@/components/home/AddBusinessModal";
 import { useBusinesses } from "@/hooks/useBusinesses";
 import { useAuthStore } from "@/stores/authStore";
 import { useHomeStore } from "@/stores/homeStore";
@@ -18,7 +21,9 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const { user, profile, signOut, loading: authLoading } = useAuthStore();
@@ -33,7 +38,8 @@ export default function HomePage() {
     error,
     hasMore,
     totalCount,
-    loadMore
+    loadMore,
+    refresh
   } = useBusinesses(debouncedQuery);
 
   // Debounce search query
@@ -95,6 +101,11 @@ export default function HomePage() {
       ar: 'إدارة الأعمال',
       ku: 'بەڕێوەبردنی کار'
     },
+    addBusiness: {
+      en: 'Add Business',
+      ar: 'أضف عملك',
+      ku: 'کارەکەت زیاد بکە'
+    },
     settings: {
       en: 'Settings',
       ar: 'الإعدادات',
@@ -104,6 +115,11 @@ export default function HomePage() {
       en: 'Sign Out',
       ar: 'تسجيل الخروج',
       ku: 'چوونەدەرەوە'
+    },
+    dashboard: {
+      en: 'Business Dashboard',
+      ar: 'لوحة تحكم الأعمال',
+      ku: 'داشبۆردی بازرگانی'
     },
     owner: {
       en: 'Owner',
@@ -119,7 +135,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-bg-light selection:bg-primary/30" dir={isRTL ? 'rtl' : 'ltr'}>
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        initialMode={authMode}
+      />
       <BusinessDetailModal business={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
       {/* Header */}
       <header className="sticky top-0 z-[60] bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">
@@ -179,14 +199,58 @@ export default function HomePage() {
               <div className="w-10 h-10 rounded-xl bg-slate-100 animate-pulse" />
             ) : (
               <>
-                {!user ? (
+                {user && (
                   <button 
-                    onClick={() => setIsAuthModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-bg-dark text-[10px] font-black rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                    onClick={() => setIsAddBusinessModalOpen(true)}
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-text-main text-[10px] font-black rounded-xl hover:border-primary hover:text-primary transition-all uppercase tracking-widest"
                   >
-                    <User className="w-4 h-4" />
-                    <span className="hidden sm:inline">Register / Login</span>
+                    <PlusCircle className="w-4 h-4" />
+                    <span>{translations.addBusiness[language]}</span>
                   </button>
+                )}
+
+                {user && profile?.role === 'business_owner' && (
+                  <Link 
+                    to="/dashboard"
+                    className="hidden lg:flex items-center gap-2 px-4 py-2 bg-secondary text-bg-dark text-[10px] font-black rounded-xl shadow-lg shadow-secondary/20 hover:bg-secondary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                  >
+                    <Briefcase className="w-4 h-4" />
+                    <span>{translations.dashboard[language]}</span>
+                  </Link>
+                )}
+
+                {!user ? (
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => {
+                        setAuthMode('login');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-text-main text-[10px] font-black rounded-xl hover:border-primary hover:text-primary transition-all uppercase tracking-widest"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>{translations.addBusiness[language]}</span>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setAuthMode('login');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="px-4 py-2 text-text-muted text-[10px] font-black rounded-xl hover:text-primary transition-all uppercase tracking-widest"
+                    >
+                      {language === 'ar' ? 'دخول' : language === 'ku' ? 'چوونەژوورەوە' : 'Login'}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setAuthMode('signup');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-primary text-bg-dark text-[10px] font-black rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                    >
+                      <User className="w-4 h-4" />
+                      <span className="hidden sm:inline">{language === 'ar' ? 'تسجيل' : language === 'ku' ? 'تۆمارکردن' : 'Register'}</span>
+                    </button>
+                  </div>
                 ) : (
                   <div className="relative">
                     <button 
@@ -199,25 +263,53 @@ export default function HomePage() {
                       <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
                     </button>
 
-                    {showUserMenu && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-[70]">
-                        <div className="px-4 py-2 border-b border-slate-200 mb-2">
-                          <p className="text-[10px] font-black text-text-main truncate">{user.email}</p>
-                        </div>
-                        <button className="w-full px-4 py-2 text-left text-xs font-bold text-text-muted hover:bg-slate-50 hover:text-primary flex items-center gap-2 transition-colors">
-                          <Settings className="w-4 h-4" /> {translations.settings[language]}
-                        </button>
-                        <button 
-                          onClick={() => {
-                            signOut();
-                            setShowUserMenu(false);
-                          }}
-                          className="w-full px-4 py-2 text-left text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                    <AnimatePresence>
+                      {showUserMenu && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-[70] overflow-hidden"
                         >
-                          <LogOut className="w-4 h-4" /> {translations.signOut[language]}
-                        </button>
-                      </div>
-                    )}
+                          <div className="px-4 py-3 border-b border-slate-100 mb-2 bg-slate-50/50">
+                            <p className="text-[10px] font-black text-text-main truncate">{profile?.full_name || user.email}</p>
+                            <p className="text-[8px] font-bold text-text-muted truncate mt-0.5 opacity-60">{user.email}</p>
+                            {profile?.role === 'business_owner' && (
+                              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 bg-secondary/10 text-secondary rounded-full">
+                                <Briefcase className="w-2.5 h-2.5" />
+                                <span className="text-[7px] font-black uppercase tracking-widest">{translations.owner[language]}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {profile?.role === 'business_owner' && (
+                            <Link 
+                              to="/dashboard"
+                              onClick={() => setShowUserMenu(false)}
+                              className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-text-muted hover:bg-slate-50 hover:text-secondary flex items-center gap-3 transition-colors"
+                            >
+                              <LayoutDashboard className="w-4 h-4" /> {translations.dashboard[language]}
+                            </Link>
+                          )}
+
+                          <button className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-text-muted hover:bg-slate-50 hover:text-primary flex items-center gap-3 transition-colors">
+                            <Settings className="w-4 h-4" /> {translations.settings[language]}
+                          </button>
+                          
+                          <div className="h-px bg-slate-100 my-1" />
+                          
+                          <button 
+                            onClick={() => {
+                              signOut();
+                              setShowUserMenu(false);
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" /> {translations.signOut[language]}
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
               </>
@@ -227,6 +319,14 @@ export default function HomePage() {
       </header>
 
       <main className="pb-24">
+        {error && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">
+              Failed to load businesses: {error}
+            </div>
+          </div>
+        )}
+
         {/* 1. Hero Section */}
         <HeroSection businesses={businesses} onBusinessClick={setSelectedBusiness} />
 
@@ -344,6 +444,12 @@ export default function HomePage() {
           </div>
         </div>
       </main>
+
+      <AddBusinessModal 
+        isOpen={isAddBusinessModalOpen} 
+        onClose={() => setIsAddBusinessModalOpen(false)}
+        onSuccess={() => refresh()}
+      />
 
       {/* Footer */}
       <footer className="bg-bg-dark text-white pt-24 pb-12">
