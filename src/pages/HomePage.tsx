@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { Search, User, PlusCircle } from "lucide-react";
+import { Search, User, PlusCircle, Loader2, AlertCircle } from "lucide-react";
 import HeroSection from "@/components/home/HeroSection";
 import LocationFilter from "@/components/home/LocationFilter";
 import StoryRow from "@/components/home/StoryRow";
@@ -7,39 +6,31 @@ import CategoryGrid from "@/components/home/CategoryGrid";
 import TrendingSection from "@/components/home/TrendingSection";
 import BusinessGrid from "@/components/home/BusinessGrid";
 import { useHomeStore } from "@/stores/homeStore";
-import type { Business } from "@/lib/supabase";
+import { useBusinesses } from "@/hooks/useBusinesses";
 
 export default function HomePage() {
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { selectedGovernorate, selectedCategory, selectedCity } = useHomeStore();
+  const {
+    selectedGovernorate,
+    selectedCategory,
+    selectedCity,
+    searchQuery,
+    setSearchQuery,
+  } = useHomeStore();
 
-  useEffect(() => {
-    const loadBusinesses = async () => {
-      setLoading(true);
-      try {
-        const mockData = generateMockBusinesses();
-        
-        // Filter logic
-        let filtered = mockData;
-        if (selectedGovernorate) {
-          filtered = filtered.filter(b => b.governorate === selectedGovernorate);
-        }
-        if (selectedCity) {
-          filtered = filtered.filter(b => b.city === selectedCity);
-        }
-        if (selectedCategory) {
-          filtered = filtered.filter(b => b.category === selectedCategory);
-        }
-        
-        setBusinesses(filtered);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadBusinesses();
-  }, [selectedGovernorate, selectedCategory, selectedCity]);
+  const {
+    businesses,
+    totalCount,
+    loadedCount,
+    loading,
+    error,
+    hasMore,
+    loadMore,
+  } = useBusinesses({
+    governorate: selectedGovernorate,
+    city: selectedCity,
+    category: selectedCategory,
+    searchQuery: searchQuery || undefined,
+  });
 
   return (
     <div className="min-h-screen bg-[#F5F7F9]">
@@ -63,7 +54,9 @@ export default function HomePage() {
             </div>
             <input
               type="text"
-              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search businesses..."
               className="w-full pl-10 pr-4 py-2 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-[#2CA6A4] rounded-full focus:outline-none transition-all duration-300 text-sm"
             />
           </div>
@@ -96,14 +89,56 @@ export default function HomePage() {
           <CategoryGrid />
 
           {/* FEATURED BUSINESSES (Vertical Cards) */}
-          <TrendingSection businesses={businesses} loading={loading} />
+          <TrendingSection businesses={businesses} loading={loading && businesses.length === 0} />
 
           {/* MAIN BUSINESS GRID (Compact Cards) */}
           <div className="px-4 mb-4 mt-12">
-            <h2 className="text-xl font-bold text-[#2B2F33] poppins-bold">Explore Businesses</h2>
-            <p className="text-sm text-[#6B7280]">Discover top-rated places in your area</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-[#2B2F33] poppins-bold">Explore Businesses</h2>
+                <p className="text-sm text-[#6B7280]">
+                  {loading && businesses.length === 0 ? (
+                    "Loading businesses..."
+                  ) : error ? (
+                    <span className="text-red-500 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {error}
+                    </span>
+                  ) : (
+                    <>Showing {loadedCount} of {totalCount} businesses</>
+                  )}
+                </p>
+              </div>
+            </div>
           </div>
-          <BusinessGrid businesses={businesses} loading={loading} />
+
+          <BusinessGrid businesses={businesses} loading={loading && businesses.length === 0} />
+
+          {/* Load More Button */}
+          {businesses.length > 0 && (
+            <div className="flex justify-center py-8">
+              {hasMore ? (
+                <button
+                  onClick={loadMore}
+                  disabled={loading}
+                  className="px-6 py-3 bg-[#2CA6A4] text-white font-bold rounded-xl hover:bg-[#1e7a78] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Load More Businesses"
+                  )}
+                </button>
+              ) : (
+                <p className="text-sm text-[#6B7280]">
+                  All {totalCount} businesses loaded
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </main>
 
@@ -184,45 +219,4 @@ export default function HomePage() {
       </footer>
     </div>
   );
-}
-
-// Mock data generator
-function generateMockBusinesses(): Business[] {
-  const categories = [
-    'dining_cuisine', 'cafe_coffee', 'shopping_retail', 
-    'entertainment_events', 'accommodation_stays', 'culture_heritage',
-    'business_services', 'health_wellness', 'doctors', 'hospitals',
-    'clinics', 'transport_mobility', 'public_essential', 'lawyers', 'education'
-  ];
-  
-  const governorates = ["Baghdad", "Erbil", "Basra", "Mosul", "Sulaymaniyah"];
-  const cities: Record<string, string[]> = {
-    Baghdad: ["Central", "Kadhimiya", "Adhamiyah"],
-    Erbil: ["Erbil Center", "Ankawa", "Shaqlawa"],
-    Basra: ["Basra City", "Zubair"],
-    Mosul: ["Mosul Center", "Hamdaniya"],
-    Sulaymaniyah: ["Suli Center", "Halabja"]
-  };
-
-  return Array.from({ length: 24 }, (_, i) => {
-    const gov = governorates[i % governorates.length];
-    const cityList = cities[gov];
-    const city = cityList[i % cityList.length];
-    
-    return {
-      id: `biz-${i}`,
-      name: `${['Al-Mansour', 'Babylon', 'Tigris', 'Euphrates', 'Mesopotamia'][i % 5]} ${['Plaza', 'Garden', 'Center', 'Hub', 'Lounge'][i % 5]}`,
-      category: categories[i % categories.length],
-      rating: 4 + (i % 10) / 10,
-      reviewCount: 10 + i * 5,
-      governorate: gov,
-      city: city,
-      address: `${city}, Iraq`,
-      image: `https://picsum.photos/seed/biz${i}/600/400`,
-      isFeatured: i < 8,
-      phone: "+964 770 123 4567",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-  });
 }

@@ -8,7 +8,7 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ businesses }: HeroSectionProps) {
-  const featured = businesses.filter(b => b.isFeatured).slice(0, 5);
+  const featured = businesses.filter(b => b.isFeatured);
   
   if (featured.length === 0) return null;
 

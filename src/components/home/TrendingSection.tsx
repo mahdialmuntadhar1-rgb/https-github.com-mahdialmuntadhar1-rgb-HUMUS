@@ -9,7 +9,7 @@ interface TrendingSectionProps {
 }
 
 export default function TrendingSection({ businesses, loading }: TrendingSectionProps) {
-  const featured = businesses.filter(b => b.isFeatured).slice(0, 6);
+  const featured = businesses.filter(b => b.isFeatured);
 
   if (loading) return (
     <div className="w-full h-[320px] bg-gray-100 animate-pulse rounded-2xl mb-12" />
