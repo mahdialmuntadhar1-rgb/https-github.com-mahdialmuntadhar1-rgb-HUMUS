@@ -1,340 +1,204 @@
+import React from 'react';
 import { motion } from 'motion/react';
-import { Phone, MessageCircle, ExternalLink, MapPin } from 'lucide-react';
-import type { Business } from '@/lib/supabase';
-import * as React from 'react';
+import { Star, MapPin, Phone, ArrowRight, ShieldCheck, TrendingUp, Heart } from 'lucide-react';
+import { Business } from '@/lib/supabase';
+import { useHomeStore } from '@/stores/homeStore';
+import { mapBusinessToCard } from '@/lib/mappers';
 
 interface BusinessCardProps {
-  business: Business;
-  onClick?: () => void;
-  variant?: 'default' | 'featured' | 'compact';
+  biz: Business;
+  variant?: 'default' | 'compact' | 'featured';
+  onClick?: (biz: Business) => void;
 }
 
-// Category icons mapping
-const CATEGORY_ICONS: Record<string, string> = {
-  dining_cuisine: '🍽️',
-  cafe_coffee: '☕',
-  shopping_retail: '🛍️',
-  entertainment_events: '🎬',
-  accommodation_stays: '🏨',
-  culture_heritage: '🏛️',
-  business_services: '💼',
-  health_wellness: '⚕️',
-  doctors: '👨‍⚕️',
-  hospitals: '🏥',
-  clinics: '🏥',
-  transport_mobility: '🚗',
-  public_essential: '🏛️',
-  lawyers: '⚖️',
-  education: '🎓',
-};
+export default function BusinessCard({ biz, variant = 'default', onClick }: BusinessCardProps) {
+  const { language } = useHomeStore();
+  const card = mapBusinessToCard(biz, language);
 
-// Category gradients for postcard backgrounds
-const CATEGORY_GRADIENTS: Record<string, string> = {
-  dining_cuisine: 'from-orange-500/90 to-red-600/90',
-  cafe_coffee: 'from-amber-500/90 to-orange-600/90',
-  shopping_retail: 'from-blue-500/90 to-indigo-600/90',
-  entertainment_events: 'from-purple-500/90 to-pink-600/90',
-  accommodation_stays: 'from-indigo-500/90 to-blue-600/90',
-  culture_heritage: 'from-rose-500/90 to-red-600/90',
-  business_services: 'from-slate-500/90 to-gray-600/90',
-  health_wellness: 'from-emerald-500/90 to-teal-600/90',
-  doctors: 'from-teal-500/90 to-cyan-600/90',
-  hospitals: 'from-red-500/90 to-rose-600/90',
-  clinics: 'from-pink-500/90 to-rose-600/90',
-  transport_mobility: 'from-gray-500/90 to-slate-600/90',
-  public_essential: 'from-cyan-500/90 to-blue-600/90',
-  lawyers: 'from-blue-600/90 to-indigo-700/90',
-  education: 'from-yellow-500/90 to-orange-600/90',
-};
-
-function formatPhone(phone: string | null): string {
-  if (!phone) return '';
-  return phone.replace(/[^\d]/g, '');
-}
-
-function getWhatsAppLink(phone: string | null): string {
-  const formatted = formatPhone(phone);
-  if (!formatted) return '#';
-  let international = formatted;
-  if (formatted.startsWith('07')) {
-    international = '964' + formatted.substring(1);
-  } else if (formatted.startsWith('7')) {
-    international = '964' + formatted;
-  }
-  return `https://wa.me/${international}`;
-}
-
-export default function BusinessCard({ business, onClick, variant = 'default' }: BusinessCardProps) {
-  const categoryIcon = CATEGORY_ICONS[business.category] || '🏢';
-  const categoryGradient = CATEGORY_GRADIENTS[business.category] || 'from-gray-500/90 to-slate-600/90';
-  
-  // Get primary phone (prefer WhatsApp, then phone)
-  const primaryPhone = business.whatsapp || business.phone;
-  const hasPhone = primaryPhone;
-
-  // Build location string - short format
-  const locationParts = [];
-  if (business.city && business.city !== business.governorate) {
-    locationParts.push(business.city);
-  }
-  const locationString = locationParts.join(', ') || business.city || business.governorate || 'Iraq';
-
-  // Handle phone click
-  const handleCall = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (primaryPhone) {
-      window.location.href = `tel:${formatPhone(primaryPhone)}`;
-    }
-  };
-
-  // Handle WhatsApp click
-  const handleWhatsApp = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const link = getWhatsAppLink(business.whatsapp || business.phone);
-    if (link !== '#') {
-      window.open(link, '_blank');
-    }
-  };
-
-  // Featured variant - larger card with more details
   if (variant === 'featured') {
     return (
       <motion.div
-        whileHover={{ y: -8 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={onClick}
-        className="flex-shrink-0 w-[280px] h-[380px] bg-white rounded-[24px] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 flex flex-col cursor-pointer group"
+        whileHover={{ y: -5 }}
+        onClick={() => onClick?.(biz)}
+        className="flex-shrink-0 w-72 sm:w-80 group cursor-pointer"
       >
-        {/* Image Section with Category Gradient */}
-        <div className={`relative h-[55%] bg-gradient-to-br ${categoryGradient} overflow-hidden`}>
-          {/* Category Icon Overlay */}
-          <div className="absolute top-4 left-4">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-2xl shadow-lg">
-              {categoryIcon}
-            </div>
-          </div>
+        <div className="relative aspect-[16/10] rounded-[24px] overflow-hidden mb-4 shadow-premium border border-white/10">
+          <img 
+            src={card.image} 
+            alt={card.name}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg-dark/90 via-bg-dark/20 to-transparent" />
           
-          {/* Featured Badge */}
-          {business.isFeatured && (
-            <div className="absolute top-4 right-4">
-              <span className="px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-[#8B1A1A] shadow-lg">
-                ⭐ Featured
+          <div className="absolute top-4 left-4">
+            <div className="px-3 py-1 glass rounded-full border border-white/20">
+              <span className="text-[8px] font-black text-white uppercase tracking-widest">
+                {card.categoryName}
               </span>
             </div>
-          )}
-
-          {/* Business Name Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/70 to-transparent">
-            <h3 className="text-xl font-bold text-white leading-tight">
-              {business.name}
-            </h3>
-            {business.nameAr && (
-              <p className="text-white/80 text-sm mt-1">{business.nameAr}</p>
-            )}
           </div>
-        </div>
 
-        {/* Info Section */}
-        <div className="p-5 flex flex-col flex-1 justify-between">
-          <div className="space-y-3">
-            {/* Location */}
-            <div className="flex items-center gap-2 text-gray-500">
-              <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm line-clamp-1">{locationString}</span>
+          <div className="absolute bottom-4 left-4 right-4 text-left">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-white font-black text-sm sm:text-base truncate uppercase tracking-tight poppins-bold">
+                {card.name}
+              </h3>
+              {card.isVerified && <ShieldCheck className="w-4 h-4 text-accent" />}
             </div>
-
-            {/* Phone - only if exists */}
-            {primaryPhone && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <Phone className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm font-medium">{primaryPhone}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-white/60">
+                <MapPin className="w-3 h-3 text-primary" />
+                <span className="text-[9px] font-bold uppercase tracking-widest">
+                  {card.location}
+                </span>
               </div>
-            )}
-
-            {/* Subcategory/Description - only if exists */}
-            {business.description && (
-              <p className="text-sm text-gray-500 line-clamp-2">
-                {business.description}
-              </p>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 mt-4">
-            {hasPhone ? (
-              <>
-                <button
-                  onClick={handleCall}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#8B1A1A] hover:bg-[#6b1414] text-white rounded-xl text-sm font-bold transition-all"
-                >
-                  <Phone className="w-4 h-4" />
-                  Call
-                </button>
-                <button
-                  onClick={handleWhatsApp}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-bold transition-all"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  WhatsApp
-                </button>
-              </>
-            ) : (
-              <button className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold">
-                <ExternalLink className="w-4 h-4" />
-                View Details
-              </button>
-            )}
+              <div className="flex items-center gap-1 glass-dark px-2 py-0.5 rounded-lg border border-white/10">
+                <Star className="w-2.5 h-2.5 text-secondary fill-secondary" />
+                <span className="text-[9px] font-black text-white">{card.rating.toFixed(1)}</span>
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>
     );
   }
 
-  // Compact variant - for grid layouts
   if (variant === 'compact') {
     return (
       <motion.div
         whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={onClick}
-        className="bg-white rounded-[16px] overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-gray-100 flex flex-col cursor-pointer group"
+        onClick={() => onClick?.(biz)}
+        className="flex-shrink-0 w-48 group cursor-pointer"
       >
-        {/* Image Section */}
-        <div className={`relative aspect-[4/3] bg-gradient-to-br ${categoryGradient} overflow-hidden`}>
-          <div className="absolute top-3 left-3">
-            <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-lg shadow-md">
-              {categoryIcon}
-            </div>
+        <div className="relative aspect-square rounded-[20px] overflow-hidden mb-2 shadow-sm border border-slate-100">
+          <img 
+            src={card.image} 
+            alt={card.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-bg-dark/40 group-hover:bg-bg-dark/10 transition-colors" />
+          <div className="absolute bottom-2 left-2 right-2 text-left">
+            <p className="text-white text-[9px] font-black truncate uppercase tracking-tight drop-shadow-md">
+              {card.name}
+            </p>
           </div>
-          
-          {/* Category Badge */}
-          <div className="absolute bottom-3 left-3">
-            <span className="px-2 py-1 bg-white/95 backdrop-blur-sm rounded-lg text-[10px] font-bold text-gray-700 shadow-md uppercase tracking-wider">
-              {business.category.split('_')[0]}
-            </span>
-          </div>
-        </div>
-
-        {/* Info Section */}
-        <div className="p-3 flex flex-col flex-1">
-          <h3 className="text-sm font-bold text-gray-900 mb-1 line-clamp-1">
-            {business.name}
-          </h3>
-          
-          <div className="flex items-center gap-1 text-gray-500 text-[10px] mb-2">
-            <MapPin className="w-3 h-3" />
-            <span className="line-clamp-1">{locationString}</span>
-          </div>
-
-          {/* Phone - clickable */}
-          {primaryPhone && (
-            <button
-              onClick={handleCall}
-              className="flex items-center gap-1.5 text-[#8B1A1A] text-xs font-medium mt-auto hover:underline"
-            >
-              <Phone className="w-3 h-3" />
-              {primaryPhone}
-            </button>
-          )}
         </div>
       </motion.div>
     );
   }
 
-  // Default variant - postcard style
   return (
     <motion.div
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className="bg-white rounded-[20px] overflow-hidden shadow-[0_6px_20px_rgba(0,0,0,0.1)] border border-gray-100 flex flex-col cursor-pointer group"
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -10 }}
+      className="group relative flex flex-col bg-white rounded-[40px] overflow-hidden shadow-[0_20px_50px_-15px_rgba(0,0,0,0.08)] border border-slate-100 transition-all duration-700 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] h-full"
     >
-      {/* Image Section - Postcard Top */}
-      <div className={`relative aspect-[16/10] bg-gradient-to-br ${categoryGradient} overflow-hidden`}>
-        {/* Category Badge with Icon */}
-        <div className="absolute top-4 left-4">
-          <div className="flex items-center gap-2 px-3 py-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg">
-            <span className="text-xl">{categoryIcon}</span>
-            <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">
-              {business.category.split('_')[0]}
+      {/* Image Section */}
+      <div 
+        className="aspect-[16/11] w-full overflow-hidden relative cursor-pointer"
+        onClick={() => onClick?.(biz)}
+      >
+        <img 
+          src={card.image} 
+          alt={card.name}
+          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-bg-dark/80 via-bg-dark/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+        
+        {/* Category & Trending Badges */}
+        <div className="absolute top-5 left-5 flex flex-col gap-2">
+          <div className="px-4 py-2 glass rounded-[18px] shadow-2xl flex items-center gap-2.5 border border-white/30 backdrop-blur-md">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(255,159,28,0.8)]" />
+            <span className="text-[9px] font-black text-bg-dark uppercase tracking-[0.25em]">
+              {card.categoryName}
             </span>
+          </div>
+          
+          {(card.rating >= 4.8 || card.reviewCount > 50) && (
+            <div className="px-4 py-2 bg-secondary rounded-[18px] shadow-2xl flex items-center gap-2.5 border border-white/20 backdrop-blur-md animate-bounce-slow">
+              <TrendingUp className="w-3.5 h-3.5 text-bg-dark" />
+              <span className="text-[9px] font-black text-bg-dark uppercase tracking-[0.25em]">
+                Trending
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Rating & Interaction */}
+        <div className="absolute bottom-5 right-5 flex items-center gap-3">
+          <button 
+            onClick={(e) => { e.stopPropagation(); /* Handle Like */ }}
+            className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-xl flex items-center justify-center text-slate-400 hover:text-red-500 transition-all shadow-premium border border-white/20 group/heart"
+          >
+            <Heart className="w-5 h-5 transition-transform group-hover/heart:scale-110" />
+          </button>
+          <div className="px-4 py-2 bg-bg-dark/80 backdrop-blur-md rounded-[18px] shadow-2xl flex items-center gap-2.5 border border-white/10">
+            <Star className="w-3.5 h-3.5 text-secondary fill-secondary" />
+            <span className="text-[11px] font-black text-white">{card.rating.toFixed(1)}</span>
           </div>
         </div>
 
-        {/* Featured Badge */}
-        {business.isFeatured && (
-          <div className="absolute top-4 right-4">
-            <span className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-400 text-amber-900 rounded-lg text-[10px] font-bold shadow-lg">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-              Featured
-            </span>
-          </div>
-        )}
-
-        {/* Business Name Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
-          <h3 className="text-lg font-bold text-white leading-tight">
-            {business.name}
-          </h3>
+        {/* Quick Action Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onClick?.(biz); }}
+            className="px-8 py-4 bg-white text-bg-dark text-[10px] font-black rounded-2xl uppercase tracking-[0.3em] shadow-2xl hover:bg-primary hover:text-bg-dark transition-all active:scale-95"
+          >
+            {language === 'ar' ? 'عرض التفاصيل' : language === 'ku' ? 'بینینی وردەکاری' : 'View Details'}
+          </button>
         </div>
       </div>
-
-      {/* Info Section - Postcard Bottom */}
-      <div className="p-4 flex flex-col flex-1">
-        {/* Location */}
-        <div className="flex items-center gap-2 text-gray-500 mb-3">
-          <MapPin className="w-4 h-4 flex-shrink-0" />
-          <span className="text-sm line-clamp-1">{locationString}</span>
+      
+      {/* Info Section */}
+      <div className="p-8 flex flex-col flex-1">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1 min-w-0">
+            <h3 
+              className="text-xl font-black text-bg-dark poppins-bold uppercase tracking-tighter group-hover:text-primary transition-colors duration-500 cursor-pointer line-clamp-1 leading-tight"
+              onClick={() => onClick?.(biz)}
+            >
+              {card.name}
+            </h3>
+            <div className="flex items-center gap-2.5 mt-2 text-slate-400">
+              <MapPin className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] truncate">
+                {card.location}
+              </span>
+            </div>
+          </div>
+          {card.isVerified && (
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner shrink-0 group-hover:bg-primary group-hover:text-bg-dark transition-all duration-700">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+          )}
         </div>
 
-        {/* Phone - if exists */}
-        {primaryPhone && (
-          <div className="flex items-center gap-2 text-gray-700 mb-3">
-            <Phone className="w-4 h-4 flex-shrink-0 text-[#8B1A1A]" />
-            <span className="text-sm font-medium">{primaryPhone}</span>
-          </div>
-        )}
-
-        {/* Description - only if exists */}
-        {business.description && (
-          <p className="text-xs text-gray-500 line-clamp-2 mb-4">
-            {business.description}
+        {card.description && (
+          <p className="text-slate-500 text-xs line-clamp-2 mb-6 font-medium leading-relaxed">
+            {card.description}
           </p>
         )}
-
-        {/* Action Buttons */}
-        <div className="flex gap-2 mt-auto">
-          {hasPhone ? (
-            <>
-              <button
-                onClick={handleCall}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-100 hover:bg-[#8B1A1A] hover:text-white text-gray-700 rounded-xl text-sm font-bold transition-all"
-              >
-                <Phone className="w-4 h-4" />
-                Call
-              </button>
-              <button
-                onClick={handleWhatsApp}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-green-50 hover:bg-green-600 hover:text-white text-green-700 rounded-xl text-sm font-bold transition-all"
-              >
-                <MessageCircle className="w-4 h-4" />
-                WhatsApp
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onClick?.(); }}
-                className="w-10 flex items-center justify-center py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
-              >
-                <ExternalLink className="w-4 h-4 text-gray-600" />
-              </button>
-            </>
-          ) : (
-            <button className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-[#8B1A1A] text-white rounded-xl text-sm font-bold">
-              <ExternalLink className="w-4 h-4" />
-              View Details
-            </button>
-          )}
+        
+        <div className="mt-auto flex items-center gap-3">
+          <button 
+            onClick={() => onClick?.(biz)}
+            className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-bg-dark text-white text-[10px] font-black rounded-2xl uppercase tracking-[0.3em] hover:bg-primary hover:text-bg-dark transition-all duration-500 shadow-[0_15px_30px_-10px_rgba(0,0,0,0.3)] hover:shadow-primary/30 active:scale-95 group/btn"
+          >
+            <span>{language === 'ar' ? 'تواصل الآن' : language === 'ku' ? 'پەیوەندی بکە' : 'Contact Now'}</span>
+            <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+          </button>
+          <a 
+            href={`tel:${card.phone}`}
+            onClick={(e) => e.stopPropagation()}
+            className="w-12 h-12 flex items-center justify-center bg-slate-50 text-bg-dark rounded-2xl hover:bg-secondary hover:text-bg-dark transition-all duration-500 border border-slate-100 group/phone shadow-sm hover:shadow-secondary/20"
+          >
+            <Phone className="w-4 h-4 transition-transform group-hover/phone:rotate-12 group-hover/phone:scale-110" />
+          </a>
         </div>
       </div>
     </motion.div>

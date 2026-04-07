@@ -6,9 +6,9 @@ export interface Business {
   category: string;
   governorate: string;
   city: string;
+  neighborhood?: string;
   address: string;
   phone: string;
-  whatsapp?: string;
   rating?: number;
   reviewCount?: number;
   isFeatured?: boolean;

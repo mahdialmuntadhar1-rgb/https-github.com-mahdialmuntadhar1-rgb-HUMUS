@@ -3,7 +3,7 @@ import {
   GraduationCap, Clapperboard, Plane, Stethoscope, Scale, 
   Hospital, HeartPulse, Home, PartyPopper, 
   Pill, Dumbbell, Sparkles, Store, Armchair, ShieldCheck,
-  Smartphone, Shirt, MoreHorizontal
+  Smartphone, Shirt, Car, Cpu, MoreHorizontal
 } from 'lucide-react';
 
 export const ICON_MAP: Record<string, any> = {
@@ -11,7 +11,7 @@ export const ICON_MAP: Record<string, any> = {
   GraduationCap, Clapperboard, Plane, Stethoscope, Scale, 
   Hospital, HeartPulse, Home, PartyPopper, 
   Pill, Dumbbell, Sparkles, Store, Armchair, ShieldCheck,
-  Smartphone, Shirt, MoreHorizontal
+  Smartphone, Shirt, Car, Cpu, MoreHorizontal
 };
 
 export const GOVERNORATES = [

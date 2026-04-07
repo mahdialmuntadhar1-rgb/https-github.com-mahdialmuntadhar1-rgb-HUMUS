@@ -19,14 +19,14 @@ interface HomeState {
   reset: () => void;
 }
 
-const DEFAULT_GOVERNORATE = "all";
+const DEFAULT_GOVERNORATE = "Baghdad";
 
 export const useHomeStore = create<HomeState>()(
   persist(
     (set) => ({
       selectedGovernorate: DEFAULT_GOVERNORATE,
       selectedCity: null,
-      selectedCategory: null, // LAUNCH MODE: visual only, not used in queries
+      selectedCategory: null,
       searchQuery: "",
       sortBy: "trending",
       language: "en",

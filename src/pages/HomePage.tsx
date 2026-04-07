@@ -1,38 +1,52 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search, Briefcase, LayoutDashboard, Star, TrendingUp } from "lucide-react";
 import debounce from "lodash/debounce";
+import { motion, AnimatePresence } from "motion/react";
 import HeroSection from "@/components/home/HeroSection";
 import StorySection from "@/components/home/StorySection";
 import LocationFilter from "@/components/home/LocationFilter";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import FeedComponent from "@/components/home/FeedComponent";
-import CategorizedBusinessGrid from "@/components/home/CategorizedBusinessGrid";
-// NEW: Import components from 18-AGENTS integration
-import FeaturedBusinesses from "@/components/home/FeaturedBusinesses";
-import DiscoverySection from "@/components/home/DiscoverySection";
-import PlatformReviews from "@/components/home/PlatformReviews";
-import BusinessDetails from "@/components/home/BusinessDetails";
+import BusinessGrid from "@/components/home/BusinessGrid";
+import BusinessCard from "@/components/home/BusinessCard";
+import CategorySection from "@/components/home/CategorySection";
 import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
 import AddBusinessModal from "@/components/home/AddBusinessModal";
 import { useBusinesses } from "@/hooks/useBusinesses";
 import { useAuthStore } from "@/stores/authStore";
 import { useHomeStore } from "@/stores/homeStore";
+import { CATEGORIES } from "@/constants";
 import type { Business } from "@/lib/supabase";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategoryExpansion = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const { user, profile, signOut, loading: authLoading } = useAuthStore();
   const { 
     language,
-    setLanguage
+    setLanguage,
+    setCategory
   } = useHomeStore();
   
   const { 
@@ -41,7 +55,8 @@ export default function HomePage() {
     error,
     hasMore,
     totalCount,
-    loadMore
+    loadMore,
+    refresh
   } = useBusinesses(debouncedQuery);
 
   // Debounce search query
@@ -55,37 +70,7 @@ export default function HomePage() {
     return () => debouncedSetQuery.cancel();
   }, [searchQuery, debouncedSetQuery]);
 
-  useEffect(() => {
-    if (!loadMoreRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasMore && !businessesLoading) {
-          loadMore();
-        }
-      },
-      { rootMargin: '320px 0px' }
-    );
-
-    observer.observe(loadMoreRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, businessesLoading, loadMore, businesses.length]);
-
   const isRTL = language === 'ar' || language === 'ku';
-
-  // NEW: State for BusinessDetails modal from 18-AGENTS integration
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  const handleBusinessClick = useCallback((business: Business) => {
-    setSelectedBusiness(business);
-    setIsDetailsOpen(true);
-  }, []);
-
-  const handleCloseDetails = useCallback(() => {
-    setIsDetailsOpen(false);
-    setSelectedBusiness(null);
-  }, []);
 
   const translations = {
     explore: {
@@ -133,6 +118,11 @@ export default function HomePage() {
       ar: 'إدارة الأعمال',
       ku: 'بەڕێوەبردنی کار'
     },
+    addBusiness: {
+      en: 'Add Business',
+      ar: 'أضف عملك',
+      ku: 'کارەکەت زیاد بکە'
+    },
     settings: {
       en: 'Settings',
       ar: 'الإعدادات',
@@ -142,6 +132,11 @@ export default function HomePage() {
       en: 'Sign Out',
       ar: 'تسجيل الخروج',
       ku: 'چوونەدەرەوە'
+    },
+    dashboard: {
+      en: 'Business Dashboard',
+      ar: 'لوحة تحكم الأعمال',
+      ku: 'داشبۆردی بازرگانی'
     },
     owner: {
       en: 'Owner',
@@ -157,128 +152,173 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-bg-light selection:bg-primary/30" dir={isRTL ? 'rtl' : 'ltr'}>
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      <BusinessDetailModal business={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
-      <AddBusinessModal isOpen={isAddBusinessModalOpen} onClose={() => setIsAddBusinessModalOpen(false)} />
-      {/* NEW: BusinessDetails modal from 18-AGENTS integration */}
-      <BusinessDetails 
-        business={selectedBusiness}
-        isOpen={isDetailsOpen}
-        onClose={handleCloseDetails}
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        initialMode={authMode}
       />
+      <BusinessDetailModal business={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
       {/* Header */}
-      <header className="sticky top-0 z-[60] bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-[60] bg-white/95 backdrop-blur-2xl border-b border-slate-100 shadow-[0_1px_10px_rgba(0,0,0,0.02)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-6">
           {/* Left: Branch (English Only) */}
           <div 
-            className="flex items-center gap-2 group cursor-pointer" 
+            className="flex items-center gap-3 group cursor-pointer" 
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
-            <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary-dark rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-all duration-500">
-              <span className="text-white font-black text-xl poppins-bold">S</span>
+            <div className="w-11 h-11 bg-bg-dark rounded-2xl flex items-center justify-center shadow-xl group-hover:bg-primary transition-all duration-700 group-hover:rotate-[10deg]">
+              <span className="text-white font-black text-2xl poppins-bold">B</span>
             </div>
             <div className="flex flex-col">
-              <h1 className="text-lg font-black text-text-main poppins-bold tracking-tight leading-none">Saku Maku</h1>
-              <p className="text-[8px] text-primary font-black uppercase tracking-[0.2em] mt-0.5">Iraqi Directory</p>
+              <h1 className="text-xl font-black text-text-main poppins-bold tracking-tighter leading-none uppercase">Belive</h1>
+              <p className="text-[9px] text-primary font-black uppercase tracking-[0.3em] mt-1">Iraqi Business Hub</p>
             </div>
           </div>
 
-          {/* Center: Search & Language */}
-          <div className="hidden md:flex flex-1 max-w-md items-center gap-4">
-            <div className="relative flex-1 group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-              <input 
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={language === 'ar' ? 'ابحث عن مطاعم، فنادق...' : language === 'ku' ? 'بگەڕێ بۆ چێشتخانە، هوتێل...' : 'Search restaurants, hotels...'}
-                className="w-full pl-10 pr-4 py-2 bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 bg-slate-100/50 p-1 rounded-full border border-slate-200">
+          {/* Center: Language Selection with Flags */}
+          <div className="hidden md:flex flex-1 justify-center">
+            <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
               <button 
                 onClick={() => setLanguage('en')}
-                className={`px-3 py-1 rounded-full text-[9px] font-black transition-all ${language === 'en' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-primary'}`}
+                className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[10px] font-black transition-all duration-500 uppercase tracking-widest ${language === 'en' ? 'bg-white text-primary shadow-premium' : 'text-slate-400 hover:text-primary'}`}
               >
-                EN
+                <span className="text-sm">🇺🇸</span>
+                <span>English</span>
               </button>
               <button 
                 onClick={() => setLanguage('ar')}
-                className={`px-3 py-1 rounded-full text-[9px] font-black transition-all ${language === 'ar' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-primary'}`}
+                className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[10px] font-black transition-all duration-500 uppercase tracking-widest ${language === 'ar' ? 'bg-white text-primary shadow-premium' : 'text-slate-400 hover:text-primary'}`}
               >
-                عربي
+                <span className="text-sm">🇮🇶</span>
+                <span>عربي</span>
               </button>
               <button 
                 onClick={() => setLanguage('ku')}
-                className={`px-3 py-1 rounded-full text-[9px] font-black transition-all ${language === 'ku' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-primary'}`}
+                className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[10px] font-black transition-all duration-500 uppercase tracking-widest ${language === 'ku' ? 'bg-white text-primary shadow-premium' : 'text-slate-400 hover:text-primary'}`}
               >
-                کوردی
+                <span className="text-sm">☀️</span>
+                <span>کوردی</span>
               </button>
             </div>
           </div>
 
           {/* Right: Registration/User */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {authLoading ? (
-              <div className="w-10 h-10 rounded-xl bg-slate-100 animate-pulse" />
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 animate-pulse" />
             ) : (
               <>
-                <button 
-                  onClick={() => setIsAddBusinessModalOpen(true)}
-                  className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-xs font-black rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  {language === 'ar' ? 'أضف عملك' : language === 'ku' ? 'کار زیاد بکە' : 'Add Business'}
-                </button>
-                {profile?.role === 'business_owner' && (
+                {user && (
                   <button 
-                    className="hidden lg:flex items-center gap-2 px-5 py-2.5 bg-secondary text-white text-xs font-black rounded-xl shadow-lg shadow-secondary/20 hover:bg-secondary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                    onClick={() => setIsAddBusinessModalOpen(true)}
+                    className="hidden sm:flex items-center gap-3 px-6 py-3 bg-white border border-slate-100 text-text-main text-[10px] font-black rounded-2xl hover:border-primary hover:text-primary transition-all uppercase tracking-widest shadow-sm hover:shadow-premium"
                   >
-                    <PlusCircle className="w-4 h-4" />
-                    {translations.manage[language]}
+                    <PlusCircle className="w-5 h-5" />
+                    <span>{translations.addBusiness[language]}</span>
                   </button>
                 )}
-                
-                {!user ? (
-                  <button 
-                    onClick={() => setIsAuthModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-bg-dark text-[10px] font-black rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+
+                {user && profile?.role === 'business_owner' && (
+                  <Link 
+                    to="/dashboard"
+                    className="hidden lg:flex items-center gap-3 px-6 py-3 bg-secondary text-bg-dark text-[10px] font-black rounded-2xl shadow-xl shadow-secondary/20 hover:bg-secondary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
                   >
-                    <User className="w-4 h-4" />
-                    <span className="hidden sm:inline">Register / Login</span>
-                  </button>
+                    <Briefcase className="w-5 h-5" />
+                    <span>{translations.dashboard[language]}</span>
+                  </Link>
+                )}
+
+                {!user ? (
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => {
+                        setAuthMode('login');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="hidden sm:flex items-center gap-3 px-6 py-3 bg-white border border-slate-100 text-text-main text-[10px] font-black rounded-2xl hover:border-primary hover:text-primary transition-all uppercase tracking-widest shadow-sm hover:shadow-premium"
+                    >
+                      <PlusCircle className="w-5 h-5" />
+                      <span>{translations.addBusiness[language]}</span>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setAuthMode('login');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="px-6 py-3 text-text-muted text-[10px] font-black rounded-2xl hover:text-primary transition-all uppercase tracking-widest"
+                    >
+                      {language === 'ar' ? 'دخول' : language === 'ku' ? 'چوونەژوورەوە' : 'Login'}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setAuthMode('signup');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="flex items-center gap-3 px-8 py-3 bg-primary text-bg-dark text-[10px] font-black rounded-2xl shadow-2xl shadow-primary/20 hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                    >
+                      <User className="w-5 h-5" />
+                      <span className="hidden sm:inline">{language === 'ar' ? 'تسجيل' : language === 'ku' ? 'تۆمارکردن' : 'Register'}</span>
+                    </button>
+                  </div>
                 ) : (
                   <div className="relative">
                     <button 
                       onClick={() => setShowUserMenu(!showUserMenu)}
-                      className="flex items-center gap-2 p-1 rounded-xl bg-white border border-slate-200 hover:border-primary transition-all shadow-sm"
+                      className="flex items-center gap-3 p-1.5 rounded-2xl bg-white border border-slate-100 hover:border-primary transition-all shadow-sm group"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white text-[10px] font-black">
+                      <div className="w-10 h-10 rounded-xl bg-bg-dark flex items-center justify-center text-white text-[12px] font-black group-hover:bg-primary transition-colors">
                         {profile?.full_name?.charAt(0) || user.email?.charAt(0).toUpperCase()}
                       </div>
-                      <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
                     </button>
 
-                    {showUserMenu && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-[70]">
-                        <div className="px-4 py-2 border-b border-slate-200 mb-2">
-                          <p className="text-[10px] font-black text-text-main truncate">{user.email}</p>
-                        </div>
-                        <button className="w-full px-4 py-2 text-left text-xs font-bold text-text-muted hover:bg-slate-50 hover:text-primary flex items-center gap-2 transition-colors">
-                          <Settings className="w-4 h-4" /> {translations.settings[language]}
-                        </button>
-                        <button 
-                          onClick={() => {
-                            signOut();
-                            setShowUserMenu(false);
-                          }}
-                          className="w-full px-4 py-2 text-left text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                    <AnimatePresence>
+                      {showUserMenu && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-[70] overflow-hidden"
                         >
-                          <LogOut className="w-4 h-4" /> {translations.signOut[language]}
-                        </button>
-                      </div>
-                    )}
+                          <div className="px-4 py-3 border-b border-slate-100 mb-2 bg-slate-50/50">
+                            <p className="text-[10px] font-black text-text-main truncate">{profile?.full_name || user.email}</p>
+                            <p className="text-[8px] font-bold text-text-muted truncate mt-0.5 opacity-60">{user.email}</p>
+                            {profile?.role === 'business_owner' && (
+                              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 bg-secondary/10 text-secondary rounded-full">
+                                <Briefcase className="w-2.5 h-2.5" />
+                                <span className="text-[7px] font-black uppercase tracking-widest">{translations.owner[language]}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {profile?.role === 'business_owner' && (
+                            <Link 
+                              to="/dashboard"
+                              onClick={() => setShowUserMenu(false)}
+                              className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-text-muted hover:bg-slate-50 hover:text-secondary flex items-center gap-3 transition-colors"
+                            >
+                              <LayoutDashboard className="w-4 h-4" /> {translations.dashboard[language]}
+                            </Link>
+                          )}
+
+                          <button className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-text-muted hover:bg-slate-50 hover:text-primary flex items-center gap-3 transition-colors">
+                            <Settings className="w-4 h-4" /> {translations.settings[language]}
+                          </button>
+                          
+                          <div className="h-px bg-slate-100 my-1" />
+                          
+                          <button 
+                            onClick={() => {
+                              signOut();
+                              setShowUserMenu(false);
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" /> {translations.signOut[language]}
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
               </>
@@ -289,21 +329,41 @@ export default function HomePage() {
 
       <main className="pb-24">
         {/* 1. Hero Section */}
-        <HeroSection businesses={businesses} onBusinessClick={handleBusinessClick} />
+        <HeroSection 
+          businesses={businesses} 
+          onBusinessClick={setSelectedBusiness} 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
 
-        {/* Stories Section */}
-        <StorySection />
-
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           {/* 2. Quick Filters & Categories */}
-          <div className="max-w-xl mx-auto pt-8">
+          <div className="max-w-4xl mx-auto pt-12">
             {/* Dropdown Filters (Utility) */}
             <LocationFilter businesses={businesses} />
 
+            {/* Popular Now Chips */}
+            <div className="flex items-center gap-4 mb-12 px-1 overflow-x-auto no-scrollbar pb-2">
+              <div className="flex items-center gap-2 px-4 py-2 bg-secondary/10 text-secondary rounded-full border border-secondary/20 whitespace-nowrap">
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span className="text-[9px] font-black uppercase tracking-widest">Popular Now:</span>
+              </div>
+              {CATEGORIES.slice(0, 6).map((cat, idx) => (
+                <button 
+                  key={cat.id}
+                  onClick={() => setCategory(cat.id)}
+                  className="px-5 py-2 bg-white border border-slate-100 rounded-full text-[9px] font-black text-slate-500 uppercase tracking-widest hover:border-primary hover:text-primary transition-all shadow-sm whitespace-nowrap flex items-center gap-2 group"
+                >
+                  <cat.icon className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+                  {cat.name[language]}
+                </button>
+              ))}
+            </div>
+
             {/* Compact Category Grid (Discovery) */}
-            <div className="px-4 mb-12">
-              <div className="flex items-center justify-between mb-4 px-1">
-                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
+            <div className="mb-20">
+              <div className="flex items-center justify-between mb-8 px-1">
+                <h2 className="text-xl font-black text-bg-dark poppins-bold uppercase tracking-tight">
                   {language === 'ar' ? 'استكشف الفئات' : language === 'ku' ? 'پۆلەکان بگەڕێ' : 'Explore Categories'}
                 </h2>
               </div>
@@ -311,129 +371,149 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="max-w-xl mx-auto">
-            {/* NEW: Featured Businesses from 18-AGENTS */}
-            <FeaturedBusinesses 
-              businesses={businesses} 
-              locationName={useHomeStore.getState().selectedGovernorate || undefined}
-              onBusinessClick={handleBusinessClick}
-            />
-
-            {/* NEW: Discovery Section from 18-AGENTS */}
-            <DiscoverySection 
-              businesses={businesses}
-              onBusinessClick={handleBusinessClick}
-            />
-
-            {/* NEW: Platform Reviews from 18-AGENTS */}
-            <PlatformReviews />
-
-            {/* 3. Featured Businesses (One Line) - KEEP EXISTING */}
-            <div className="px-4 mb-12">
-              <div className="flex items-center justify-between mb-6 px-1">
-                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
-                  {language === 'ar' ? 'أماكن مميزة' : language === 'ku' ? 'شوێنە دیارەکان' : 'Featured Businesses'}
-                </h2>
+          <div className="space-y-32">
+            {/* 3. Featured Businesses */}
+            <div className="space-y-10">
+              <div className="flex items-center justify-end gap-4 px-1">
+                <div className="text-right">
+                  <h2 className="text-2xl font-black text-bg-dark poppins-bold leading-tight uppercase tracking-tight">
+                    {language === 'ar' ? 'أماكن مميزة' : language === 'ku' ? 'شوێنە دیارەکان' : 'Featured Businesses'}
+                  </h2>
+                  <p className="text-[11px] font-bold text-slate-400">
+                    {language === 'ar' ? 'أفضل الأماكن المختارة' : language === 'ku' ? 'باشترین شوێنەکان' : 'Handpicked top-rated establishments'}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-sm">
+                  <Star className="w-6 h-6" />
+                </div>
               </div>
-              <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-                {businesses.filter(b => b.isFeatured).slice(0, 6).map(business => (
-                  <button 
-                    key={business.id}
-                    onClick={() => setSelectedBusiness(business)}
-                    className="flex-shrink-0 w-64 group"
-                  >
-                    <div className="relative aspect-video rounded-2xl overflow-hidden mb-3 shadow-lg bg-gradient-to-br from-primary/20 to-secondary/20">
-                      {business.image ? (
-                        <img 
-                          src={business.image}
-                          alt={business.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-                          <span className="text-4xl opacity-50">🏢</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute bottom-3 left-3 right-3">
-                        <p className="text-white font-black text-xs truncate">{business.name}</p>
-                        <p className="text-primary text-[10px] font-bold uppercase tracking-tighter">
-                          {business.category} • {business.governorate}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
+              <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 sm:mx-0 sm:px-0">
+                {businesses.filter(b => b.isFeatured).slice(0, 10).map(business => (
+                  <div key={business.id}>
+                    <BusinessCard 
+                      biz={business}
+                      variant="featured"
+                      onClick={setSelectedBusiness}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
 
-            {/* 4. Trending in City (One Line) - KEEP EXISTING */}
-            <div className="px-4 mb-12">
-              <div className="flex items-center justify-between mb-6 px-1">
-                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
-                  {language === 'ar' ? `رائج في ${useHomeStore.getState().selectedGovernorate || 'العراق'}` : language === 'ku' ? `لە ${useHomeStore.getState().selectedGovernorate || 'عێراق'} باوە` : `Trending in ${useHomeStore.getState().selectedGovernorate || 'Iraq'}`}
-                </h2>
+            {/* 4. Trending / Discovery */}
+            <div className="space-y-10">
+              <div className="flex items-center justify-end gap-4 px-1">
+                <div className="text-right">
+                  <h2 className="text-2xl font-black text-bg-dark poppins-bold leading-tight uppercase tracking-tight">
+                    {language === 'ar' ? `رائج في ${useHomeStore.getState().selectedGovernorate || 'العراق'}` : language === 'ku' ? `لە ${useHomeStore.getState().selectedGovernorate || 'عێراق'} باوە` : `Trending in ${useHomeStore.getState().selectedGovernorate || 'Iraq'}`}
+                  </h2>
+                  <p className="text-[11px] font-bold text-slate-400">
+                    {language === 'ar' ? 'الأماكن الأكثر زيارة' : language === 'ku' ? 'زۆرترین سەردانیکراو' : 'Most visited places this week'}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-secondary/20 rounded-2xl flex items-center justify-center text-bg-dark border border-secondary/30 shadow-sm">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
               </div>
-              <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-                {businesses.slice(0, 6).map(business => (
-                  <button 
-                    key={business.id}
-                    onClick={() => setSelectedBusiness(business)}
-                    className="flex-shrink-0 w-48 group"
-                  >
-                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 shadow-md bg-gradient-to-br from-primary/10 to-secondary/10">
-                      {business.image ? (
-                        <img 
-                          src={business.image}
-                          alt={business.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-                          <span className="text-3xl opacity-50">🏪</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
-                    </div>
-                    <p className="text-[10px] font-black text-text-main truncate text-center">{business.name}</p>
-                  </button>
+              <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 sm:mx-0 sm:px-0">
+                {businesses.slice(0, 12).map(business => (
+                  <div key={business.id}>
+                    <BusinessCard 
+                      biz={business}
+                      variant="compact"
+                      onClick={setSelectedBusiness}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
 
-            {/* 5. Latest Feed (Engagement) - KEEP EXISTING */}
-            <div className="px-4 mb-12">
-              <div className="flex items-center gap-2 mb-6 px-1">
-                <div className="w-2 h-2 rounded-full bg-accent animate-ping" />
-                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
-                  {language === 'ar' ? 'آخر الأخبار' : language === 'ku' ? 'دوایین هەواڵەکان' : 'Live Feed'}
-                </h2>
+            {/* 5. Platform Activity (Live Feed) */}
+            <div className="space-y-10">
+              <div className="flex items-center justify-end gap-4 px-1">
+                <div className="text-right">
+                  <h2 className="text-2xl font-black text-bg-dark poppins-bold leading-tight uppercase tracking-tight">
+                    {language === 'ar' ? 'آخر الأخبار والنشاطات' : language === 'ku' ? 'دوایین چالاکییەکان' : 'Live Platform Activity'}
+                  </h2>
+                  <p className="text-[11px] font-bold text-slate-400">
+                    {language === 'ar' ? 'تحديثات مباشرة من الشركات' : language === 'ku' ? 'نوێکارییەکان' : 'Real-time updates from local businesses'}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-accent/10 rounded-2xl flex items-center justify-center text-accent border border-accent/20 shadow-sm">
+                  <div className="w-3 h-3 rounded-full bg-accent animate-ping" />
+                </div>
               </div>
               <FeedComponent businesses={businesses} loading={businessesLoading} />
             </div>
 
-            {/* 6. Categorized Business Sections (Directory) - KEEP EXISTING */}
-            <div id="business-grid" className="px-4 mb-12">
-              <div className="flex items-center justify-between mb-6 px-1">
-                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
-                  {language === 'ar' ? 'جميع الأماكن' : language === 'ku' ? 'هەموو شوێنەکان' : 'All Places'}
-                </h2>
-              </div>
-              <CategorizedBusinessGrid 
-                businesses={businesses} 
-                loading={businessesLoading}
-                hasMore={hasMore}
-                totalCount={totalCount}
-                onLoadMore={loadMore}
-                onBusinessClick={setSelectedBusiness}
-              />
-              <div ref={loadMoreRef} className="h-1 w-full" aria-hidden />
+            {/* 6. Main Business Listing Grouped by Category */}
+            <div id="business-grid" className="space-y-20">
+              {CATEGORIES.filter(cat => {
+                // Only show categories that have businesses in the current list
+                return businesses.some(b => b.category === cat.id);
+              }).map(category => {
+                const categoryBusinesses = businesses.filter(b => b.category === category.id);
+                if (categoryBusinesses.length === 0) return null;
+
+                return (
+                  <div key={category.id}>
+                    <CategorySection 
+                      category={category}
+                      businesses={categoryBusinesses}
+                      loading={businessesLoading}
+                      onBusinessClick={setSelectedBusiness}
+                    />
+                  </div>
+                );
+              })}
+
+              {/* General/Other Category */}
+              {businesses.filter(b => !CATEGORIES.some(c => c.id === b.category)).length > 0 && (
+                <CategorySection 
+                  category={{
+                    id: 'other',
+                    name: { en: 'Other', ar: 'أخرى', ku: 'ئەوانی تر' },
+                    icon: Briefcase
+                  }}
+                  businesses={businesses.filter(b => !CATEGORIES.some(c => c.id === b.category))}
+                  loading={businessesLoading}
+                  onBusinessClick={setSelectedBusiness}
+                />
+              )}
+
+              {/* Global Load More */}
+              {hasMore && (
+                <div className="flex flex-col items-center gap-8 py-20 bg-slate-50/50 rounded-[60px] border border-slate-100">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                      {translations.showing[language]} <span className="text-bg-dark">{businesses.length}</span> {translations.of[language]} <span className="text-bg-dark">{totalCount}</span> {translations.services[language]}
+                    </div>
+                    <div className="w-64 h-2 bg-slate-200 rounded-full overflow-hidden shadow-inner">
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary to-accent"
+                        style={{ width: `${(businesses.length / totalCount) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={loadMore}
+                    disabled={businessesLoading}
+                    className="px-16 py-6 bg-bg-dark text-white text-[12px] font-black uppercase tracking-[0.4em] rounded-[28px] hover:bg-primary hover:text-bg-dark transition-all duration-700 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.4)] hover:shadow-primary/30 active:scale-95"
+                  >
+                    {businessesLoading ? 'Loading...' : 'Load More Businesses'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </main>
+
+      <AddBusinessModal 
+        isOpen={isAddBusinessModalOpen} 
+        onClose={() => setIsAddBusinessModalOpen(false)}
+        onSuccess={() => refresh()}
+      />
 
       {/* Footer */}
       <footer className="bg-bg-dark text-white pt-24 pb-12">
@@ -442,9 +522,9 @@ export default function HomePage() {
             <div className="lg:col-span-4">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20">
-                  <span className="text-white font-black text-2xl poppins-bold">S</span>
+                  <span className="text-white font-black text-2xl poppins-bold">B</span>
                 </div>
-                <h3 className="text-3xl font-black poppins-bold tracking-tighter">Saku Maku</h3>
+                <h3 className="text-3xl font-black poppins-bold tracking-tighter">Belive</h3>
               </div>
               <p className="text-slate-400 leading-relaxed mb-10 text-base max-w-sm">
                 Iraq's most trusted business discovery platform. Connecting millions of users with local businesses across all 19 governorates.
@@ -471,7 +551,6 @@ export default function HomePage() {
             <div className="lg:col-span-2">
               <h4 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-8">For Business</h4>
               <ul className="space-y-4 text-sm font-bold text-slate-400">
-                <li><button onClick={() => setIsAddBusinessModalOpen(true)} className="hover:text-white transition-colors text-left">Add Your Business</button></li>
                 <li><a href="#" className="hover:text-white transition-colors">Claim Listing</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Advertise</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Business Blog</a></li>
@@ -481,7 +560,7 @@ export default function HomePage() {
 
             <div className="lg:col-span-4">
               <h4 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-8">Mobile App</h4>
-              <p className="text-sm text-slate-500 mb-8 font-medium">Download the Saku Maku app for the best experience on the go.</p>
+              <p className="text-sm text-slate-500 mb-8 font-medium">Download the Belive app for the best experience on the go.</p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <a href="#" className="flex-1 bg-white/5 border border-white/10 p-4 rounded-[20px] flex items-center gap-4 hover:bg-white/10 transition-all group">
                   <div className="text-3xl group-hover:scale-110 transition-transform">🍎</div>
@@ -502,9 +581,9 @@ export default function HomePage() {
           </div>
           
           <div className="border-t border-white/5 mt-24 pt-12 flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">
-            <p>&copy; {new Date().getFullYear()} Saku Maku. ALL RIGHTS RESERVED.</p>
+            <p>&copy; {new Date().getFullYear()} Belive. ALL RIGHTS RESERVED.</p>
             <div className="flex items-center gap-4">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/20 font-black text-[10px]">SM</div>
+              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/20 font-black text-[10px]">BL</div>
               <div className="flex gap-12">
                 <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
                 <a href="#" className="hover:text-white transition-colors">Terms of Service</a>

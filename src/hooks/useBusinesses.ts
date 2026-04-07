@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Business } from '@/lib/supabase';
 import { useHomeStore } from '@/stores/homeStore';
-import { supabase } from '@/services/supabase';
+import { supabase } from '@/lib/supabaseClient';
 
 interface UseBusinessesResult {
   businesses: Business[];
@@ -13,10 +13,7 @@ interface UseBusinessesResult {
   refresh: () => void;
 }
 
-const ITEMS_PER_PAGE = 100;
-
-// LAUNCH MODE: Category filtering disabled - visual only
-// All businesses shown by default, governorate-only filtering
+const ITEMS_PER_PAGE = 24;
 
 export function useBusinesses(searchQuery: string): UseBusinessesResult {
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -26,7 +23,7 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
 
-  const { selectedGovernorate, selectedCity } = useHomeStore();
+  const { selectedGovernorate, selectedCategory, selectedCity } = useHomeStore();
 
   const fetchBusinesses = useCallback(async (isRefresh = false) => {
     setLoading(true);
@@ -34,59 +31,27 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
     
     const currentPage = isRefresh ? 1 : page;
     
-    // DEBUG: Log query inputs
-    console.log('[useBusinesses] Query inputs:', {
-      selectedGovernorate,
-      selectedCity,
-      searchQuery,
-      currentPage,
-      rangeStart: (currentPage - 1) * ITEMS_PER_PAGE,
-      rangeEnd: currentPage * ITEMS_PER_PAGE - 1
-    });
-    
     try {
-      if (!supabase) {
-        throw new Error('Supabase client is not initialized. Please check your environment variables.');
-      }
-      
-      // Start query from businesses table
       let query = supabase
         .from('businesses')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact' })
+        .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
 
-      // Apply governorate filter ONLY if not "all"
-      if (selectedGovernorate && selectedGovernorate !== 'all') {
-        console.log('[useBusinesses] Applying governorate filter:', selectedGovernorate);
+      if (selectedGovernorate) {
         query = query.eq('governorate', selectedGovernorate);
-      } else {
-        console.log('[useBusinesses] No governorate filter (showing all)');
       }
-      
-      // Apply city filter if present
       if (selectedCity) {
-        console.log('[useBusinesses] Applying city filter:', selectedCity);
         query = query.eq('city', selectedCity);
       }
-      
-      // LAUNCH MODE: Category filtering disabled - visual only
-      
-      // Apply search filter if present
+      if (selectedCategory) {
+        // Map frontend categories to database values if needed
+        query = query.eq('category', selectedCategory);
+      }
       if (searchQuery) {
-        console.log('[useBusinesses] Applying search filter:', searchQuery);
         query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
-      
-      // Apply pagination range
-      query = query.range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
 
-      console.log('[useBusinesses] Executing query...');
       const { data, count, error: fetchError } = await query;
-      
-      console.log('[useBusinesses] Query results:', { 
-        dataLength: data?.length || 0, 
-        count, 
-        error: fetchError?.message 
-      });
       
       if (fetchError) throw fetchError;
       
@@ -102,7 +67,6 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
           city: item.city,
           address: item.address,
           phone: item.phone,
-          whatsapp: item.whatsapp,
           rating: item.rating || 0,
           reviewCount: item.review_count || 0,
           isFeatured: item.is_featured || false,
@@ -119,14 +83,11 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
         }));
 
         setBusinesses(prev => {
-          const mergedBusinesses = isRefresh ? mappedBusinesses : [...prev, ...mappedBusinesses];
-          const uniqueBusinesses = mergedBusinesses.filter(
-            (business, index, self) => index === self.findIndex(item => item.id === business.id)
-          );
+          const newBusinesses = isRefresh ? mappedBusinesses : [...prev, ...mappedBusinesses];
           const countVal = count || 0;
           setTotalCount(countVal);
-          setHasMore(uniqueBusinesses.length < countVal);
-          return uniqueBusinesses;
+          setHasMore(newBusinesses.length < countVal);
+          return newBusinesses;
         });
       }
     } catch (err) {
@@ -135,12 +96,12 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
     } finally {
       setLoading(false);
     }
-  }, [page, selectedGovernorate, selectedCity, searchQuery]);
+  }, [page, selectedGovernorate, selectedCity, selectedCategory, searchQuery]);
 
   useEffect(() => {
     setPage(1);
     fetchBusinesses(true);
-  }, [selectedGovernorate, selectedCity, searchQuery]);
+  }, [selectedGovernorate, selectedCity, selectedCategory, searchQuery]);
 
   useEffect(() => {
     if (page > 1) {

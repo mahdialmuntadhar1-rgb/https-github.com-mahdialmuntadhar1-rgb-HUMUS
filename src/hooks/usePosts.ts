@@ -1,36 +1,42 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/services/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import type { Post } from '@/lib/supabase';
 
 export function usePosts(businessId?: string) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 10;
 
-  const fetchPosts = useCallback(async () => {
-    setLoading(true);
+  const fetchPosts = useCallback(async (isLoadMore = false) => {
+    if (!isLoadMore) {
+      setLoading(true);
+      setPage(0);
+    }
     setError(null);
     try {
-      if (!supabase) {
-        throw new Error('Supabase client is not initialized. Please check your environment variables.');
-      }
-      
+      const from = isLoadMore ? (page + 1) * PAGE_SIZE : 0;
+      const to = from + PAGE_SIZE - 1;
+
       let query = supabase
         .from('posts')
         .select(`
           *,
           businesses (
             name,
-            image
+            image_url
           )
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (businessId) {
         query = query.eq('business_id', businessId);
       }
 
-      const { data, error: fetchError } = await query;
+      const { data, error: fetchError, count } = await query;
 
       if (fetchError) throw fetchError;
 
@@ -43,9 +49,19 @@ export function usePosts(businessId?: string) {
           likes: item.likes || 0,
           createdAt: new Date(item.created_at),
           authorName: item.businesses?.name,
-          authorAvatar: item.businesses?.image
+          authorAvatar: item.businesses?.image_url
         }));
-        setPosts(mappedPosts);
+
+        if (isLoadMore) {
+          setPosts(prev => [...prev, ...mappedPosts]);
+          setPage(prev => prev + 1);
+        } else {
+          setPosts(mappedPosts);
+        }
+
+        if (count !== null) {
+          setHasMore(from + data.length < count);
+        }
       }
     } catch (err) {
       console.error('Error fetching posts:', err);
@@ -53,7 +69,13 @@ export function usePosts(businessId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [businessId]);
+  }, [businessId, page]);
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      fetchPosts(true);
+    }
+  };
 
   const createPost = async (content: string, imageUrl?: string) => {
     if (!businessId) return;
@@ -99,5 +121,5 @@ export function usePosts(businessId?: string) {
     fetchPosts();
   }, [fetchPosts]);
 
-  return { posts, loading, error, createPost, likePost, refresh: fetchPosts };
+  return { posts, loading, error, hasMore, loadMore, createPost, likePost, refresh: fetchPosts };
 }
