@@ -342,13 +342,19 @@ export default function HomePage() {
                     onClick={() => setSelectedBusiness(business)}
                     className="flex-shrink-0 w-64 group"
                   >
-                    <div className="relative aspect-video rounded-2xl overflow-hidden mb-3 shadow-lg">
-                      <img 
-                        src={business.image || `https://picsum.photos/seed/${business.id}/400/225`} 
-                        alt={business.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        referrerPolicy="no-referrer"
-                      />
+                    <div className="relative aspect-video rounded-2xl overflow-hidden mb-3 shadow-lg bg-gradient-to-br from-primary/20 to-secondary/20">
+                      {business.image ? (
+                        <img 
+                          src={business.image}
+                          alt={business.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                          <span className="text-4xl opacity-50">🏢</span>
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       <div className="absolute bottom-3 left-3 right-3">
                         <p className="text-white font-black text-xs truncate">{business.name}</p>
@@ -376,13 +382,19 @@ export default function HomePage() {
                     onClick={() => setSelectedBusiness(business)}
                     className="flex-shrink-0 w-48 group"
                   >
-                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 shadow-md">
-                      <img 
-                        src={business.image || `https://picsum.photos/seed/${business.id}/300/300`} 
-                        alt={business.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        referrerPolicy="no-referrer"
-                      />
+                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 shadow-md bg-gradient-to-br from-primary/10 to-secondary/10">
+                      {business.image ? (
+                        <img 
+                          src={business.image}
+                          alt={business.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                          <span className="text-3xl opacity-50">🏪</span>
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
                     </div>
                     <p className="text-[10px] font-black text-text-main truncate text-center">{business.name}</p>
