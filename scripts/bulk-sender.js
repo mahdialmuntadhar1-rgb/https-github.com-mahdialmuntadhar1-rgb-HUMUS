@@ -29,9 +29,9 @@ const CONFIG = {
   RETRY_DELAY_MS: 5000,
   BATCH_SIZE: 100, // Fetch businesses in batches
   STATE_FILE: join(__dirname, '../.bulk-sender-state.json'),
-  // Testing mode: limit to 20 businesses max
+  // Testing mode: limit to 10 businesses max (5-10 for validation)
   TESTING_MODE: process.env.BULK_SEND_TEST_MODE === 'true',
-  TEST_MODE_LIMIT: 20,
+  TEST_MODE_LIMIT: parseInt(process.env.BULK_SEND_TEST_LIMIT) || 10,
 };
 
 // WhatsApp Cloud API Config
@@ -433,6 +433,7 @@ class BulkMessageSender {
       console.log(`📤 [${business.name?.substring(0, 30) || 'Unknown'}] ${phone}`);
 
       // 1. Insert message record (pending)
+      console.log(`   ⏳ [1/4] Inserting message record (status: pending)`);
       const { data: message, error: insertError } = await this.supabase
         .from('messages')
         .insert({
@@ -449,8 +450,10 @@ class BulkMessageSender {
       if (insertError) {
         throw new Error(`Failed to create message record: ${insertError.message}`);
       }
+      console.log(`   ✅ Message record created (ID: ${message.id.substring(0, 8)}...)`);
 
       // 2. Send via WhatsApp API (with retries)
+      console.log(`   📤 [2/4] Sending via WhatsApp API...`);
       let attempt = 0;
       let lastError = null;
 
@@ -462,6 +465,7 @@ class BulkMessageSender {
           );
 
           // 3. Update message status to sent
+          console.log(`   ✅ [3/4] Updating message status: sent`);
           const { error: updateError } = await this.supabase
             .from('messages')
             .update({
@@ -473,9 +477,12 @@ class BulkMessageSender {
 
           if (updateError) {
             console.warn('⚠️ Failed to update message status:', updateError.message);
+          } else {
+            console.log(`   ✅ Status updated: pending → sent`);
           }
 
           // 4. Create conversation record
+          console.log(`   💬 [4/4] Creating/upserting conversation record`);
           await this.supabase
             .from('conversations')
             .upsert({
@@ -488,6 +495,7 @@ class BulkMessageSender {
               replied: false,
               converted: false,
             }, { onConflict: 'business_id,phone' });
+          console.log(`   ✅ Conversation record ready for replies`);
 
           this.state.update({ 
             sentCount: this.state.state.sentCount + 1,
@@ -549,6 +557,93 @@ class BulkMessageSender {
   delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+
+  async validateEndToEnd() {
+    console.log('\n' + '='.repeat(60));
+    console.log('🔍 END-TO-END VALIDATION');
+    console.log('='.repeat(60));
+    
+    // 1. Count messages sent for this campaign
+    const { data: sentMessages, error: sentError } = await this.supabase
+      .from('messages')
+      .select('id, business_id, phone, status, created_at, external_message_id')
+      .eq('campaign_id', this.campaignId);
+    
+    if (sentError) {
+      console.error('❌ Error fetching sent messages:', sentError.message);
+    } else {
+      const pending = sentMessages.filter(m => m.status === 'pending').length;
+      const sent = sentMessages.filter(m => m.status === 'sent').length;
+      const delivered = sentMessages.filter(m => m.status === 'delivered').length;
+      const failed = sentMessages.filter(m => m.status === 'failed').length;
+      const replied = sentMessages.filter(m => m.status === 'replied').length;
+      
+      console.log(`\n📤 MESSAGES SENT: ${sentMessages.length}`);
+      console.log(`   ⏳ Pending: ${pending}`);
+      console.log(`   ✅ Sent: ${sent}`);
+      console.log(`   📬 Delivered: ${delivered}`);
+      console.log(`   💬 Replied: ${replied}`);
+      console.log(`   ❌ Failed: ${failed}`);
+    }
+    
+    // 2. Count replies received
+    const { data: conversations, error: convError } = await this.supabase
+      .from('conversations')
+      .select('business_id, phone, replied, message_count, last_message, last_message_at, last_inbound_message')
+      .not('business_id', 'is', null)
+      .order('last_message_at', { ascending: false });
+    
+    if (convError) {
+      console.error('❌ Error fetching conversations:', convError.message);
+    } else {
+      const repliedConversations = conversations.filter(c => c.replied);
+      console.log(`\n💬 REPLIES RECEIVED: ${repliedConversations.length}`);
+      
+      if (repliedConversations.length > 0) {
+        console.log('\n📋 Latest replies:');
+        repliedConversations.slice(0, 5).forEach((conv, i) => {
+          console.log(`   ${i + 1}. [${conv.phone}] ${conv.last_inbound_message?.substring(0, 40) || 'N/A'}...`);
+        });
+      }
+    }
+    
+    // 3. Check inbox structure
+    const uniqueBusinesses = new Set(conversations?.map(c => c.business_id) || []);
+    console.log(`\n📥 INBOX GROUPS: ${uniqueBusinesses.size} businesses`);
+    
+    // 4. Summary
+    console.log('\n' + '='.repeat(60));
+    console.log('📊 VALIDATION SUMMARY');
+    console.log('='.repeat(60));
+    
+    const allGood = sentMessages?.length > 0 && 
+                     sentMessages.filter(m => m.status === 'sent').length === sentMessages.filter(m => m.status !== 'pending' && m.status !== 'failed').length;
+    
+    if (allGood) {
+      console.log('✅ Message sending: WORKING');
+    } else {
+      console.log('⚠️ Message sending: ISSUES DETECTED');
+    }
+    
+    if (repliedConversations?.length > 0) {
+      console.log('✅ Reply receiving: WORKING');
+    } else {
+      console.log('⏳ Reply receiving: NO REPLIES YET (wait for webhook)');
+    }
+    
+    if (uniqueBusinesses.size > 0) {
+      console.log('✅ Inbox grouping: WORKING');
+    }
+    
+    console.log('='.repeat(60));
+    
+    return {
+      messagesSent: sentMessages?.length || 0,
+      messagesReplied: repliedConversations?.length || 0,
+      inboxGroups: uniqueBusinesses.size,
+      failures: sentMessages?.filter(m => m.status === 'failed').length || 0,
+    };
+  }
 }
 
 // ==================== CLI ENTRY POINT ====================
@@ -559,6 +654,7 @@ async function main() {
   // Parse optional filter args
   const args = process.argv.slice(3);
   const filters = {};
+  let validateOnly = false;
   
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -571,6 +667,8 @@ async function main() {
     } else if (arg === '--city' && args[i + 1]) {
       filters.city = args[i + 1];
       i++;
+    } else if (arg === '--validate') {
+      validateOnly = true;
     }
   }
 
@@ -582,10 +680,12 @@ async function main() {
     console.error('   --governorate <name>   Filter by governorate (e.g., Baghdad)');
     console.error('   --category <name>     Filter by category (e.g., Restaurant)');
     console.error('   --city <name>         Filter by city (e.g., Mansour)');
+    console.error('   --validate            Only run validation (check existing messages)');
     console.error('');
     console.error('Environment Variables:');
-    console.error('   BULK_SEND_TEST_MODE=true   Limit to 20 businesses (testing)');
-    console.error('   BULK_SEND_DELAY_MS=3000    Delay between messages (ms)');
+    console.error('   BULK_SEND_TEST_MODE=true    Limit to 10 businesses (testing)');
+    console.error('   BULK_SEND_TEST_LIMIT=5      Set test limit (default: 10)');
+    console.error('   BULK_SEND_DELAY_MS=3000     Delay between messages (ms)');
     process.exit(1);
   }
 
@@ -597,7 +697,15 @@ async function main() {
   }
 
   const sender = new BulkMessageSender(campaignId);
-  await sender.run(filters);
+  
+  if (validateOnly) {
+    // Just run validation
+    await sender.validateEndToEnd();
+  } else {
+    // Run campaign and then validate
+    await sender.run(filters);
+    await sender.validateEndToEnd();
+  }
 }
 
 main();
