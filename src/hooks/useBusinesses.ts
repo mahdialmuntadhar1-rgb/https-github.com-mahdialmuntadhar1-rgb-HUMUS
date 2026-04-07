@@ -119,11 +119,14 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
         }));
 
         setBusinesses(prev => {
-          const newBusinesses = isRefresh ? mappedBusinesses : [...prev, ...mappedBusinesses];
+          const mergedBusinesses = isRefresh ? mappedBusinesses : [...prev, ...mappedBusinesses];
+          const uniqueBusinesses = mergedBusinesses.filter(
+            (business, index, self) => index === self.findIndex(item => item.id === business.id)
+          );
           const countVal = count || 0;
           setTotalCount(countVal);
-          setHasMore(newBusinesses.length < countVal);
-          return newBusinesses;
+          setHasMore(uniqueBusinesses.length < countVal);
+          return uniqueBusinesses;
         });
       }
     } catch (err) {

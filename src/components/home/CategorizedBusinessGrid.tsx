@@ -1,17 +1,21 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Star, MapPin, CheckCircle2, Phone, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Star, MapPin, CheckCircle2, Phone, ArrowRight, ChevronDown } from 'lucide-react';
 import { Business } from '@/lib/supabase';
 import { useHomeStore } from '@/stores/homeStore';
-import { CATEGORIES, ICON_MAP } from '@/constants';
+import { CATEGORIES } from '@/constants';
 
 interface CategorizedBusinessGridProps {
   businesses: Business[];
   loading?: boolean;
+  hasMore?: boolean;
+  totalCount?: number;
+  onLoadMore?: () => void;
   onBusinessClick?: (business: Business) => void;
 }
 
-const INITIAL_CARDS_PER_CATEGORY = 4;
+const INITIAL_CARDS_PER_CATEGORY = 3;
+const UNCATEGORIZED_KEY = 'uncategorized';
 
 // Normalize category string to match CATEGORIES array
 function normalizeCategory(category: string): string {
@@ -20,6 +24,13 @@ function normalizeCategory(category: string): string {
 
 // Get display name for a category from CATEGORIES or fallback
 function getCategoryDisplayName(category: string, language: string): string {
+  if (category === UNCATEGORIZED_KEY) {
+    return language === 'ar' ? 'غير مصنف' : language === 'ku' ? 'بێ پۆل' : 'Uncategorized';
+  }
+  if (category === 'all_businesses') {
+    return language === 'ar' ? 'جميع الأعمال' : language === 'ku' ? 'هەموو کارەکان' : 'All Businesses';
+  }
+
   const normalized = normalizeCategory(category);
   const categoryDef = CATEGORIES.find(c => c.id === normalized || normalizeCategory(c.id) === normalized);
   if (categoryDef) {
@@ -29,23 +40,21 @@ function getCategoryDisplayName(category: string, language: string): string {
   return category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// Get icon for category from CATEGORIES
-function getCategoryIcon(category: string): any {
-  const normalized = normalizeCategory(category);
-  const categoryDef = CATEGORIES.find(c => c.id === normalized || normalizeCategory(c.id) === normalized);
-  return categoryDef?.icon || ICON_MAP.Store;
-}
-
 // Group businesses by their actual category field from database
 function groupByCategory(businesses: Business[]): Record<string, Business[]> {
   const groups: Record<string, Business[]> = {};
   
   for (const business of businesses) {
-    const category = business.category || 'general';
+    const rawCategory = business.category?.trim();
+    const category = rawCategory ? rawCategory : UNCATEGORIZED_KEY;
     if (!groups[category]) {
       groups[category] = [];
     }
     groups[category].push(business);
+  }
+
+  if (Object.keys(groups).length === 1 && groups[UNCATEGORIZED_KEY]) {
+    return { all_businesses: groups[UNCATEGORIZED_KEY] };
   }
   
   return groups;
@@ -54,6 +63,9 @@ function groupByCategory(businesses: Business[]): Record<string, Business[]> {
 export default function CategorizedBusinessGrid({ 
   businesses, 
   loading, 
+  hasMore = false,
+  totalCount = 0,
+  onLoadMore,
   onBusinessClick 
 }: CategorizedBusinessGridProps) {
   const { language } = useHomeStore();
@@ -68,9 +80,12 @@ export default function CategorizedBusinessGrid({
       ku: 'نەمانتوانی هیچ کارێک بدۆزینەوە کە لەگەڵ فلتەرەکانتدا بگونجێت.'
     },
     loadMore: { en: 'Load More', ar: 'تحميل المزيد', ku: 'زیاتر' },
-    loadLess: { en: 'Load Less', ar: 'تحميل أقل', ku: 'کەمتر' },
+    showing: { en: 'Showing', ar: 'عرض', ku: 'پیشاندان' },
+    of: { en: 'of', ar: 'من', ku: 'لە' },
     verified: { en: 'Verified', ar: 'موثق', ku: 'پشتڕاستکراوە' },
-    call: { en: 'Call', ar: 'اتصال', ku: 'پەیوەندی' }
+    call: { en: 'Call', ar: 'اتصال', ku: 'پەیوەندی' },
+    loading: { en: 'Loading...', ar: 'جاري التحميل...', ku: 'بارکردن...' },
+    allBusinesses: { en: 'businesses', ar: 'أعمال', ku: 'کار' }
   };
 
   // Group businesses by their actual category field
@@ -85,10 +100,10 @@ export default function CategorizedBusinessGrid({
     );
   }, [categorizedBusinesses]);
 
-  const toggleCategory = (category: string) => {
+  const expandCategory = (category: string) => {
     setExpandedCategories(prev => ({
       ...prev,
-      [category]: !prev[category]
+      [category]: true
     }));
   };
 
@@ -101,7 +116,7 @@ export default function CategorizedBusinessGrid({
   const getBusinessImage = (biz: Business) => {
     if (biz.image) return biz.image;
     
-    const category = biz.category.toLowerCase();
+    const category = (biz.category || '').toLowerCase();
     if (category.includes('dining') || category.includes('restaurant') || category.includes('food')) {
       return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=400&auto=format&fit=crop';
     }
@@ -166,8 +181,6 @@ export default function CategorizedBusinessGrid({
         const hasMore = categoryBusinesses.length > INITIAL_CARDS_PER_CATEGORY;
         const displayCount = isExpanded ? categoryBusinesses.length : INITIAL_CARDS_PER_CATEGORY;
         const visibleBusinesses = categoryBusinesses.slice(0, displayCount);
-        const CategoryIcon = getCategoryIcon(category);
-
         return (
           <div key={category} className="space-y-4">
             {/* Category Title - Clean Simple Header */}
@@ -251,30 +264,37 @@ export default function CategorizedBusinessGrid({
               </AnimatePresence>
             </div>
 
-            {/* Load More / Load Less - Subtle */}
+            {/* Load More - Per Category */}
             {hasMore && (
               <div className="flex justify-center pt-1">
                 <button
-                  onClick={() => toggleCategory(category)}
+                  onClick={() => expandCategory(category)}
                   className="text-xs font-bold text-slate-400 hover:text-primary transition-colors flex items-center gap-1"
                 >
-                  {isExpanded ? (
-                    <>
-                      <ChevronUp className="w-4 h-4" />
-                      {translations.loadLess[language]}
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="w-4 h-4" />
-                      {translations.loadMore[language]}
-                    </>
-                  )}
+                  <ChevronDown className="w-4 h-4" />
+                  {translations.loadMore[language]}
                 </button>
               </div>
             )}
           </div>
         );
       })}
+
+      {/* Keep global backend pagination visible */}
+      {hasMore && (
+        <div className="flex flex-col items-center gap-3 pt-4">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+            {translations.showing[language]} {businesses.length} {translations.of[language]} {totalCount} {translations.allBusinesses[language]}
+          </p>
+          <button
+            onClick={onLoadMore}
+            disabled={loading}
+            className="px-8 py-3 bg-bg-dark text-white text-[11px] font-black rounded-xl hover:bg-primary hover:text-bg-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all uppercase tracking-[0.2em] shadow-lg active:scale-95"
+          >
+            {loading ? translations.loading[language] : translations.loadMore[language]}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

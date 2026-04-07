@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search } from "lucide-react";
 import debounce from "lodash/debounce";
 import HeroSection from "@/components/home/HeroSection";
@@ -27,6 +27,7 @@ export default function HomePage() {
   const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const { user, profile, signOut, loading: authLoading } = useAuthStore();
   const { 
@@ -53,6 +54,23 @@ export default function HomePage() {
     debouncedSetQuery(searchQuery);
     return () => debouncedSetQuery.cancel();
   }, [searchQuery, debouncedSetQuery]);
+
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !businessesLoading) {
+          loadMore();
+        }
+      },
+      { rootMargin: '320px 0px' }
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, businessesLoading, loadMore, businesses.length]);
 
   const isRTL = language === 'ar' || language === 'ku';
 
@@ -394,8 +412,12 @@ export default function HomePage() {
               <CategorizedBusinessGrid 
                 businesses={businesses} 
                 loading={businessesLoading}
+                hasMore={hasMore}
+                totalCount={totalCount}
+                onLoadMore={loadMore}
                 onBusinessClick={setSelectedBusiness}
               />
+              <div ref={loadMoreRef} className="h-1 w-full" aria-hidden />
             </div>
           </div>
         </div>
