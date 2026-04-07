@@ -21,7 +21,7 @@ export function usePosts(businessId?: string) {
           *,
           businesses (
             name,
-            image_url
+            image
           )
         `)
         .order('created_at', { ascending: false });
@@ -43,7 +43,7 @@ export function usePosts(businessId?: string) {
           likes: item.likes || 0,
           createdAt: new Date(item.created_at),
           authorName: item.businesses?.name,
-          authorAvatar: item.businesses?.image_url
+          authorAvatar: item.businesses?.image
         }));
         setPosts(mappedPosts);
       }

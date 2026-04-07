@@ -11,7 +11,7 @@ interface CategorizedBusinessGridProps {
   onBusinessClick?: (business: Business) => void;
 }
 
-const INITIAL_CARDS_PER_CATEGORY = 3;
+const INITIAL_CARDS_PER_CATEGORY = 4;
 
 // Normalize category string to match CATEGORIES array
 function normalizeCategory(category: string): string {
@@ -170,22 +170,10 @@ export default function CategorizedBusinessGrid({
 
         return (
           <div key={category} className="space-y-4">
-            {/* Category Title - Prominent Section Header */}
-            <div className="flex items-center justify-between px-1 border-b-2 border-slate-200 pb-3 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <CategoryIcon className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-text-main poppins-bold uppercase tracking-tight">
-                    {getCategoryDisplayName(category, language)}
-                  </h3>
-                  <p className="text-[10px] font-bold text-slate-400">
-                    {categoryBusinesses.length} {language === 'ar' ? 'نشاط تجاري' : language === 'ku' ? 'کار' : 'Businesses'}
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Category Title - Clean Simple Header */}
+            <h3 className="text-lg font-black text-text-main poppins-bold uppercase tracking-tight px-1">
+              {getCategoryDisplayName(category, language)}
+            </h3>
 
             {/* Business Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -263,12 +251,12 @@ export default function CategorizedBusinessGrid({
               </AnimatePresence>
             </div>
 
-            {/* Load More / Load Less Button */}
+            {/* Load More / Load Less - Subtle */}
             {hasMore && (
-              <div className="flex justify-center pt-2">
+              <div className="flex justify-center pt-1">
                 <button
                   onClick={() => toggleCategory(category)}
-                  className="flex items-center gap-2 px-5 py-2 bg-white border border-slate-200 rounded-lg text-[11px] font-black text-text-main hover:bg-slate-50 hover:border-slate-300 transition-all uppercase tracking-widest shadow-sm"
+                  className="text-xs font-bold text-slate-400 hover:text-primary transition-colors flex items-center gap-1"
                 >
                   {isExpanded ? (
                     <>
@@ -279,9 +267,6 @@ export default function CategorizedBusinessGrid({
                     <>
                       <ChevronDown className="w-4 h-4" />
                       {translations.loadMore[language]}
-                      <span className="ml-1 text-[10px] text-slate-400">
-                        ({categoryBusinesses.length - INITIAL_CARDS_PER_CATEGORY} more)
-                      </span>
                     </>
                   )}
                 </button>

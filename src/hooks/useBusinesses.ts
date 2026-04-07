@@ -13,7 +13,7 @@ interface UseBusinessesResult {
   refresh: () => void;
 }
 
-const ITEMS_PER_PAGE = 24;
+const ITEMS_PER_PAGE = 100;
 
 // LAUNCH MODE: Category filtering disabled - visual only
 // All businesses shown by default, governorate-only filtering
