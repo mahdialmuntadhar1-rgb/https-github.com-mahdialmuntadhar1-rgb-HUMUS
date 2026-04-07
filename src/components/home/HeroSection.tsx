@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, MapPin, Sparkles, TrendingUp, Users, ShieldCheck, LayoutDashboard, ArrowRight } from 'lucide-react';
+import { Search, MapPin, Sparkles, TrendingUp, Users, ShieldCheck, LayoutDashboard, ArrowRight, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Business } from '@/lib/supabase';
 import { useHomeStore } from '@/stores/homeStore';
@@ -34,10 +34,52 @@ const SLOGANS = [
 export default function HeroSection({ businesses, onBusinessClick, searchQuery, setSearchQuery }: HeroSectionProps) {
   const featured = businesses.filter(b => b.isFeatured).slice(0, 5);
   const [currentSlogan, setCurrentSlogan] = React.useState(0);
+  const [installPrompt, setInstallPrompt] = React.useState<any>(null);
+  const [isInstallable, setIsInstallable] = React.useState(false);
   const { language } = useHomeStore();
   const { profile } = useAuthStore();
 
   const isRTL = language === 'ar' || language === 'ku';
+
+  // Capture PWA install prompt
+  React.useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstallable(false);
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+    }
+  };
+
+  const installTranslations = {
+    install: {
+      en: 'Install App',
+      ar: 'تثبيت التطبيق',
+      ku: 'دامەزراندنی ئەپ'
+    },
+    installDesc: {
+      en: 'Get the best experience on your device',
+      ar: 'احصل على أفضل تجربة على جهازك',
+      ku: 'باشترین ئەزموون بەدەستبهێنە لەسەر ئامێرەکەت'
+    }
+  };
 
   React.useEffect(() => {
     const timer = setInterval(() => {
@@ -69,7 +111,7 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mb-10 px-6 py-2.5 glass rounded-full border border-white/10 flex items-center gap-4 shadow-2xl"
+            className="mb-6 px-6 py-2.5 glass rounded-full border border-white/10 flex items-center gap-4 shadow-2xl"
           >
             <div className="flex -space-x-3">
               {[1, 2, 3, 4].map(i => (
@@ -86,6 +128,33 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
               </span>
             </div>
           </motion.div>
+
+          {/* PWA Install Button - Prominent & Glowing */}
+          {isInstallable && (
+            <motion.button
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleInstallClick}
+              className="mb-8 group relative px-8 py-4 bg-gradient-to-r from-primary via-accent to-secondary rounded-2xl shadow-[0_0_40px_rgba(255,159,28,0.4)] hover:shadow-[0_0_60px_rgba(255,159,28,0.6)] transition-all duration-500"
+            >
+              {/* Animated glow ring */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary animate-pulse blur-xl opacity-50" />
+              
+              <div className="relative flex items-center gap-3">
+                <Download className="w-5 h-5 text-bg-dark animate-bounce" />
+                <div className="text-left">
+                  <span className="block text-[11px] font-black text-bg-dark uppercase tracking-[0.2em]">
+                    {installTranslations.install[language]}
+                  </span>
+                  <span className="block text-[8px] text-bg-dark/70 font-bold">
+                    {installTranslations.installDesc[language]}
+                  </span>
+                </div>
+              </div>
+            </motion.button>
+          )}
 
           {/* Slogan with Animation */}
           <div className="h-24 sm:h-32 flex flex-col items-center justify-center w-full mb-8">
@@ -155,6 +224,20 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
               </span>
             </div>
           </motion.div>
+
+          {/* Global Helper Line */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="mt-6 text-[11px] text-white/50 font-black uppercase tracking-[0.2em] text-center"
+          >
+            {language === 'ar' 
+              ? 'ابحث عن الأنشطة أو شاهد ما يحدث حولك' 
+              : language === 'ku' 
+                ? 'کارەکان بدۆزەوە یان ببینە چی لە دەورتدا ڕوودەدات'
+                : 'Find businesses or see what\'s happening around you'}
+          </motion.p>
         </div>
       </div>
     </section>
