@@ -228,8 +228,17 @@ async function handleIncomingMessage(
     }
   }
 
-  // Upsert conversation record
+  // Upsert conversation + store raw reply for inbox
   if (businessId) {
+    const { data: existingConversation } = await supabase
+      .from('conversations')
+      .select('message_count')
+      .eq('business_id', businessId)
+      .eq('phone', phone)
+      .maybeSingle()
+
+    const nextMessageCount = (existingConversation?.message_count || 0) + 1
+
     const { error: convError } = await supabase
       .from('conversations')
       .upsert({
@@ -239,7 +248,7 @@ async function handleIncomingMessage(
         last_message_at: timestamp,
         last_outbound_message_id: outboundMessage?.id,
         replied: true,
-        message_count: supabase.rpc('increment_message_count', { row_id: businessId, phone_num: phone }),
+        message_count: nextMessageCount,
         updated_at: timestamp
       }, {
         onConflict: 'business_id,phone'
@@ -249,6 +258,21 @@ async function handleIncomingMessage(
       console.error('Failed to upsert conversation:', convError)
     } else {
       console.log('Conversation updated for business:', businessId, 'phone:', phone)
+    }
+
+    const { error: replyError } = await supabase
+      .from('incoming_replies')
+      .insert({
+        business_id: businessId,
+        phone,
+        reply_body: messageBody,
+        channel: 'whatsapp',
+        external_message_id: message.id,
+        received_at: timestamp
+      })
+
+    if (replyError) {
+      console.error('Failed to save incoming reply:', replyError)
     }
   }
 }
@@ -283,6 +307,13 @@ async function handleTelegramMessage(supabase: any, payload: WebhookPayload) {
       .update({ status: 'replied', replied_at: timestamp })
       .eq('id', outboundMessage.id)
 
+    const { data: existingConversation } = await supabase
+      .from('conversations')
+      .select('message_count')
+      .eq('business_id', outboundMessage.business_id)
+      .eq('phone', phone)
+      .maybeSingle()
+
     // Update conversation
     await supabase
       .from('conversations')
@@ -293,8 +324,20 @@ async function handleTelegramMessage(supabase: any, payload: WebhookPayload) {
         last_message_at: timestamp,
         last_outbound_message_id: outboundMessage.id,
         replied: true,
+        message_count: (existingConversation?.message_count || 0) + 1,
         updated_at: timestamp
       }, { onConflict: 'business_id,phone' })
+
+    await supabase
+      .from('incoming_replies')
+      .insert({
+        business_id: outboundMessage.business_id,
+        phone,
+        reply_body: text,
+        channel: 'telegram',
+        external_message_id: chatId,
+        received_at: timestamp
+      })
 
     // Update campaign stats
     if (outboundMessage.campaign_id) {
