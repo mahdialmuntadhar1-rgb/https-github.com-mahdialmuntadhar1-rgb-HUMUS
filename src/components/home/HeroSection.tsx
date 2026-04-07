@@ -224,6 +224,20 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
               </span>
             </div>
           </motion.div>
+
+          {/* Global Helper Line */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="mt-6 text-[11px] text-white/50 font-black uppercase tracking-[0.2em] text-center"
+          >
+            {language === 'ar' 
+              ? 'ابحث عن الأنشطة أو شاهد ما يحدث حولك' 
+              : language === 'ku' 
+                ? 'کارەکان بدۆزەوە یان ببینە چی لە دەورتدا ڕوودەدات'
+                : 'Find businesses or see what\'s happening around you'}
+          </motion.p>
         </div>
       </div>
     </section>
