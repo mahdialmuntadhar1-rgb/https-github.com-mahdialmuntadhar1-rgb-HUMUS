@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/services/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { CATEGORIES as FALLBACK_CATEGORIES, GOVERNORATES as FALLBACK_GOVERNORATES } from '@/constants';
 
 export interface Category {

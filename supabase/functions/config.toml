@@ -1,4 +1,0 @@
-# Supabase Functions Configuration
-
-[webhook-handler]
-verify_jwt = false  # Webhooks from external services don't have JWT

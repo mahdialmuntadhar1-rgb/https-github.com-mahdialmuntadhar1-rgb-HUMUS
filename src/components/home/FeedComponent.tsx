@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import type { Business, Post } from "@/lib/supabase";
 import { usePosts } from "@/hooks/usePosts";
 import { useAuthStore } from "@/stores/authStore";
+import { useHomeStore } from "@/stores/homeStore";
 
 interface FeedComponentProps {
   businesses: Business[];
@@ -13,6 +14,7 @@ interface FeedComponentProps {
 export default function FeedComponent({ businesses, loading: businessesLoading }: FeedComponentProps) {
   const { posts, loading: postsLoading, likePost } = usePosts();
   const { user } = useAuthStore();
+  const { language } = useHomeStore();
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
   const handleLike = async (postId: string) => {
@@ -62,6 +64,19 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
 
   const displayPosts = posts;
 
+  if (displayPosts.length === 0 && !postsLoading) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
+        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <MessageCircle className="w-8 h-8 text-slate-300" />
+        </div>
+        <p className="text-sm text-text-muted font-bold uppercase tracking-widest">
+          {language === 'ar' ? 'لا توجد منشورات حالياً' : language === 'ku' ? 'هیچ پۆستێک نییە' : 'No activity yet'}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 pb-20">
       <div className="space-y-12">
@@ -69,8 +84,7 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
           const business = businesses.find(b => b.id === post.businessId);
           const category = business?.category || "Featured";
           const phone = business?.phone;
-          const authorName = post.authorName || business?.name || "Unknown Business";
-          const authorAvatar = post.authorAvatar || business?.image;
+          const authorName = post.authorName || business?.name || "Business";
 
             return (
               <motion.div
@@ -89,7 +103,7 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
                       className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-1000"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-bg-dark/60 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-500" />
                     
                     {/* Floating Badge on Image */}
                     <div className="absolute bottom-4 left-4 glass-dark px-3 py-1.5 rounded-lg border border-white/20">
@@ -107,15 +121,15 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl p-[1px] bg-gradient-to-tr from-primary via-secondary to-accent">
                         <div className="w-full h-full rounded-xl bg-white flex items-center justify-center text-primary font-bold border border-white shadow-inner overflow-hidden">
-                          {authorAvatar ? (
+                          {post.authorAvatar ? (
                             <img
-                              src={authorAvatar}
+                              src={post.authorAvatar}
                               alt={authorName}
                               className="w-full h-full object-cover"
                               referrerPolicy="no-referrer"
                             />
                           ) : (
-                            <span className="text-lg font-black">{authorName?.charAt(0)}</span>
+                            <span className="text-lg font-black">{authorName.charAt(0)}</span>
                           )}
                         </div>
                       </div>
@@ -123,9 +137,12 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
                         <h3 className="font-black text-text-main text-sm poppins-bold group-hover:text-primary transition-colors tracking-tight">
                           {authorName}
                         </h3>
-                        <p className="text-[8px] text-text-muted flex items-center gap-1 mt-0.5 font-black uppercase tracking-widest">
-                          <Clock size={10} className="text-primary" /> {formatTimestamp(post.createdAt)}
-                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <Clock size={10} className="text-primary" />
+                          <p className="text-[8px] text-text-muted font-black uppercase tracking-widest">
+                            {formatTimestamp(post.createdAt)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -152,7 +169,7 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
                           size={14}
                           className={likedPosts.has(post.id) ? "fill-current" : ""}
                         />
-                        {post.likes + (likedPosts.has(post.id) ? 1 : 0)}
+                        {(post.likes || 0) + (likedPosts.has(post.id) ? 1 : 0)}
                       </button>
 
                       <button className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white border border-slate-200 text-text-muted rounded-xl font-black text-[9px] transition-all duration-300 uppercase tracking-widest">
@@ -164,7 +181,7 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
                     {phone && (
                       <a
                         href={`tel:${phone}`}
-                        className="block w-full py-2.5 bg-bg-dark hover:bg-primary text-white hover:text-bg-dark text-[9px] font-black rounded-xl transition-all duration-300 text-center uppercase tracking-widest"
+                        className="block w-full py-2.5 bg-bg-dark hover:bg-primary text-white hover:text-white text-[9px] font-black rounded-xl transition-all duration-300 text-center uppercase tracking-widest"
                       >
                         Call Now
                       </a>
@@ -173,7 +190,7 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
                 </div>
               </motion.div>
             );
-          })}
+        })}
 
           {/* Load More Button */}
           <div className="text-center pt-10">
@@ -182,7 +199,6 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
-
+    </div>
+  );
+}

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Star, MapPin, Phone, Globe, Share2, Heart, Clock, CheckCircle2, Facebook, Instagram, Twitter, MessageCircle, ShieldAlert, Loader2 } from 'lucide-react';
+import { X, Star, MapPin, Phone, Globe, Share2, Heart, Clock, CheckCircle2, Facebook, Instagram, Twitter, MessageCircle, ShieldAlert, Loader2, ShieldCheck } from 'lucide-react';
 import { Business } from '@/lib/supabase';
+import { CATEGORIES } from '@/constants';
 import { useHomeStore } from '@/stores/homeStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useBusinessManagement } from '@/hooks/useBusinessManagement';
+import { useReviews } from '@/hooks/useReviews';
 
 interface BusinessDetailModalProps {
   business: Business | null;
@@ -15,6 +17,7 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
   const { language } = useHomeStore();
   const { user, profile } = useAuthStore();
   const { claimBusiness, loading: claimLoading } = useBusinessManagement();
+  const { reviews, loading: reviewsLoading, hasMore: reviewsHasMore, loadMore: reviewsLoadMore } = useReviews(business?.id);
   const [claimSuccess, setClaimSuccess] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
 
@@ -188,60 +191,60 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-bg-dark via-bg-dark/20 to-transparent" />
               
               {/* Desktop Close */}
               <button
                 onClick={onClose}
-                className="absolute top-8 right-8 hidden sm:flex p-3 rounded-full bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20 transition-all shadow-2xl"
+                className="absolute top-8 right-8 hidden sm:flex p-3 rounded-full glass text-white border border-white/20 hover:bg-white/20 transition-all shadow-2xl"
               >
                 <X className="w-6 h-6" />
               </button>
 
               <div className="absolute bottom-8 left-8 right-8 text-white">
                 <div className="flex flex-wrap items-center gap-3 mb-4">
-                  <span className="px-4 py-1.5 bg-[#2CA6A4] text-[10px] font-black rounded-xl uppercase tracking-[0.2em] shadow-xl border border-white/20">
-                    {business.category.replace('_', ' ')}
+                  <span className="px-4 py-1.5 bg-primary text-[10px] font-black rounded-xl uppercase tracking-[0.2em] shadow-xl border border-white/20">
+                    {CATEGORIES.find(c => c.id === business.category)?.name[language] || business.category}
                   </span>
                   {business.isVerified && (
-                    <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/30">
-                      <CheckCircle2 className="w-4 h-4 text-[#2CA6A4] fill-white" />
+                    <div className="flex items-center gap-1.5 glass px-3 py-1.5 rounded-xl border border-white/30">
+                      <CheckCircle2 className="w-4 h-4 text-accent fill-white" />
                       <span className="text-[10px] font-black uppercase tracking-widest">{translations.verified[language]}</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-                    <Star className="w-4 h-4 text-[#E87A41] fill-[#E87A41]" />
-                    <span className="text-[11px] font-black">{business.rating?.toFixed(1) || 'N/A'}</span>
+                  <div className="flex items-center gap-1.5 glass-dark px-3 py-1.5 rounded-xl border border-white/10">
+                    <Star className="w-4 h-4 text-secondary fill-secondary" />
+                    <span className="text-[11px] font-black">{business.rating?.toFixed(1) || '5.0'}</span>
                     <span className="text-[10px] text-white/60 font-bold ml-1">({business.reviewCount || 0})</span>
                   </div>
                 </div>
                 <h2 className="text-4xl sm:text-5xl font-bold poppins-bold leading-tight tracking-tight drop-shadow-2xl">{getBusinessName()}</h2>
                 <div className="flex items-center gap-2 mt-3 text-white/80 font-medium">
-                  <MapPin className="w-4 h-4 text-[#2CA6A4]" />
-                  <span className="text-sm">{business.address}</span>
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="text-sm">{business.neighborhood ? `${business.neighborhood}, ` : ''}{business.address}</span>
                 </div>
               </div>
             </div>
 
             {/* Content Section */}
-            <div className="flex-1 overflow-y-auto p-8 sm:p-10 bg-[#F9FAFB]">
+            <div className="flex-1 overflow-y-auto p-8 sm:p-10 bg-bg-light">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                 {/* Left Column: Info */}
                 <div className="lg:col-span-2 space-y-10">
                   {/* Claim Banner */}
                   {canClaim && !claimSuccess && (
-                    <div className="p-6 bg-[#E87A41]/5 border border-[#E87A41]/20 rounded-[32px] flex flex-col sm:flex-row items-center gap-6">
-                      <div className="w-16 h-16 bg-[#E87A41]/10 rounded-2xl flex items-center justify-center text-[#E87A41] shrink-0">
+                    <div className="p-6 bg-secondary/5 border border-secondary/20 rounded-[32px] flex flex-col sm:flex-row items-center gap-6">
+                      <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary shrink-0">
                         <ShieldAlert className="w-8 h-8" />
                       </div>
                       <div className="flex-1 text-center sm:text-left">
-                        <h4 className="text-lg font-bold text-[#2B2F33] mb-1">{translations.claim[language]}</h4>
-                        <p className="text-sm text-[#6B7280] leading-relaxed">{translations.claimDesc[language]}</p>
+                        <h4 className="text-lg font-bold text-text-main mb-1">{translations.claim[language]}</h4>
+                        <p className="text-sm text-text-muted leading-relaxed">{translations.claimDesc[language]}</p>
                       </div>
                       <button 
                         onClick={handleClaim}
                         disabled={claimLoading}
-                        className="px-8 py-3 bg-[#E87A41] text-white font-black rounded-2xl shadow-lg shadow-[#E87A41]/20 hover:bg-[#d16a35] transition-all uppercase tracking-widest text-xs disabled:opacity-50 flex items-center gap-2"
+                        className="px-8 py-3 bg-secondary text-white font-black rounded-2xl shadow-lg shadow-secondary/20 hover:bg-secondary-dark transition-all uppercase tracking-widest text-xs disabled:opacity-50 flex items-center gap-2"
                       >
                         {claimLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : translations.claim[language]}
                       </button>
@@ -249,9 +252,9 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                   )}
 
                   {claimSuccess && (
-                    <div className="p-6 bg-[#2CA6A4]/5 border border-[#2CA6A4]/20 rounded-[32px] flex items-center gap-4">
-                      <CheckCircle2 className="w-6 h-6 text-[#2CA6A4]" />
-                      <p className="text-sm font-bold text-[#2CA6A4]">{translations.claimSuccess[language]}</p>
+                    <div className="p-6 bg-accent/5 border border-accent/20 rounded-[32px] flex items-center gap-4">
+                      <CheckCircle2 className="w-6 h-6 text-accent" />
+                      <p className="text-sm font-bold text-accent">{translations.claimSuccess[language]}</p>
                     </div>
                   )}
 
@@ -262,32 +265,32 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                   )}
 
                   <section>
-                    <h3 className="text-xl font-bold text-[#2B2F33] mb-4 poppins-bold flex items-center gap-2">
-                      <div className="w-1.5 h-6 bg-[#2CA6A4] rounded-full" />
+                    <h3 className="text-xl font-bold text-text-main mb-4 poppins-bold flex items-center gap-2">
+                      <div className="w-1.5 h-6 bg-primary rounded-full" />
                       {translations.about[language]}
                     </h3>
-                    <p className="text-[#6B7280] leading-relaxed text-base">
+                    <p className="text-text-muted leading-relaxed text-base">
                       {getBusinessDescription()}
                     </p>
                   </section>
 
                   <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-5 bg-white rounded-[24px] border border-[#E5E7EB] shadow-sm flex items-center gap-4 group hover:border-[#2CA6A4] transition-all">
-                      <div className="w-12 h-12 bg-[#F5F7F9] group-hover:bg-[#2CA6A4]/10 rounded-2xl flex items-center justify-center transition-colors">
-                        <Clock className="w-6 h-6 text-[#2CA6A4]" />
+                    <div className="p-5 bg-white rounded-[24px] border border-slate-200 shadow-sm flex items-center gap-4 group hover:border-primary transition-all">
+                      <div className="w-12 h-12 bg-slate-50 group-hover:bg-primary/10 rounded-2xl flex items-center justify-center transition-colors">
+                        <Clock className="w-6 h-6 text-primary" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest mb-0.5">{translations.openingHours[language]}</p>
-                        <p className="text-sm font-bold text-[#2B2F33]">{business.openingHours || '9:00 AM - 10:00 PM'}</p>
+                        <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-0.5">{translations.openingHours[language]}</p>
+                        <p className="text-sm font-bold text-text-main">{business.openingHours || '9:00 AM - 10:00 PM'}</p>
                       </div>
                     </div>
-                    <div className="p-5 bg-white rounded-[24px] border border-[#E5E7EB] shadow-sm flex items-center gap-4 group hover:border-[#2CA6A4] transition-all">
-                      <div className="w-12 h-12 bg-[#F5F7F9] group-hover:bg-[#2CA6A4]/10 rounded-2xl flex items-center justify-center transition-colors">
-                        <Phone className="w-6 h-6 text-[#2CA6A4]" />
+                    <div className="p-5 bg-white rounded-[24px] border border-slate-200 shadow-sm flex items-center gap-4 group hover:border-primary transition-all">
+                      <div className="w-12 h-12 bg-slate-50 group-hover:bg-primary/10 rounded-2xl flex items-center justify-center transition-colors">
+                        <Phone className="w-6 h-6 text-primary" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest mb-0.5">{translations.contact[language]}</p>
-                        <p className="text-sm font-bold text-[#2B2F33]">{business.phone || 'N/A'}</p>
+                        <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-0.5">{translations.contact[language]}</p>
+                        <p className="text-sm font-bold text-text-main">{business.phone}</p>
                       </div>
                     </div>
                   </section>
@@ -312,8 +315,13 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                         </a>
                       )}
                       {business.socialLinks?.whatsapp && (
-                        <a href={`https://wa.me/${business.socialLinks.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="w-12 h-12 bg-white rounded-2xl border border-[#E5E7EB] flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all shadow-sm">
-                          <MessageCircle className="w-5 h-5" />
+                        <a 
+                          href={`https://wa.me/${business.socialLinks.whatsapp.replace(/\D/g, '')}`} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="w-12 h-12 bg-white rounded-2xl border border-[#E5E7EB] flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all shadow-sm group"
+                        >
+                          <MessageCircle className="w-5 h-5 transition-transform group-hover:scale-110" />
                         </a>
                       )}
                     </div>
@@ -325,7 +333,7 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                   <div className="p-8 bg-white rounded-[32px] border border-[#E5E7EB] shadow-xl space-y-4">
                     <h4 className="text-sm font-black text-[#2B2F33] uppercase tracking-widest mb-4">{translations.quickActions[language]}</h4>
                     <a 
-                      href={`tel:${business.phone || '#'}`}
+                      href={`tel:${business.phone}`}
                       className="w-full py-4 bg-[#2CA6A4] text-white font-black rounded-2xl shadow-xl shadow-[#2CA6A4]/20 hover:bg-[#1e7a78] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
                     >
                       <Phone className="w-4 h-4" />
@@ -333,7 +341,7 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                     </a>
                     {business.website && (
                       <a 
-                        href={business.website}
+                        href={business.website.startsWith('http') ? business.website : `https://${business.website}`}
                         target="_blank"
                         rel="noreferrer"
                         className="w-full py-4 border-2 border-[#E5E7EB] text-[#2B2F33] font-black rounded-2xl hover:border-[#2CA6A4] hover:text-[#2CA6A4] transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
@@ -345,16 +353,26 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                     <div className="grid grid-cols-2 gap-3">
                       <button 
                         onClick={handleShare}
-                        className="py-4 border border-[#E5E7EB] text-[#2B2F33] font-bold rounded-2xl hover:bg-[#F5F7F9] transition-all flex items-center justify-center gap-2 text-xs"
+                        className="py-4 border border-[#E5E7EB] text-[#2B2F33] font-bold rounded-2xl hover:bg-[#F5F7F9] transition-all flex items-center justify-center gap-2 text-xs group"
                       >
-                        <Share2 className="w-4 h-4" />
+                        <Share2 className="w-4 h-4 transition-transform group-hover:rotate-12" />
                         {translations.share[language]}
                       </button>
-                      <button className="py-4 border border-[#E5E7EB] text-[#2B2F33] font-bold rounded-2xl hover:bg-[#F5F7F9] transition-all flex items-center justify-center gap-2 text-xs">
-                        <Heart className="w-4 h-4" />
+                      <button className="py-4 border border-[#E5E7EB] text-[#2B2F33] font-bold rounded-2xl hover:bg-[#F5F7F9] transition-all flex items-center justify-center gap-2 text-xs group">
+                        <Heart className="w-4 h-4 transition-transform group-hover:scale-110 text-red-500" />
                         {translations.save[language]}
                       </button>
                     </div>
+
+                    {!business.ownerId && profile?.role === 'business_owner' && (
+                      <button 
+                        onClick={handleClaim}
+                        disabled={claimLoading}
+                        className="w-full py-4 bg-secondary text-white font-black rounded-2xl shadow-xl shadow-secondary/20 hover:bg-secondary/90 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs disabled:opacity-50"
+                      >
+                        {claimLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ShieldCheck className="w-4 h-4" /> {translations.claim[language]}</>}
+                      </button>
+                    )}
                   </div>
 
                   <div className="p-6 bg-[#2CA6A4]/5 rounded-[24px] border border-[#2CA6A4]/10">
@@ -379,30 +397,51 @@ export default function BusinessDetailModal({ business, onClose }: BusinessDetai
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[1, 2].map((i) => (
-                    <div key={i} className="p-6 bg-white rounded-[28px] border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="p-6 bg-white rounded-[28px] border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#2CA6A4]/10 flex items-center justify-center text-[#2CA6A4] text-sm font-black">
-                            {['JD', 'AS'][i-1]}
+                          <div className="w-10 h-10 rounded-full bg-[#2CA6A4]/10 flex items-center justify-center text-[#2CA6A4] text-sm font-black overflow-hidden">
+                            {review.userAvatar ? (
+                              <img src={review.userAvatar} className="w-full h-full object-cover" alt="" />
+                            ) : (
+                              review.userName?.charAt(0) || 'U'
+                            )}
                           </div>
                           <div>
-                            <span className="text-sm font-bold text-[#2B2F33] block">{['John Doe', 'Ahmed S.'][i-1]}</span>
-                            <span className="text-[10px] text-[#6B7280] font-medium uppercase tracking-widest">2 days ago</span>
+                            <span className="text-sm font-bold text-[#2B2F33] block">{review.userName || 'Anonymous'}</span>
+                            <span className="text-[10px] text-[#6B7280] font-medium uppercase tracking-widest">{review.createdAt.toLocaleDateString()}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-0.5">
                           {[...Array(5)].map((_, j) => (
-                            <Star key={j} className={`w-3 h-3 ${j < 4 ? 'text-[#E87A41] fill-[#E87A41]' : 'text-gray-200'}`} />
+                            <Star key={j} className={`w-3 h-3 ${j < review.rating ? 'text-[#E87A41] fill-[#E87A41]' : 'text-gray-200'}`} />
                           ))}
                         </div>
                       </div>
                       <p className="text-sm text-[#6B7280] leading-relaxed italic">
-                        "Amazing experience! The service was top-notch and the atmosphere was very welcoming. Highly recommend visiting if you're in {business.city}."
+                        "{review.comment}"
                       </p>
                     </div>
                   ))}
+                  {reviews.length === 0 && !reviewsLoading && (
+                    <div className="md:col-span-2 py-12 text-center text-[#6B7280]">
+                      <p>No reviews yet. Be the first to share your experience!</p>
+                    </div>
+                  )}
                 </div>
+
+                {reviewsHasMore && (
+                  <div className="mt-10 text-center">
+                    <button 
+                      onClick={reviewsLoadMore}
+                      disabled={reviewsLoading}
+                      className="px-8 py-3 bg-white border-2 border-[#2CA6A4] text-[#2CA6A4] font-black rounded-2xl hover:bg-[#2CA6A4] hover:text-white transition-all uppercase tracking-widest text-[10px] disabled:opacity-50"
+                    >
+                      {reviewsLoading ? 'Loading...' : 'Load More Reviews'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

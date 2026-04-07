@@ -8,7 +8,6 @@ import HomePage from '@/pages/HomePage';
 import Scraper from '@/pages/Scraper';
 import Review from '@/pages/Review';
 import BusinessDashboard from '@/components/dashboard/BusinessDashboard';
-import MessagingDashboard from '@/pages/MessagingDashboard';
 import './styles/humus-design.css';
 
 export default function App() {
@@ -24,9 +23,6 @@ export default function App() {
 
         {/* Business Dashboard */}
         <Route path="/dashboard" element={<BusinessDashboard />} />
-
-        {/* Messaging Dashboard */}
-        <Route path="/messaging-dashboard" element={<MessagingDashboard />} />
 
         {/* Catch-all 404 route */}
         <Route path="*" element={<Navigate to="/" replace />} />

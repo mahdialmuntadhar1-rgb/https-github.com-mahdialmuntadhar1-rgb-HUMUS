@@ -1,33 +1,44 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search, Briefcase, LayoutDashboard } from "lucide-react";
 import debounce from "lodash/debounce";
+import { motion, AnimatePresence } from "motion/react";
 import HeroSection from "@/components/home/HeroSection";
 import StorySection from "@/components/home/StorySection";
 import LocationFilter from "@/components/home/LocationFilter";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import FeedComponent from "@/components/home/FeedComponent";
-import CategorizedBusinessGrid from "@/components/home/CategorizedBusinessGrid";
-// NEW: Import components from 18-AGENTS integration
-import FeaturedBusinesses from "@/components/home/FeaturedBusinesses";
-import DiscoverySection from "@/components/home/DiscoverySection";
-import PlatformReviews from "@/components/home/PlatformReviews";
-import BusinessDetails from "@/components/home/BusinessDetails";
+import BusinessGrid from "@/components/home/BusinessGrid";
 import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
 import AddBusinessModal from "@/components/home/AddBusinessModal";
 import { useBusinesses } from "@/hooks/useBusinesses";
 import { useAuthStore } from "@/stores/authStore";
 import { useHomeStore } from "@/stores/homeStore";
+import { CATEGORIES } from "@/constants";
 import type { Business } from "@/lib/supabase";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  const toggleCategoryExpansion = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const { user, profile, signOut, loading: authLoading } = useAuthStore();
   const { 
@@ -41,7 +52,8 @@ export default function HomePage() {
     error,
     hasMore,
     totalCount,
-    loadMore
+    loadMore,
+    refresh
   } = useBusinesses(debouncedQuery);
 
   // Debounce search query
@@ -55,37 +67,7 @@ export default function HomePage() {
     return () => debouncedSetQuery.cancel();
   }, [searchQuery, debouncedSetQuery]);
 
-  useEffect(() => {
-    if (!loadMoreRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasMore && !businessesLoading) {
-          loadMore();
-        }
-      },
-      { rootMargin: '320px 0px' }
-    );
-
-    observer.observe(loadMoreRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, businessesLoading, loadMore, businesses.length]);
-
   const isRTL = language === 'ar' || language === 'ku';
-
-  // NEW: State for BusinessDetails modal from 18-AGENTS integration
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  const handleBusinessClick = useCallback((business: Business) => {
-    setSelectedBusiness(business);
-    setIsDetailsOpen(true);
-  }, []);
-
-  const handleCloseDetails = useCallback(() => {
-    setIsDetailsOpen(false);
-    setSelectedBusiness(null);
-  }, []);
 
   const translations = {
     explore: {
@@ -133,6 +115,11 @@ export default function HomePage() {
       ar: 'إدارة الأعمال',
       ku: 'بەڕێوەبردنی کار'
     },
+    addBusiness: {
+      en: 'Add Business',
+      ar: 'أضف عملك',
+      ku: 'کارەکەت زیاد بکە'
+    },
     settings: {
       en: 'Settings',
       ar: 'الإعدادات',
@@ -142,6 +129,11 @@ export default function HomePage() {
       en: 'Sign Out',
       ar: 'تسجيل الخروج',
       ku: 'چوونەدەرەوە'
+    },
+    dashboard: {
+      en: 'Business Dashboard',
+      ar: 'لوحة تحكم الأعمال',
+      ku: 'داشبۆردی بازرگانی'
     },
     owner: {
       en: 'Owner',
@@ -157,15 +149,12 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-bg-light selection:bg-primary/30" dir={isRTL ? 'rtl' : 'ltr'}>
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      <BusinessDetailModal business={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
-      <AddBusinessModal isOpen={isAddBusinessModalOpen} onClose={() => setIsAddBusinessModalOpen(false)} />
-      {/* NEW: BusinessDetails modal from 18-AGENTS integration */}
-      <BusinessDetails 
-        business={selectedBusiness}
-        isOpen={isDetailsOpen}
-        onClose={handleCloseDetails}
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        initialMode={authMode}
       />
+      <BusinessDetailModal business={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
       {/* Header */}
       <header className="sticky top-0 z-[60] bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
@@ -183,19 +172,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Center: Search & Language */}
-          <div className="hidden md:flex flex-1 max-w-md items-center gap-4">
-            <div className="relative flex-1 group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-              <input 
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={language === 'ar' ? 'ابحث عن مطاعم، فنادق...' : language === 'ku' ? 'بگەڕێ بۆ چێشتخانە، هوتێل...' : 'Search restaurants, hotels...'}
-                className="w-full pl-10 pr-4 py-2 bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              />
-            </div>
-            
+          {/* Center: Language Only (Search moved to Hero) */}
+          <div className="hidden md:flex flex-1 justify-center">
             <div className="flex items-center gap-2 bg-slate-100/50 p-1 rounded-full border border-slate-200">
               <button 
                 onClick={() => setLanguage('en')}
@@ -224,30 +202,58 @@ export default function HomePage() {
               <div className="w-10 h-10 rounded-xl bg-slate-100 animate-pulse" />
             ) : (
               <>
-                <button 
-                  onClick={() => setIsAddBusinessModalOpen(true)}
-                  className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-xs font-black rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  {language === 'ar' ? 'أضف عملك' : language === 'ku' ? 'کار زیاد بکە' : 'Add Business'}
-                </button>
-                {profile?.role === 'business_owner' && (
+                {user && (
                   <button 
-                    className="hidden lg:flex items-center gap-2 px-5 py-2.5 bg-secondary text-white text-xs font-black rounded-xl shadow-lg shadow-secondary/20 hover:bg-secondary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                    onClick={() => setIsAddBusinessModalOpen(true)}
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-text-main text-[10px] font-black rounded-xl hover:border-primary hover:text-primary transition-all uppercase tracking-widest"
                   >
                     <PlusCircle className="w-4 h-4" />
-                    {translations.manage[language]}
+                    <span>{translations.addBusiness[language]}</span>
                   </button>
                 )}
-                
-                {!user ? (
-                  <button 
-                    onClick={() => setIsAuthModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-bg-dark text-[10px] font-black rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+
+                {user && profile?.role === 'business_owner' && (
+                  <Link 
+                    to="/dashboard"
+                    className="hidden lg:flex items-center gap-2 px-4 py-2 bg-secondary text-bg-dark text-[10px] font-black rounded-xl shadow-lg shadow-secondary/20 hover:bg-secondary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
                   >
-                    <User className="w-4 h-4" />
-                    <span className="hidden sm:inline">Register / Login</span>
-                  </button>
+                    <Briefcase className="w-4 h-4" />
+                    <span>{translations.dashboard[language]}</span>
+                  </Link>
+                )}
+
+                {!user ? (
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => {
+                        setAuthMode('login');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-text-main text-[10px] font-black rounded-xl hover:border-primary hover:text-primary transition-all uppercase tracking-widest"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>{translations.addBusiness[language]}</span>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setAuthMode('login');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="px-4 py-2 text-text-muted text-[10px] font-black rounded-xl hover:text-primary transition-all uppercase tracking-widest"
+                    >
+                      {language === 'ar' ? 'دخول' : language === 'ku' ? 'چوونەژوورەوە' : 'Login'}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setAuthMode('signup');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-primary text-bg-dark text-[10px] font-black rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                    >
+                      <User className="w-4 h-4" />
+                      <span className="hidden sm:inline">{language === 'ar' ? 'تسجيل' : language === 'ku' ? 'تۆمارکردن' : 'Register'}</span>
+                    </button>
+                  </div>
                 ) : (
                   <div className="relative">
                     <button 
@@ -260,25 +266,53 @@ export default function HomePage() {
                       <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
                     </button>
 
-                    {showUserMenu && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-[70]">
-                        <div className="px-4 py-2 border-b border-slate-200 mb-2">
-                          <p className="text-[10px] font-black text-text-main truncate">{user.email}</p>
-                        </div>
-                        <button className="w-full px-4 py-2 text-left text-xs font-bold text-text-muted hover:bg-slate-50 hover:text-primary flex items-center gap-2 transition-colors">
-                          <Settings className="w-4 h-4" /> {translations.settings[language]}
-                        </button>
-                        <button 
-                          onClick={() => {
-                            signOut();
-                            setShowUserMenu(false);
-                          }}
-                          className="w-full px-4 py-2 text-left text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                    <AnimatePresence>
+                      {showUserMenu && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-[70] overflow-hidden"
                         >
-                          <LogOut className="w-4 h-4" /> {translations.signOut[language]}
-                        </button>
-                      </div>
-                    )}
+                          <div className="px-4 py-3 border-b border-slate-100 mb-2 bg-slate-50/50">
+                            <p className="text-[10px] font-black text-text-main truncate">{profile?.full_name || user.email}</p>
+                            <p className="text-[8px] font-bold text-text-muted truncate mt-0.5 opacity-60">{user.email}</p>
+                            {profile?.role === 'business_owner' && (
+                              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 bg-secondary/10 text-secondary rounded-full">
+                                <Briefcase className="w-2.5 h-2.5" />
+                                <span className="text-[7px] font-black uppercase tracking-widest">{translations.owner[language]}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {profile?.role === 'business_owner' && (
+                            <Link 
+                              to="/dashboard"
+                              onClick={() => setShowUserMenu(false)}
+                              className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-text-muted hover:bg-slate-50 hover:text-secondary flex items-center gap-3 transition-colors"
+                            >
+                              <LayoutDashboard className="w-4 h-4" /> {translations.dashboard[language]}
+                            </Link>
+                          )}
+
+                          <button className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-text-muted hover:bg-slate-50 hover:text-primary flex items-center gap-3 transition-colors">
+                            <Settings className="w-4 h-4" /> {translations.settings[language]}
+                          </button>
+                          
+                          <div className="h-px bg-slate-100 my-1" />
+                          
+                          <button 
+                            onClick={() => {
+                              signOut();
+                              setShowUserMenu(false);
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" /> {translations.signOut[language]}
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
               </>
@@ -289,10 +323,12 @@ export default function HomePage() {
 
       <main className="pb-24">
         {/* 1. Hero Section */}
-        <HeroSection businesses={businesses} onBusinessClick={handleBusinessClick} />
-
-        {/* Stories Section */}
-        <StorySection />
+        <HeroSection 
+          businesses={businesses} 
+          onBusinessClick={setSelectedBusiness} 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
 
         <div className="max-w-7xl mx-auto">
           {/* 2. Quick Filters & Categories */}
@@ -303,7 +339,7 @@ export default function HomePage() {
             {/* Compact Category Grid (Discovery) */}
             <div className="px-4 mb-12">
               <div className="flex items-center justify-between mb-4 px-1">
-                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
+                <h2 className="text-sm font-black text-bg-dark poppins-bold uppercase tracking-tight">
                   {language === 'ar' ? 'استكشف الفئات' : language === 'ku' ? 'پۆلەکان بگەڕێ' : 'Explore Categories'}
                 </h2>
               </div>
@@ -312,54 +348,33 @@ export default function HomePage() {
           </div>
 
           <div className="max-w-xl mx-auto">
-            {/* NEW: Featured Businesses from 18-AGENTS */}
-            <FeaturedBusinesses 
-              businesses={businesses} 
-              locationName={useHomeStore.getState().selectedGovernorate || undefined}
-              onBusinessClick={handleBusinessClick}
-            />
-
-            {/* NEW: Discovery Section from 18-AGENTS */}
-            <DiscoverySection 
-              businesses={businesses}
-              onBusinessClick={handleBusinessClick}
-            />
-
-            {/* NEW: Platform Reviews from 18-AGENTS */}
-            <PlatformReviews />
-
-            {/* 3. Featured Businesses (One Line) - KEEP EXISTING */}
+            {/* 3. Featured Businesses (One Line) */}
             <div className="px-4 mb-12">
               <div className="flex items-center justify-between mb-6 px-1">
-                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
+                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight flex items-center gap-2">
+                  <div className="w-1 h-4 bg-primary rounded-full" />
                   {language === 'ar' ? 'أماكن مميزة' : language === 'ku' ? 'شوێنە دیارەکان' : 'Featured Businesses'}
                 </h2>
               </div>
               <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-                {businesses.filter(b => b.isFeatured).slice(0, 6).map(business => (
+                {businesses.filter(b => b.isFeatured).slice(0, 10).map(business => (
                   <button 
                     key={business.id}
                     onClick={() => setSelectedBusiness(business)}
                     className="flex-shrink-0 w-64 group"
                   >
-                    <div className="relative aspect-video rounded-2xl overflow-hidden mb-3 shadow-lg bg-gradient-to-br from-primary/20 to-secondary/20">
-                      {business.image ? (
-                        <img 
-                          src={business.image}
-                          alt={business.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-                          <span className="text-4xl opacity-50">🏢</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute bottom-3 left-3 right-3">
-                        <p className="text-white font-black text-xs truncate">{business.name}</p>
-                        <p className="text-primary text-[10px] font-bold uppercase tracking-tighter">
-                          {business.category} • {business.governorate}
+                    <div className="relative aspect-video rounded-2xl overflow-hidden mb-3 shadow-lg border border-slate-100">
+                      <img 
+                        src={business.image || `https://picsum.photos/seed/${business.id}/400/225`} 
+                        alt={business.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-bg-dark/90 via-bg-dark/20 to-transparent" />
+                      <div className="absolute bottom-3 left-3 right-3 text-left">
+                        <p className="text-white font-black text-xs truncate uppercase tracking-tight">{language === 'ar' ? business.nameAr || business.name : business.name}</p>
+                        <p className="text-primary text-[9px] font-black uppercase tracking-widest mt-0.5">
+                          {CATEGORIES.find(c => c.id === business.category)?.name[language] || business.category} • {business.governorate}
                         </p>
                       </div>
                     </div>
@@ -368,72 +383,149 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 4. Trending in City (One Line) - KEEP EXISTING */}
+            {/* 4. Trending / Discovery (One Line) */}
             <div className="px-4 mb-12">
               <div className="flex items-center justify-between mb-6 px-1">
-                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
+                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight flex items-center gap-2">
+                  <div className="w-1 h-4 bg-secondary rounded-full" />
                   {language === 'ar' ? `رائج في ${useHomeStore.getState().selectedGovernorate || 'العراق'}` : language === 'ku' ? `لە ${useHomeStore.getState().selectedGovernorate || 'عێراق'} باوە` : `Trending in ${useHomeStore.getState().selectedGovernorate || 'Iraq'}`}
                 </h2>
               </div>
               <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-                {businesses.slice(0, 6).map(business => (
+                {businesses.slice(0, 12).map(business => (
                   <button 
                     key={business.id}
                     onClick={() => setSelectedBusiness(business)}
                     className="flex-shrink-0 w-48 group"
                   >
-                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 shadow-md bg-gradient-to-br from-primary/10 to-secondary/10">
-                      {business.image ? (
-                        <img 
-                          src={business.image}
-                          alt={business.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-                          <span className="text-3xl opacity-50">🏪</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
+                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 shadow-md border border-slate-100">
+                      <img 
+                        src={business.image || `https://picsum.photos/seed/${business.id}/300/300`} 
+                        alt={business.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-bg-dark/40 group-hover:bg-bg-dark/10 transition-colors" />
+                      <div className="absolute bottom-2 left-2 right-2 text-left">
+                        <p className="text-white text-[9px] font-black truncate uppercase tracking-tight">{language === 'ar' ? business.nameAr || business.name : business.name}</p>
+                      </div>
                     </div>
-                    <p className="text-[10px] font-black text-text-main truncate text-center">{business.name}</p>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* 5. Latest Feed (Engagement) - KEEP EXISTING */}
+            {/* 5. Platform Activity (Live Feed) */}
             <div className="px-4 mb-12">
               <div className="flex items-center gap-2 mb-6 px-1">
                 <div className="w-2 h-2 rounded-full bg-accent animate-ping" />
                 <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
-                  {language === 'ar' ? 'آخر الأخبار' : language === 'ku' ? 'دوایین هەواڵەکان' : 'Live Feed'}
+                  {language === 'ar' ? 'آخر الأخبار والنشاطات' : language === 'ku' ? 'دوایین چالاکییەکان' : 'Live Platform Activity'}
                 </h2>
               </div>
               <FeedComponent businesses={businesses} loading={businessesLoading} />
             </div>
 
-            {/* 6. Categorized Business Sections (Directory) - KEEP EXISTING */}
-            <div id="business-grid" className="px-4 mb-12">
-              <div className="flex items-center justify-between mb-6 px-1">
-                <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
-                  {language === 'ar' ? 'جميع الأماكن' : language === 'ku' ? 'هەموو شوێنەکان' : 'All Places'}
-                </h2>
-              </div>
-              <CategorizedBusinessGrid 
-                businesses={businesses} 
-                loading={businessesLoading}
-                hasMore={hasMore}
-                totalCount={totalCount}
-                onLoadMore={loadMore}
-                onBusinessClick={setSelectedBusiness}
-              />
-              <div ref={loadMoreRef} className="h-1 w-full" aria-hidden />
+            {/* 6. Main Business Listing Grouped by Category */}
+            <div id="business-grid" className="px-4 mb-12 space-y-16">
+              {CATEGORIES.filter(cat => {
+                // Only show categories that have businesses in the current list
+                return businesses.some(b => b.category === cat.id);
+              }).map(category => {
+                const categoryBusinesses = businesses.filter(b => b.category === category.id);
+                if (categoryBusinesses.length === 0) return null;
+
+                return (
+                    <div key={category.id} className="space-y-6">
+                      <div className="flex items-center justify-between px-1">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                            <category.icon className="w-4 h-4" />
+                          </div>
+                          <h2 className="text-lg font-black text-text-main poppins-bold uppercase tracking-tight">
+                            {category.name[language]}
+                          </h2>
+                        </div>
+                        <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                          {categoryBusinesses.length} {language === 'ar' ? 'منشأة' : language === 'ku' ? 'شوێن' : 'Places'}
+                        </span>
+                      </div>
+                      
+                      <BusinessGrid 
+                        businesses={expandedCategories.has(category.id) ? categoryBusinesses : categoryBusinesses.slice(0, 3)} 
+                        loading={businessesLoading}
+                        onBusinessClick={setSelectedBusiness}
+                      />
+
+                      {categoryBusinesses.length > 3 && (
+                        <button 
+                          onClick={() => toggleCategoryExpansion(category.id)}
+                          className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-[10px] font-black text-text-muted uppercase tracking-widest hover:border-primary hover:text-primary transition-all"
+                        >
+                          {expandedCategories.has(category.id) 
+                            ? (language === 'ar' ? 'عرض أقل' : language === 'ku' ? 'بینینی کەمتر' : 'Show Less')
+                            : (language === 'ar' ? 'عرض المزيد في هذا التصنيف' : language === 'ku' ? 'بینینی زیاتر لەم پۆلەدا' : `View More in ${category.name[language]}`)
+                          }
+                        </button>
+                      )}
+                    </div>
+                );
+              })}
+
+              {/* General/Other Category for businesses without a matching category */}
+              {businesses.filter(b => !CATEGORIES.some(c => c.id === b.category)).length > 0 && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
+                        <Briefcase className="w-4 h-4" />
+                      </div>
+                      <h2 className="text-lg font-black text-bg-dark poppins-bold uppercase tracking-tight">
+                        {language === 'ar' ? 'أخرى' : language === 'ku' ? 'ئەوانی تر' : 'Other'}
+                      </h2>
+                    </div>
+                  </div>
+                  <BusinessGrid 
+                    businesses={businesses.filter(b => !CATEGORIES.some(c => c.id === b.category)).slice(0, 3)} 
+                    loading={businessesLoading}
+                    onBusinessClick={setSelectedBusiness}
+                  />
+                </div>
+              )}
+
+              {/* Global Load More */}
+              {hasMore && (
+                <div className="flex flex-col items-center gap-6 py-12">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">
+                      Showing {businesses.length} of {totalCount} local services
+                    </div>
+                    <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary"
+                        style={{ width: `${(businesses.length / totalCount) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={loadMore}
+                    disabled={businessesLoading}
+                    className="px-12 py-5 bg-bg-dark text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-[24px] hover:bg-primary hover:text-bg-dark transition-all duration-500 shadow-xl"
+                  >
+                    {businessesLoading ? 'Loading...' : 'Load More Businesses'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </main>
+
+      <AddBusinessModal 
+        isOpen={isAddBusinessModalOpen} 
+        onClose={() => setIsAddBusinessModalOpen(false)}
+        onSuccess={() => refresh()}
+      />
 
       {/* Footer */}
       <footer className="bg-bg-dark text-white pt-24 pb-12">
@@ -471,7 +563,6 @@ export default function HomePage() {
             <div className="lg:col-span-2">
               <h4 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-8">For Business</h4>
               <ul className="space-y-4 text-sm font-bold text-slate-400">
-                <li><button onClick={() => setIsAddBusinessModalOpen(true)} className="hover:text-white transition-colors text-left">Add Your Business</button></li>
                 <li><a href="#" className="hover:text-white transition-colors">Claim Listing</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Advertise</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Business Blog</a></li>
