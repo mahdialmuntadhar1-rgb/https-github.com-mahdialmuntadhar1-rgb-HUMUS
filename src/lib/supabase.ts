@@ -29,13 +29,30 @@ export interface Business {
   updatedAt: Date;
 }
 
+export interface PostComment {
+  id: string;
+  postId: string;
+  authorName: string;
+  commentText: string;
+  createdAt: Date;
+  isSeeded?: boolean;
+}
+
 export interface Post {
   id: string;
   businessId: string;
   content: string;
   image?: string;
   likes: number;
+  comments: number;
+  shares: number;
   createdAt: Date;
   authorName?: string;
   authorAvatar?: string;
+  businessName?: string;
+  businessCity?: string;
+  businessCategory?: string;
+  businessPhone?: string;
+  businessWhatsapp?: string;
+  postComments?: PostComment[];
 }
