@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search } from "lucide-react";
 import debounce from "lodash/debounce";
 import HeroSection from "@/components/home/HeroSection";
@@ -7,6 +7,11 @@ import LocationFilter from "@/components/home/LocationFilter";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import FeedComponent from "@/components/home/FeedComponent";
 import CategorizedBusinessGrid from "@/components/home/CategorizedBusinessGrid";
+// NEW: Import components from 18-AGENTS integration
+import FeaturedBusinesses from "@/components/home/FeaturedBusinesses";
+import DiscoverySection from "@/components/home/DiscoverySection";
+import PlatformReviews from "@/components/home/PlatformReviews";
+import BusinessDetails from "@/components/home/BusinessDetails";
 import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
 import AddBusinessModal from "@/components/home/AddBusinessModal";
@@ -50,6 +55,19 @@ export default function HomePage() {
   }, [searchQuery, debouncedSetQuery]);
 
   const isRTL = language === 'ar' || language === 'ku';
+
+  // NEW: State for BusinessDetails modal from 18-AGENTS integration
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  const handleBusinessClick = useCallback((business: Business) => {
+    setSelectedBusiness(business);
+    setIsDetailsOpen(true);
+  }, []);
+
+  const handleCloseDetails = useCallback(() => {
+    setIsDetailsOpen(false);
+    setSelectedBusiness(null);
+  }, []);
 
   const translations = {
     explore: {
@@ -124,6 +142,12 @@ export default function HomePage() {
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <BusinessDetailModal business={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
       <AddBusinessModal isOpen={isAddBusinessModalOpen} onClose={() => setIsAddBusinessModalOpen(false)} />
+      {/* NEW: BusinessDetails modal from 18-AGENTS integration */}
+      <BusinessDetails 
+        business={selectedBusiness}
+        isOpen={isDetailsOpen}
+        onClose={handleCloseDetails}
+      />
       {/* Header */}
       <header className="sticky top-0 z-[60] bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
@@ -247,7 +271,7 @@ export default function HomePage() {
 
       <main className="pb-24">
         {/* 1. Hero Section */}
-        <HeroSection businesses={businesses} onBusinessClick={setSelectedBusiness} />
+        <HeroSection businesses={businesses} onBusinessClick={handleBusinessClick} />
 
         {/* Stories Section */}
         <StorySection />
@@ -270,7 +294,23 @@ export default function HomePage() {
           </div>
 
           <div className="max-w-xl mx-auto">
-            {/* 3. Featured Businesses (One Line) */}
+            {/* NEW: Featured Businesses from 18-AGENTS */}
+            <FeaturedBusinesses 
+              businesses={businesses} 
+              locationName={useHomeStore.getState().selectedGovernorate || undefined}
+              onBusinessClick={handleBusinessClick}
+            />
+
+            {/* NEW: Discovery Section from 18-AGENTS */}
+            <DiscoverySection 
+              businesses={businesses}
+              onBusinessClick={handleBusinessClick}
+            />
+
+            {/* NEW: Platform Reviews from 18-AGENTS */}
+            <PlatformReviews />
+
+            {/* 3. Featured Businesses (One Line) - KEEP EXISTING */}
             <div className="px-4 mb-12">
               <div className="flex items-center justify-between mb-6 px-1">
                 <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
@@ -304,7 +344,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 4. Trending in City (One Line) */}
+            {/* 4. Trending in City (One Line) - KEEP EXISTING */}
             <div className="px-4 mb-12">
               <div className="flex items-center justify-between mb-6 px-1">
                 <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
@@ -333,7 +373,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 5. Latest Feed (Engagement) */}
+            {/* 5. Latest Feed (Engagement) - KEEP EXISTING */}
             <div className="px-4 mb-12">
               <div className="flex items-center gap-2 mb-6 px-1">
                 <div className="w-2 h-2 rounded-full bg-accent animate-ping" />
@@ -344,7 +384,7 @@ export default function HomePage() {
               <FeedComponent businesses={businesses} loading={businessesLoading} />
             </div>
 
-            {/* 4. Categorized Business Sections (Directory) */}
+            {/* 6. Categorized Business Sections (Directory) - KEEP EXISTING */}
             <div id="business-grid" className="px-4 mb-12">
               <div className="flex items-center justify-between mb-6 px-1">
                 <h2 className="text-sm font-black text-text-main poppins-bold uppercase tracking-tight">
