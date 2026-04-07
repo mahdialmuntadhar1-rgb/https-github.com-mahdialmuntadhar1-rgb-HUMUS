@@ -18,6 +18,39 @@ interface CategoryBusinessSectionsProps {
 const INITIAL_VISIBLE_PER_CATEGORY = 3;
 const LOAD_MORE_STEP = 3;
 
+const CATEGORY_ALIASES: Record<string, string> = {
+  restaurant: 'dining',
+  restaurants: 'dining',
+  dining: 'dining',
+  cafe: 'cafe',
+  coffee: 'cafe',
+  hotels: 'hotels',
+  hotel: 'hotels',
+  shopping: 'shopping',
+  bank: 'banks',
+  banks: 'banks',
+  education: 'education',
+  entertainment: 'entertainment',
+  travel: 'tourism',
+  tourism: 'tourism',
+  doctor: 'doctors',
+  doctors: 'doctors',
+  lawyer: 'lawyers',
+  lawyers: 'lawyers',
+  hospital: 'hospitals',
+  hospitals: 'hospitals',
+  medical: 'medical',
+  realestate: 'realestate',
+  events: 'events',
+  pharmacy: 'pharmacy',
+  gym: 'gym',
+  beauty: 'beauty',
+  supermarket: 'supermarkets',
+  supermarkets: 'supermarkets',
+  furniture: 'furniture',
+  general: 'general'
+};
+
 export default function CategoryBusinessSections({
   businesses,
   loading,
@@ -28,6 +61,20 @@ export default function CategoryBusinessSections({
 }: CategoryBusinessSectionsProps) {
   const { language } = useHomeStore();
   const [expandedCounts, setExpandedCounts] = useState<Record<string, number>>({});
+
+  const getLocalizedCategoryTitle = (categoryValue: string) => {
+    const normalized = categoryValue.trim().toLowerCase().replace(/[\s&/-]+/g, '');
+    const mappedId = CATEGORY_ALIASES[normalized] || categoryValue;
+    const fromId = CATEGORIES.find((category) => category.id === mappedId);
+    if (fromId) return fromId.name[language];
+
+    const fromName = CATEGORIES.find((category) =>
+      [category.name.en, category.name.ar, category.name.ku]
+        .map((name) => name.toLowerCase())
+        .includes(categoryValue.toLowerCase())
+    );
+    return fromName?.name[language] || categoryValue;
+  };
 
   const categorySections = useMemo(() => {
     const grouped = new Map<string, Business[]>();
@@ -44,8 +91,7 @@ export default function CategoryBusinessSections({
         const featuredCount = items.filter((biz) => biz.isFeatured).length;
         const verifiedCount = items.filter((biz) => biz.isVerified).length;
         const densityScore = (featuredCount + verifiedCount) / Math.max(items.length, 1);
-        const categoryMeta = CATEGORIES.find((category) => category.id === categoryId);
-        const title = categoryMeta?.name[language] || categoryId;
+        const title = getLocalizedCategoryTitle(categoryId);
 
         return {
           categoryId,
@@ -79,7 +125,7 @@ export default function CategoryBusinessSections({
       ar: 'لم نتمكن من العثور على أي شركات تطابق الفلاتر الحالية. حاول توسيع نطاق بحثك.',
       ku: 'نەمانتوانی هیچ کارێک بدۆزینەوە کە لەگەڵ فلتەرەکانتدا بگونجێت.'
     },
-    loadMoreInCategory: { en: 'Load More in Category', ar: 'تحميل المزيد في الفئة', ku: 'بارکردنی زیاتر لە پۆلەکەدا' },
+    loadMoreInCategory: { en: 'Load More', ar: 'تحميل المزيد', ku: 'بارکردنی زیاتر' },
     loadMore: { en: 'Load More Businesses', ar: 'تحميل المزيد من الشركات', ku: 'بارکردنی کاری زیاتر' },
     loading: { en: 'Loading...', ar: 'جاري التحميل...', ku: 'بارکردن...' },
     showing: { en: 'Showing', ar: 'عرض', ku: 'پیشاندانی' },
