@@ -80,12 +80,28 @@ export interface Database {
           phone_2: string | null;
           whatsapp: string | null;
           governorate: string | null;
+          city: string | null;
           category: string | null;
+          image_url: string | null;
           status: string;
           created_at: string;
         };
         Insert: Partial<Database['public']['Tables']['businesses']['Row']>;
         Update: Partial<Database['public']['Tables']['businesses']['Row']>;
+      };
+      posts: {
+        Row: {
+          id: string;
+          business_id: string;
+          caption: string;
+          image_url: string;
+          created_at: string;
+          likes_count: number;
+          comments_count: number;
+          is_active: boolean;
+        };
+        Insert: Partial<Database['public']['Tables']['posts']['Row']>;
+        Update: Partial<Database['public']['Tables']['posts']['Row']>;
       };
     };
     Functions: {
