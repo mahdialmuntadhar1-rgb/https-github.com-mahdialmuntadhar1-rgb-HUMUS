@@ -16,8 +16,22 @@ export default function HomeTabSwitcher({ activeTab, onChange }: HomeTabSwitcher
     explore: { en: 'My City', ar: 'مدينتي', ku: 'شارەکەم' }
   } as const;
 
+  const subtitles = {
+    social: {
+      en: 'Social feed from businesses across Iraq',
+      ar: 'الشريط الاجتماعي من الشركات في جميع أنحاء العراق',
+      ku: 'فیدی کۆمەڵایەتی لە کارەکان لە سەرانسەری عێراق'
+    },
+    explore: {
+      en: 'Discover local businesses by category',
+      ar: 'اكتشف الشركات المحلية حسب الفئة',
+      ku: 'کارە ناوخۆییەکان بەپێی پۆل بدۆزەرەوە'
+    }
+  } as const;
+
   return (
-    <div className="max-w-3xl mx-auto pt-10 pb-8 px-1">
+    <div className="max-w-3xl mx-auto pt-10 pb-8 px-4">
+      {/* Tab Buttons */}
       <div className="grid grid-cols-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-lg shadow-slate-100/80">
         {(['social', 'explore'] as const).map((tab) => {
           const isActive = activeTab === tab;
@@ -43,6 +57,11 @@ export default function HomeTabSwitcher({ activeTab, onChange }: HomeTabSwitcher
           );
         })}
       </div>
+      
+      {/* Tab Subtitle */}
+      <p className="text-center text-[11px] text-slate-400 font-black uppercase tracking-[0.2em] mt-3">
+        {subtitles[activeTab][language]}
+      </p>
     </div>
   );
 }

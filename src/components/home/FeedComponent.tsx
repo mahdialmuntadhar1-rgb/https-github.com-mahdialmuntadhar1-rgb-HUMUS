@@ -132,6 +132,10 @@ export default function FeedComponent({ businesses, loading: businessesLoading }
       });
   }, [posts, businessById, language]);
 
+  // ============================================
+  // FALLBACK: Generate posts from businesses when Supabase is empty
+  // These are NOT mock posts - they derive from real business data
+  // ============================================
   const fallbackFeedItems = useMemo<FeedItem[]>(() => {
     const sorted = [...businesses]
       .sort((a, b) => {

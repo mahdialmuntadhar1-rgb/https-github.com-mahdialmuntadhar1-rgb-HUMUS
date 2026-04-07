@@ -71,6 +71,97 @@ const mockPosts: SocialPost[] = [
     likes: 167,
     comments: 19,
     timestamp: '1 day ago'
+  },
+  // Additional Arabic posts
+  {
+    id: '7',
+    businessName: 'مطعم بغدادية',
+    businessLogo: 'مب',
+    image: 'https://picsum.photos/seed/baghdadiya/400/400',
+    caption: 'أفضل المأكولات العراقية الأصيلة! كباب بغدادي على الفحم مع الأرز العباسي. احجز طاولتك الآن 🇮🇶 #بغداد #أكل_عراقي #كباب',
+    likes: 567,
+    comments: 42,
+    timestamp: '30 mins ago'
+  },
+  {
+    id: '8',
+    businessName: 'Karbala Sweets',
+    businessLogo: 'KS',
+    image: 'https://picsum.photos/seed/sweets1/400/400',
+    caption: 'Traditional Iraqi sweets fresh from our kitchen! Klecha, Baklava, and our famous date cookies. Perfect for Eid celebrations 🍯 #Karbala #Sweets #Traditional',
+    likes: 423,
+    comments: 38,
+    timestamp: '1 hour ago'
+  },
+  {
+    id: '9',
+    businessName: 'مكتبة الرافدين',
+    businessLogo: 'ر',
+    image: 'https://picsum.photos/seed/rafeedeen/400/400',
+    caption: '📚 عروض خاصة على الكتب الجامعية! خصم ٢٥٪ على جميع الكتب القانونية والطبية. زورونا في فرع المنصور #بغداد #كتب #جامعة',
+    likes: 234,
+    comments: 15,
+    timestamp: '3 hours ago'
+  },
+  {
+    id: '10',
+    businessName: 'Duhok Market',
+    businessLogo: 'DM',
+    image: 'https://picsum.photos/seed/duhokmarket/400/400',
+    caption: 'Fresh fruits and vegetables daily! Direct from local farms to your table. Supporting Kurdish farmers 🌾 #Duhok #Fresh #Organic #Local',
+    likes: 312,
+    comments: 28,
+    timestamp: '5 hours ago'
+  },
+  {
+    id: '11',
+    businessName: 'صيدلية النور',
+    businessLogo: 'ن',
+    image: 'https://picsum.photos/seed/pharmacy1/400/400',
+    caption: 'خدمة ٢٤ ساعة 💊 توصيل مجاني للأدوية لجميع مناطق كربلاء. استشارة صيدلاني مجانية عبر الواتساب #صيدلية #كربلاء #صحة',
+    likes: 891,
+    comments: 56,
+    timestamp: '7 hours ago'
+  },
+  {
+    id: '12',
+    businessName: 'Anbar Coffee',
+    businessLogo: 'AC',
+    image: 'https://picsum.photos/seed/anbarcoffee/400/400',
+    caption: 'Good morning Ramadi! ☕ Start your day with our special Arabic coffee blend. Quiet workspace and fast WiFi available. #Ramadi #Coffee #WorkSpace',
+    likes: 178,
+    comments: 22,
+    timestamp: '9 hours ago'
+  },
+  {
+    id: '13',
+    businessName: 'محل النجف للعطور',
+    businessLogo: 'ع',
+    image: 'https://picsum.photos/seed/perfume1/400/400',
+    caption: '✨ عطور شرقية أصلية - دهن العود، المسك، والعنبر. أفضل الهدايا للمناسبات. توصيل لجميع المحافظات #عطور #النجف #هدايا',
+    likes: 445,
+    comments: 33,
+    timestamp: '10 hours ago'
+  },
+  {
+    id: '14',
+    businessName: 'Kirkuk Electronics',
+    businessLogo: 'KE',
+    image: 'https://picsum.photos/seed/kirkuktech/400/400',
+    caption: 'New gaming laptops in stock! RTX 4060, 4070, 4090 available now. Installment plans up to 12 months 🎮 #Kirkuk #Gaming #Laptops',
+    likes: 289,
+    comments: 41,
+    timestamp: '14 hours ago'
+  },
+  {
+    id: '15',
+    businessName: 'مقهى الموصل',
+    businessLogo: 'مو',
+    image: 'https://picsum.photos/seed/mosulcafe/400/400',
+    caption: 'جلسات خارجية رائعة مع إطلالة على النهر ☕🌊 أفضل مكان للقاء الأصدقاء في الموصل القديمة. موسيقى حية كل جمعة #الموصل #مقهى #ترفيه',
+    likes: 678,
+    comments: 47,
+    timestamp: '16 hours ago'
   }
 ];
 
