@@ -80,7 +80,7 @@ export default function CategoryBusinessSections({
     const grouped = new Map<string, Business[]>();
 
     businesses.forEach((business) => {
-      const key = business.category || 'general';
+      const key = business.category?.trim() || 'uncategorized';
       const list = grouped.get(key) || [];
       list.push(business);
       grouped.set(key, list);
@@ -126,6 +126,7 @@ export default function CategoryBusinessSections({
       ku: 'نەمانتوانی هیچ کارێک بدۆزینەوە کە لەگەڵ فلتەرەکانتدا بگونجێت.'
     },
     loadMoreInCategory: { en: 'Load More', ar: 'تحميل المزيد', ku: 'بارکردنی زیاتر' },
+    uncategorized: { en: 'Unknown / Not categorized', ar: 'غير معروف / غير مصنف', ku: 'نەزانراو / پۆل نەکراو' },
     loadMore: { en: 'Load More Businesses', ar: 'تحميل المزيد من الشركات', ku: 'بارکردنی کاری زیاتر' },
     loading: { en: 'Loading...', ar: 'جاري التحميل...', ku: 'بارکردن...' },
     showing: { en: 'Showing', ar: 'عرض', ku: 'پیشاندانی' },
@@ -166,11 +167,12 @@ export default function CategoryBusinessSections({
         const visibleCount = expandedCounts[section.categoryId] || INITIAL_VISIBLE_PER_CATEGORY;
         const visibleItems = section.items.slice(0, visibleCount);
         const hasMoreInCategory = visibleCount < section.items.length;
+        const sectionTitle = section.categoryId === 'uncategorized' ? translations.uncategorized[language] : section.title;
 
         return (
-          <section key={section.categoryId} className="space-y-7">
+          <section key={section.categoryId} className="space-y-7 rounded-[28px] border border-slate-100 bg-gradient-to-br from-white to-slate-50/50 px-3 py-5 sm:px-5">
             <div className="text-center">
-              <h3 className="text-lg sm:text-xl font-black text-bg-dark uppercase tracking-[0.16em]">{section.title}</h3>
+              <h3 className="text-lg sm:text-xl font-black text-bg-dark uppercase tracking-[0.16em]">{sectionTitle}</h3>
               <p className="text-[11px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">{section.count}</p>
             </div>
 

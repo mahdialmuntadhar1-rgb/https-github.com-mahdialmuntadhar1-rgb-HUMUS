@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { User, PlusCircle, LogOut, Settings, ChevronDown, Briefcase, LayoutDashboard } from "lucide-react";
+import { User, PlusCircle, LogOut, Settings, ChevronDown, Briefcase, LayoutDashboard, Download } from "lucide-react";
 import debounce from "lodash/debounce";
 import { motion, AnimatePresence } from "motion/react";
 import HeroSection from "@/components/home/HeroSection";
@@ -22,8 +22,10 @@ export default function HomePage() {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<HomeTab>('social');
+  const [activeTab, setActiveTab] = useState<HomeTab>('explore');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
 
   const { user, profile, signOut, loading: authLoading } = useAuthStore();
   const { 
@@ -50,6 +52,28 @@ export default function HomePage() {
     debouncedSetQuery(searchQuery);
     return () => debouncedSetQuery.cancel();
   }, [searchQuery, debouncedSetQuery]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      setIsInstallable(true);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstallable(false);
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') setIsInstallable(false);
+  };
 
   const isRTL = language === 'ar' || language === 'ku';
 
@@ -151,8 +175,8 @@ export default function HomePage() {
               <span className="text-white font-black text-2xl poppins-bold">B</span>
             </div>
             <div className="flex flex-col">
-              <h1 className="text-xl font-black text-text-main poppins-bold tracking-tighter leading-none uppercase">Belive</h1>
-              <p className="text-[9px] text-primary font-black uppercase tracking-[0.3em] mt-1">Iraqi Business Hub</p>
+              <h1 className="text-xl font-black text-text-main poppins-bold tracking-tighter leading-none uppercase">Shakumaku</h1>
+              <p className="text-[10px] text-primary font-black tracking-[0.2em] mt-1">شكو ماكو</p>
             </div>
           </div>
 
@@ -309,6 +333,15 @@ export default function HomePage() {
       </header>
 
       <main className="pb-24">
+        {isInstallable && (
+          <button
+            onClick={handleInstallClick}
+            className="fixed right-4 bottom-6 z-[80] inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400 px-4 py-3 text-xs font-black text-slate-900 shadow-[0_10px_30px_rgba(251,191,36,0.45)] ring-2 ring-white/50 animate-pulse"
+          >
+            <Download className="w-4 h-4" />
+            {language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
+          </button>
+        )}
         {/* 1. Hero Section */}
         <HeroSection 
           businesses={businesses} 

@@ -12,7 +12,7 @@ export default function HomeTabSwitcher({ activeTab, onChange }: HomeTabSwitcher
   const { language } = useHomeStore();
 
   const labels = {
-    social: { en: 'Shaku Maku', ar: 'شكو ماكو؟', ku: 'شەکو ماکو' },
+    social: { en: 'Shakumaku / شكو ماكو', ar: 'شكو ماكو', ku: 'شەکو ماکو' },
     explore: { en: 'My City', ar: 'مدينتي', ku: 'شارەکەم' }
   } as const;
 
@@ -33,7 +33,7 @@ export default function HomeTabSwitcher({ activeTab, onChange }: HomeTabSwitcher
     <div id="tab-section" className="max-w-3xl mx-auto pt-8 pb-6 px-4">
       {/* Tab Buttons */}
       <div className="grid grid-cols-2 bg-white border border-slate-200 rounded-[24px] p-2 shadow-[0_8px_30px_-10px_rgba(0,0,0,0.12)]">
-        {(['social', 'explore'] as const).map((tab) => {
+        {(['explore', 'social'] as const).map((tab) => {
           const isActive = activeTab === tab;
 
           return (
