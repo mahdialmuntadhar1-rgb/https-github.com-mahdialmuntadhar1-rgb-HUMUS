@@ -57,7 +57,18 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
   const isRTL = language === 'ar' || language === 'ku';
 
   const virtualPosts = React.useMemo(() => {
-    if (realPosts.length > 0) return realPosts;
+    // Use real posts from business_postcards table
+    if (realPosts.length > 0) {
+      return realPosts.map(post => ({
+        ...post,
+        content: post.caption || post.content,
+        likes: post.likes_count || post.likes || 0,
+        image: post.image_url || post.image,
+        createdAt: post.created_at ? new Date(post.created_at) : post.createdAt
+      }));
+    }
+
+    // Fallback to generating posts from businesses if no real posts exist
     if (bizLoading || businesses.length === 0) return [];
 
     return businesses.slice(0, 20).map((biz, index) => {
