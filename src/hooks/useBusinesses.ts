@@ -13,7 +13,7 @@ interface UseBusinessesResult {
   refresh: () => void;
 }
 
-const ITEMS_PER_PAGE = 24;
+const ITEMS_PER_PAGE = 100;
 
 const FALLBACK_BUSINESSES: Business[] = [
   {
@@ -113,8 +113,9 @@ const FALLBACK_BUSINESSES: Business[] = [
   }
 ];
 
-export function useBusinesses(searchQuery: string): UseBusinessesResult {
+export function useBusinesses(searchQuery: string): UseBusinessesResult & { featuredBusinesses: Business[] } {
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [featuredBusinesses, setFeaturedBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -123,6 +124,46 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
 
   const { selectedGovernorate, selectedCategory, selectedCity } = useHomeStore();
 
+  const fetchFeatured = async () => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('businesses')
+        .select('*')
+        .eq('is_featured', true)
+        .limit(5);
+      
+      if (fetchError) throw fetchError;
+      if (data) {
+        setFeaturedBusinesses(data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          nameAr: item.nameAr || item.name_ar,
+          nameKu: item.nameKu || item.name_ku,
+          category: item.category,
+          governorate: item.governorate,
+          city: item.city,
+          address: item.address,
+          phone: item.phone,
+          rating: item.rating || 0,
+          reviewCount: item.reviewCount || item.review_count || 0,
+          isFeatured: true,
+          isVerified: item.isVerified || item.is_verified || false,
+          image: item.imageUrl || item.image_url || item.image || `https://picsum.photos/seed/${item.id}/600/400`,
+          website: item.website,
+          socialLinks: item.social_links || {},
+          description: item.description,
+          descriptionAr: item.descriptionAr || item.description_ar,
+          openingHours: item.openHours || item.opening_hours,
+          ownerId: item.owner_id,
+          createdAt: new Date(item.createdAt || item.created_at),
+          updatedAt: new Date(item.updatedAt || item.updated_at || item.created_at)
+        })));
+      }
+    } catch (err) {
+      console.error('Error fetching featured businesses:', err);
+    }
+  };
+
   const fetchBusinesses = useCallback(async (isRefresh = false) => {
     setError(null);
     
@@ -130,6 +171,7 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
     
     if (isRefresh) {
       setLoading(true);
+      fetchFeatured();
     }
 
     try {
@@ -230,5 +272,5 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
     fetchBusinesses(true);
   };
 
-  return { businesses, loading, error, hasMore, totalCount, loadMore, refresh };
+  return { businesses, featuredBusinesses, loading, error, hasMore, totalCount, loadMore, refresh };
 }

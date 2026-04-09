@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { User, PlusCircle, LogOut, Settings, ChevronDown, Briefcase, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuth } from '@/hooks/useAuth';
 import { useHomeStore } from '@/stores/homeStore';
 
 interface HomeHeaderProps {
@@ -12,7 +12,7 @@ interface HomeHeaderProps {
 
 export default function HomeHeader({ onAddBusiness, onAuth }: HomeHeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { user, profile, signOut, loading: authLoading } = useAuthStore();
+  const { user, profile, signOut, loading: authLoading } = useAuth();
   const { language, setLanguage } = useHomeStore();
 
   const isRTL = language === 'ar' || language === 'ku';

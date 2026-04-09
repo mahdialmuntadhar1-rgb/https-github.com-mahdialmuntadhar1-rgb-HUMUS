@@ -11,28 +11,45 @@ export default function MainTabSwitcher({ activeTab, onTabChange }: MainTabSwitc
   const { language } = useHomeStore();
 
   return (
-    <div className="sticky top-[73px] z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-      <div className="max-w-7xl mx-auto px-4 flex justify-center">
-        <div className="flex gap-8">
-          <button 
-            onClick={() => onTabChange('guide')}
-            className={`py-4 text-[11px] font-black uppercase tracking-[0.2em] relative transition-colors flex items-center gap-2 ${activeTab === 'guide' ? 'text-accent' : 'text-slate-400 hover:text-slate-600'}`}
-          >
-            <span className="text-lg">🏙️</span>
-            {language === 'ar' ? 'مدينتي' : language === 'ku' ? 'شارەکەم' : 'MyCity'}
-            {activeTab === 'guide' && (
-              <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
-            )}
-          </button>
+    <div className="sticky top-[73px] z-50 bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-premium">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-center items-center h-24 gap-6 sm:gap-16">
           <button 
             onClick={() => onTabChange('social')}
-            className={`py-4 text-[11px] font-black uppercase tracking-[0.2em] relative transition-colors flex items-center gap-2 ${activeTab === 'social' ? 'text-accent' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`group relative flex items-center gap-4 px-10 py-5 rounded-[24px] transition-all duration-700 ${
+              activeTab === 'social' 
+                ? 'bg-primary text-white shadow-[0_20px_40px_-10px_rgba(255,159,28,0.4)] scale-110 z-10' 
+                : 'text-slate-400 hover:text-primary hover:bg-slate-50 scale-95'
+            }`}
           >
-            <span className="text-lg">📱</span>
-            {language === 'ar' ? 'شكو ماكو' : language === 'ku' ? 'شکو ماکۆ' : 'Shakumaku'}
-            {activeTab === 'social' && (
-              <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
-            )}
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl transition-all duration-700 ${activeTab === 'social' ? 'bg-white/20 rotate-[15deg] scale-110' : 'bg-slate-100 group-hover:rotate-12'}`}>
+              📱
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 leading-none mb-1">Social Feed</span>
+              <span className="text-base font-black uppercase tracking-tight poppins-bold leading-none">
+                {language === 'ar' ? 'شكو ماكو' : language === 'ku' ? 'شکو ماکۆ' : 'Shakumaku'}
+              </span>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => onTabChange('guide')}
+            className={`group relative flex items-center gap-4 px-10 py-5 rounded-[24px] transition-all duration-700 ${
+              activeTab === 'guide' 
+                ? 'bg-accent text-bg-dark shadow-[0_20px_40px_-10px_rgba(245,158,11,0.4)] scale-110 z-10' 
+                : 'text-slate-400 hover:text-accent hover:bg-slate-50 scale-95'
+            }`}
+          >
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl transition-all duration-700 ${activeTab === 'guide' ? 'bg-white/20 -rotate-[15deg] scale-110' : 'bg-slate-100 group-hover:-rotate-12'}`}>
+              🏙️
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 leading-none mb-1">Directory</span>
+              <span className="text-base font-black uppercase tracking-tight poppins-bold leading-none">
+                {language === 'ar' ? 'مدينتي' : language === 'ku' ? 'شارەکەم' : 'My City'}
+              </span>
+            </div>
           </button>
         </div>
       </div>

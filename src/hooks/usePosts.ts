@@ -10,7 +10,7 @@ export function usePosts(businessId?: string) {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 10;
 
-  const fetchPosts = useCallback(async (isLoadMore = false) => {
+  const fetchPosts = useCallback(async (isLoadMore = false, isTrending = false) => {
     setError(null);
     try {
       const currentPage = isLoadMore ? page + 1 : 0;
@@ -23,9 +23,16 @@ export function usePosts(businessId?: string) {
 
       let query = supabase
         .from('posts')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .select('*', { count: 'exact' });
+
+      if (isTrending) {
+        // Trending: sort by likes or comments count
+        query = query.order('likes', { ascending: false });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      query = query.range(from, to);
 
       if (businessId) {
         query = query.eq('businessId', businessId);
@@ -46,7 +53,7 @@ export function usePosts(businessId?: string) {
           image: item.image_url || item.imageUrl || '',
           likes: item.likes || item.likes_count || 0,
           views: item.views || item.views_count || Math.floor(Math.random() * 5000) + 1000,
-          commentsCount: item.commentsCount || item.comments_count || Math.floor(Math.random() * 50) + 10,
+          commentsCount: item.commentsCount || item.comments_count || 0,
           createdAt: new Date(item.created_at || item.createdAt),
           authorName: item.businessName || item.business_name || 'Business',
           authorAvatar: item.businessAvatar || item.image_url || `https://i.pravatar.cc/150?u=${item.businessId}`,
@@ -116,16 +123,64 @@ export function usePosts(businessId?: string) {
     }
   };
 
-  const likePost = async (postId: string) => {
+  const fetchComments = async (postId: string) => {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*, profiles(full_name, avatar_url)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+    
+    if (error) throw error;
+    return data;
+  };
+
+  const addComment = async (postId: string, userId: string, content: string) => {
+    const { data, error } = await supabase
+      .from('comments')
+      .insert([{ post_id: postId, user_id: userId, content }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+
+    // Increment comment count on post
+    await supabase.rpc('increment_comments', { post_id: postId });
+    
+    return data;
+  };
+
+  const likePost = async (postId: string, userId?: string) => {
     try {
-      const { error: likeError } = await supabase.rpc('increment_likes', { post_id: postId });
-      if (likeError) throw likeError;
-      
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p));
+      if (userId) {
+        // Check if already liked
+        const { data: existingLike } = await supabase
+          .from('likes')
+          .select('*')
+          .eq('post_id', postId)
+          .eq('user_id', userId)
+          .single();
+
+        if (existingLike) {
+          // Unlike
+          await supabase.from('likes').delete().eq('id', existingLike.id);
+          await supabase.rpc('decrement_likes', { post_id: postId });
+          setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: Math.max(0, p.likes - 1) } : p));
+        } else {
+          // Like
+          await supabase.from('likes').insert([{ post_id: postId, user_id: userId }]);
+          await supabase.rpc('increment_likes', { post_id: postId });
+          setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p));
+        }
+      } else {
+        // Anonymous like (legacy or simple)
+        const { error: likeError } = await supabase.rpc('increment_likes', { post_id: postId });
+        if (likeError) throw likeError;
+        setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p));
+      }
     } catch (err) {
       console.error('Error liking post:', err);
     }
   };
 
-  return { posts, loading, error, hasMore, loadMore, createPost, likePost, refresh: fetchPosts };
+  return { posts, loading, error, hasMore, loadMore, createPost, likePost, fetchComments, addComment, refresh: fetchPosts };
 }

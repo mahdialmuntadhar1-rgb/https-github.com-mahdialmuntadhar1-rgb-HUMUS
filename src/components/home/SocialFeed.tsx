@@ -7,12 +7,26 @@ import { usePosts } from '@/hooks/usePosts';
 import { useBusinesses } from '@/hooks/useBusinesses';
 import { Business, Post } from '@/lib/supabase';
 
+import { useAuth } from '@/hooks/useAuth';
+
 const formatMetric = (num: number) => {
   if (num >= 1000) {
     return (num / 1000).toFixed(1) + 'k';
   }
   return num.toString();
 };
+
+interface Comment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profiles?: {
+    full_name: string;
+    avatar_url: string;
+  };
+}
 
 interface SocialFeedProps {
   onBusinessClick?: (business: Business) => void;
@@ -99,12 +113,62 @@ const FALLBACK_POST_TEMPLATES = [
 
 export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
   const { language } = useHomeStore();
-  const { posts: realPosts, loading: postsLoading, error, hasMore, loadMore, likePost, createPost } = usePosts();
-  const { businesses, loading: bizLoading } = useBusinesses("");
+  const { user } = useAuth();
+  const { posts: realPosts, loading: postsLoading, error, hasMore, loadMore, likePost, createPost, addComment, fetchComments } = usePosts();
+  const { businesses, featuredBusinesses, loading: bizLoading } = useBusinesses("");
   const [isSeeding, setIsSeeding] = React.useState(false);
   const [seedProgress, setSeedProgress] = React.useState(0);
+  const [feedType, setFeedType] = React.useState<'recent' | 'trending'>('recent');
+  const [activeComments, setActiveComments] = React.useState<Record<string, Comment[]>>({});
+  const [commentInputs, setCommentInputs] = React.useState<Record<string, string>>({});
+  const [showComments, setShowComments] = React.useState<Record<string, boolean>>({});
   
   const isRTL = language === 'ar' || language === 'ku';
+
+  const handleLike = async (postId: string) => {
+    await likePost(postId, user?.id);
+  };
+
+  const handleComment = async (postId: string) => {
+    if (!user) {
+      alert(language === 'ar' ? 'يرجى تسجيل الدخول للتعليق' : 'Please login to comment');
+      return;
+    }
+    const content = commentInputs[postId];
+    if (!content?.trim()) return;
+
+    try {
+      await addComment(postId, user.id, content);
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+      // Refresh comments
+      const comments = await fetchComments(postId);
+      setActiveComments(prev => ({ ...prev, [postId]: comments }));
+    } catch (err) {
+      console.error('Failed to add comment:', err);
+    }
+  };
+
+  const toggleComments = async (postId: string) => {
+    const isShowing = !showComments[postId];
+    setShowComments(prev => ({ ...prev, [postId]: isShowing }));
+    
+    if (isShowing && !activeComments[postId]) {
+      try {
+        const comments = await fetchComments(postId);
+        setActiveComments(prev => ({ ...prev, [postId]: comments }));
+      } catch (err) {
+        console.error('Failed to fetch comments:', err);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    const refresh = async () => {
+      // @ts-ignore
+      await fetchPosts(false, feedType === 'trending');
+    };
+    refresh();
+  }, [feedType]);
 
   // AI Seeder Logic
   React.useEffect(() => {
@@ -248,7 +312,34 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-12">
-      {/* Feed Header */}
+      {/* Featured Businesses Section */}
+      {featuredBusinesses.length > 0 && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-lg font-black text-primary uppercase tracking-tight flex items-center gap-2">
+              <Star className="w-5 h-5 text-accent fill-accent" />
+              {language === 'ar' ? 'أعمال مميزة' : 'Featured Businesses'}
+            </h3>
+          </div>
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4">
+            {featuredBusinesses.map((biz) => (
+              <button
+                key={biz.id}
+                onClick={() => onBusinessClick?.(biz)}
+                className="flex-shrink-0 w-48 bg-white rounded-3xl border border-slate-100 p-4 shadow-sm hover:shadow-md transition-all group"
+              >
+                <div className="aspect-video rounded-2xl overflow-hidden mb-3">
+                  <img src={biz.image} alt={biz.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                </div>
+                <h4 className="text-xs font-black text-bg-dark truncate poppins-bold">{biz.name}</h4>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{biz.category}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Feed Header & Toggle */}
       <div className="flex flex-col items-center text-center mb-12">
         <div className="w-16 h-16 bg-accent/10 rounded-3xl flex items-center justify-center text-accent mb-4 shadow-inner">
           <Smartphone className="w-8 h-8" />
@@ -256,9 +347,26 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
         <h2 className="text-3xl font-black text-primary poppins-bold uppercase tracking-tighter">
           {language === 'ar' ? 'شكو ماكو' : 'Shakumaku'}
         </h2>
-        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] mt-2">
-          {language === 'ar' ? 'آخر تحديثات الأعمال في العراق' : 'Latest business updates in Iraq'}
-        </p>
+        
+        <div className="flex bg-slate-100 p-1 rounded-2xl mt-6 border border-slate-200">
+          <button
+            onClick={() => setFeedType('recent')}
+            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              feedType === 'recent' ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-primary'
+            }`}
+          >
+            {language === 'ar' ? 'الأحدث' : 'Recent'}
+          </button>
+          <button
+            onClick={() => setFeedType('trending')}
+            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+              feedType === 'trending' ? 'bg-white text-accent shadow-sm' : 'text-slate-400 hover:text-accent'
+            }`}
+          >
+            <span>🔥</span>
+            {language === 'ar' ? 'الرائج' : 'Trending'}
+          </button>
+        </div>
       </div>
 
       {displayPosts.map((post) => (
@@ -344,19 +452,24 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <button 
-                  onClick={() => likePost(post.id)}
+                  onClick={() => handleLike(post.id)}
                   className="flex items-center gap-2 group"
                 >
-                  <div className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-red-50 group-hover:text-red-500 transition-all">
-                    <Heart className="w-5 h-5" />
+                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+                    (post as any).isLiked ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-400 group-hover:bg-red-50 group-hover:text-red-500'
+                  }`}>
+                    <Heart className={`w-5 h-5 ${(post as any).isLiked ? 'fill-current' : ''}`} />
                   </div>
                   <span className="text-[12px] font-black text-slate-500">{formatMetric(post.likes)}</span>
                 </button>
-                <button className="flex items-center gap-2 group">
+                <button 
+                  onClick={() => toggleComments(post.id)}
+                  className="flex items-center gap-2 group"
+                >
                   <div className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">
                     <MessageCircle className="w-5 h-5" />
                   </div>
-                  <span className="text-[12px] font-black text-slate-500">{formatMetric((post as any).commentsCount || 0)}</span>
+                  <span className="text-[12px] font-black text-slate-500">{formatMetric(post.commentsCount || 0)}</span>
                 </button>
                 <div className="flex items-center gap-2">
                   <div className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400">
@@ -383,36 +496,50 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
               </p>
             </div>
 
-            {/* Fake Reviews/Comments in Arabic */}
-            <div className="mb-6 space-y-3 border-t border-slate-50 pt-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex text-accent">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 fill-current" />
+            {/* Comments Section */}
+            {showComments[post.id] && (
+              <div className="mb-6 space-y-4 border-t border-slate-50 pt-6">
+                <div className="space-y-4 max-h-60 overflow-y-auto no-scrollbar">
+                  {activeComments[post.id]?.map((comment) => (
+                    <div key={comment.id} className="flex gap-3 items-start">
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-200">
+                        <img 
+                          src={comment.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${comment.user_id}`} 
+                          alt={comment.profiles?.full_name} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-2xl rounded-tl-none flex-1 border border-slate-100">
+                        <p className="text-[10px] font-black text-bg-dark mb-1">{comment.profiles?.full_name || 'User'}</p>
+                        <p className="text-[11px] text-slate-600 leading-snug">{comment.content}</p>
+                      </div>
+                    </div>
                   ))}
                 </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  {language === 'ar' ? 'تقييمات المستخدمين' : 'User Reviews'}
-                </span>
-              </div>
-              {[...Array(2)].map((_, i) => (
-                <div key={i} className="flex gap-3 items-start">
-                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-200">
-                    <img 
-                      src={`https://picsum.photos/seed/commenter${i + (post.id as any)}/100/100`} 
-                      alt="User" 
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
+
+                {user ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={commentInputs[post.id] || ''}
+                      onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
+                      placeholder={language === 'ar' ? 'أضف تعليقاً...' : 'Add a comment...'}
+                      className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-accent"
                     />
+                    <button
+                      onClick={() => handleComment(post.id)}
+                      className="bg-accent text-bg-dark px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                    >
+                      {language === 'ar' ? 'نشر' : 'Post'}
+                    </button>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-2xl rounded-tl-none flex-1 border border-slate-100">
-                    <p className="text-[11px] text-slate-600 leading-snug">
-                      {ARABIC_COMMENTS[(Math.floor(Math.random() * ARABIC_COMMENTS.length))]}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ) : (
+                  <p className="text-[10px] text-slate-400 text-center italic">
+                    {language === 'ar' ? 'سجل الدخول للتعليق' : 'Login to comment'}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* CTA Button */}
             <button 

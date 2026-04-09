@@ -4,6 +4,8 @@ import { X, Mail, Lock, User, ArrowRight, ShieldCheck, Briefcase, Loader2 } from
 import { supabase } from '@/lib/supabaseClient';
 import { useHomeStore } from '@/stores/homeStore';
 
+import { useAuth } from '@/hooks/useAuth';
+
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,6 +17,7 @@ type UserRole = 'user' | 'business_owner';
 export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(initialMode === 'login');
   const [isForgot, setIsForgot] = useState(initialMode === 'forgot');
+  const { signIn, signUp } = useAuth();
   
   // Reset state when modal opens with a specific mode
   React.useEffect(() => {
@@ -29,12 +32,27 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<UserRole>('user');
+  
+  // Business Owner Fields
+  const [businessName, setBusinessName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [governorate, setGovernorate] = useState('');
+  const [category, setCategory] = useState('');
+  const [city, setCity] = useState('');
+  const [description, setDescription] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { language } = useHomeStore();
 
   const translations = {
+    businessName: { en: 'Business Name', ar: 'اسم العمل التجاري', ku: 'ناوی کار' },
+    phone: { en: 'Phone Number', ar: 'رقم الهاتف', ku: 'ژمارەی تەلەفۆن' },
+    governorate: { en: 'Governorate', ar: 'المحافظة', ku: 'پارێزگا' },
+    category: { en: 'Category', ar: 'التصنيف', ku: 'پۆلێن' },
+    city: { en: 'City', ar: 'المدينة', ku: 'شار' },
+    description: { en: 'Short Description', ar: 'وصف قصير', ku: 'وەسفێکی کورت' },
     forgotTitle: {
       en: 'Reset Password',
       ar: 'إعادة تعيين كلمة المرور',
@@ -120,34 +138,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       ar: 'نسيت كلمة المرور؟',
       ku: 'وشەی نهێنیت لەبیرچووە؟'
     },
-    errorMessages: {
-      en: {
-        generic: 'An error occurred during authentication',
-        network: 'Network error: Could not connect to server. Please check your internet connection.',
-        emailExists: 'This email is already registered. Please log in instead.',
-        invalidCredentials: 'Invalid email or password. Please try again.',
-        weakPassword: 'Password is too weak. Please use at least 6 characters.',
-        profileFailed: 'Account created but profile setup failed. Please contact support.',
-        missingFields: 'Please fill in all required fields.',
-      },
-      ar: {
-        generic: 'حدث خطأ أثناء المصادقة',
-        network: 'خطأ في الاتصال: لا يمكن الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.',
-        emailExists: 'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.',
-        invalidCredentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.',
-        weakPassword: 'كلمة المرور ضعيفة جداً. يرجى استخدام 6 أحرف على الأقل.',
-        profileFailed: 'تم إنشاء الحساب لكن فشل إعداد الملف الشخصي. يرجى الاتصال بالدعم.',
-        missingFields: 'يرجى ملء جميع الحقول المطلوبة.',
-      },
-      ku: {
-        generic: 'هەڵەیەک ڕوویدا لە کاتی دڵنیاکردنەوە',
-        network: 'هەڵەی ئێنتەرنێت: ناتوانرێت پەیوەندی بە سێرڤەر بکرێت. تکایە پەیوەندی ئینتەرنێتەکەت بپشکە.',
-        emailExists: 'ئەم ئیمەیڵە پێشتر تۆمارکراوە. تکایە بچۆ ژوورەوە لەباتی تۆمارکردن.',
-        invalidCredentials: 'ئیمەیڵ یان وشەی نهێنی هەڵەیە. تکایە دووبارە هەوڵبدەرەوە.',
-        weakPassword: 'وشەی نهێنی زۆر لاوەکییە. تکایە بە لانیکەم 6 پیت بەکاربهێنە.',
-        profileFailed: 'هەژمار دروست کرا بەڵام دامەزراندنی پرۆفایل شکستی هێنا. تکایە پەیوەندی بە پشتگیری بکە.',
-        missingFields: 'تکایە هەموو خانە پێویستەکان پڕ بکەرەوە.',
-      }
+    or: {
+      en: 'Or continue with',
+      ar: 'أو استمر بواسطة',
+      ku: 'یان بەردەوام بە لەڕێگەی'
     },
     noAccount: {
       en: "Don't have an account?",
@@ -161,78 +155,15 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
     }
   };
 
-  // Helper function to get localized error message
-  const getErrorMessage = (error: Error | any): string => {
-    const messages = translations.errorMessages[language];
-    const msg = error?.message || '';
-    
-    // Check for specific error patterns
-    if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('network')) {
-      return messages.network;
-    }
-    if (msg.includes('User already registered') || msg.includes('already exists') || error?.code === '23505') {
-      return messages.emailExists;
-    }
-    if (msg.includes('Invalid login credentials') || msg.includes('Invalid email or password')) {
-      return messages.invalidCredentials;
-    }
-    if (msg.includes('Password should be at least') || msg.includes('weak')) {
-      return messages.weakPassword;
-    }
-    if (msg.includes('Database error saving new user') || msg.includes('profiles')) {
-      return messages.profileFailed;
-    }
-    
-    return messages.generic;
-  };
-
-  // Validate form fields
-  const validateForm = (): boolean => {
-    const messages = translations.errorMessages[language];
-    
-    if (!email || !email.includes('@')) {
-      setError(messages.missingFields);
-      return false;
-    }
-    
-    if (!isForgot && !password) {
-      setError(messages.missingFields);
-      return false;
-    }
-    
-    if (!isLogin && !isForgot && !name.trim()) {
-      setError(messages.missingFields);
-      return false;
-    }
-    
-    if (!isForgot && password.length < 6) {
-      setError(messages.weakPassword);
-      return false;
-    }
-    
-    return true;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Prevent double submission
-    if (loading) return;
-    
     setLoading(true);
     setError(null);
-    setSuccess(null);
-
-    // Validate before submission
-    if (!validateForm()) {
-      setLoading(false);
-      return;
-    }
 
     try {
       const isConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
       if (!isConfigured) {
-        throw new Error('Supabase configuration missing');
+        throw new Error('Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.');
       }
 
       if (isForgot) {
@@ -245,73 +176,32 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       }
 
       if (isLogin) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (signInError) throw signInError;
-        onClose();
+        await signIn(email, password);
       } else {
-        // Sign up with metadata - profile will be auto-created by trigger
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: name.trim(),
-              role: role,
-            },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
+        await signUp(email, password, {
+          full_name: name,
+          role: role,
+          business_name: role === 'business_owner' ? businessName : undefined,
+          phone: role === 'business_owner' ? phone : undefined,
+          governorate: role === 'business_owner' ? governorate : undefined,
+          category: role === 'business_owner' ? category : undefined,
+          city: role === 'business_owner' ? city : undefined,
+          description: role === 'business_owner' ? description : undefined,
         });
-        
-        if (signUpError) throw signUpError;
-
-        if (signUpData.user) {
-          // Wait briefly for trigger to create profile
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Verify profile was created
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', signUpData.user.id)
-            .single();
-          
-          if (profileError || !profileData) {
-            console.warn('[Auth] Profile auto-creation may have failed:', profileError);
-            // Try to create profile manually as fallback
-            const { error: manualInsertError } = await supabase
-              .from('profiles')
-              .insert([{
-                id: signUpData.user.id,
-                email: signUpData.user.email,
-                full_name: name.trim(),
-                role: role,
-              }]);
-            
-            if (manualInsertError) {
-              console.error('[Auth] Manual profile creation failed:', manualInsertError);
-              throw new Error('profile_failed');
-            }
-          }
-          
-          setSuccess(language === 'ar' 
-            ? 'تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.' 
-            : language === 'ku' 
-              ? 'هەژمار بە سەرکەوتوویی دروست کرا! ئێستا دەتوانی بچیتە ژوورەوە.'
-              : 'Account created successfully! You can now log in.');
-          
-          // Clear form and switch to login after 2 seconds
-          setTimeout(() => {
-            setIsLogin(true);
-            setSuccess(null);
-          }, 2000);
+        setSuccess(language === 'ar' ? 'تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب.' : 'Account created! Please check your email to verify your account.');
+        return;
+      }
+      onClose();
+    } catch (err) {
+      console.error('Auth error:', err);
+      let message = 'An error occurred during authentication';
+      if (err instanceof Error) {
+        message = err.message;
+        if (message.includes('Failed to fetch')) {
+          message = 'Network error: Could not connect to authentication server. Please check your internet connection or Supabase configuration.';
         }
       }
-    } catch (err) {
-      console.error('[Auth] Error:', err);
-      setError(getErrorMessage(err));
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -424,6 +314,83 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                         {translations.businessOwner[language]}
                       </button>
                     </div>
+
+                    {/* Business Owner Specific Fields */}
+                    {role === 'business_owner' && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="space-y-4 pt-2"
+                      >
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder={translations.businessName[language]}
+                            value={businessName}
+                            onChange={(e) => setBusinessName(e.target.value)}
+                            className={`w-full ${language === 'en' ? 'px-4' : 'px-4'} py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm`}
+                            required={role === 'business_owner'}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <input
+                            type="text"
+                            placeholder={translations.phone[language]}
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm"
+                            required={role === 'business_owner'}
+                          />
+                          <select
+                            value={governorate}
+                            onChange={(e) => setGovernorate(e.target.value)}
+                            className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm"
+                            required={role === 'business_owner'}
+                          >
+                            <option value="">{translations.governorate[language]}</option>
+                            <option value="Baghdad">Baghdad</option>
+                            <option value="Erbil">Erbil</option>
+                            <option value="Basra">Basra</option>
+                            <option value="Sulaymaniyah">Sulaymaniyah</option>
+                            <option value="Najaf">Najaf</option>
+                            <option value="Karbala">Karbala</option>
+                            <option value="Dohuk">Dohuk</option>
+                            <option value="Kirkuk">Kirkuk</option>
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <select
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm"
+                            required={role === 'business_owner'}
+                          >
+                            <option value="">{translations.category[language]}</option>
+                            <option value="hotels">Hotels</option>
+                            <option value="dining">Restaurants</option>
+                            <option value="cafe">Cafes</option>
+                            <option value="gym">Gyms</option>
+                            <option value="hospitals">Hospitals</option>
+                            <option value="shopping">Shopping</option>
+                          </select>
+                          <input
+                            type="text"
+                            placeholder={translations.city[language]}
+                            value={city}
+                            onChange={(e) => setCity(e.target.value)}
+                            className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm"
+                            required={role === 'business_owner'}
+                          />
+                        </div>
+                        <textarea
+                          placeholder={translations.description[language]}
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm min-h-[80px] resize-none"
+                          required={role === 'business_owner'}
+                        />
+                      </motion.div>
+                    )}
                   </>
                 )}
 
@@ -492,6 +459,18 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                   )}
                 </button>
 
+                {isLogin && !isForgot && (
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-slate-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white px-2 text-slate-500 font-bold tracking-widest">
+                        {language === 'ar' ? 'أو' : language === 'ku' ? 'یان' : 'OR'}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {isLogin && !isForgot && (
                   <button

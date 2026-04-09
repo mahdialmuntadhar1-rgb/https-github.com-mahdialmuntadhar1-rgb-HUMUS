@@ -15,19 +15,19 @@ interface HeroSectionProps {
 
 const SLOGANS = [
   {
-    en: "Discover Iraq's hidden gems",
-    ar: "اكتشف جواهر العراق الخفية",
-    ku: "گەوهەرە شاراوەکانی عێراق بدۆزەرەوە"
+    en: "The first Iraqi business directory",
+    ar: "أول دليل أعمال عراقي",
+    ku: "یەکەمین ڕێبەری کارەکانی عێراق"
   },
   {
-    en: "Grow your business with us",
-    ar: "نمِّ عملك التجاري معنا",
-    ku: "کارەکەت لەگەڵ ئێمە گەشە پێ بدە"
+    en: "All businesses organized by city and category",
+    ar: "جميع الأعمال منظمة حسب المدينة والفئة",
+    ku: "هەموو کارەکان بەپێی شار و پۆل ڕێکخراون"
   },
   {
-    en: "Verified reviews you can trust",
-    ar: "مراجعات موثوقة يمكنك الاعتماد عليها",
-    ku: "پێداچوونەوەی ڕاست و باوەڕپێکراو"
+    en: "Trilingual Iraqi business platform",
+    ar: "منصة أعمال عراقية بثلاث لغات",
+    ku: "پلاتفۆرمی کارەکانی عێراق بە سێ زمان"
   }
 ];
 
@@ -35,164 +35,95 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
   const [currentSlogan, setCurrentSlogan] = useState(0);
   const { language } = useHomeStore();
   const { profile } = useAuthStore();
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   const isRTL = language === 'ar' || language === 'ku';
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlogan((prev) => (prev + 1) % SLOGANS.length);
-    }, 5000);
+    }, 4000);
 
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
+    return () => clearInterval(timer);
   }, []);
-
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-      }
-    }
-  };
   
   return (
-    <section className="w-full relative overflow-hidden bg-bg-dark pt-12 pb-20 sm:pt-20 sm:pb-32 border-b border-white/5">
-      {/* PWA Install Button */}
-      {deferredPrompt && (
-        <motion.button
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          onClick={handleInstallClick}
-          className="fixed bottom-8 right-8 z-[100] w-16 h-16 bg-accent text-bg-dark rounded-full shadow-[0_0_30px_rgba(245,158,11,0.5)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all animate-bounce"
-        >
-          <Download className="w-8 h-8" />
-        </motion.button>
-      )}
-
-      {/* Background Elements */}
-      <div className="absolute inset-0 z-0">
-        <img 
-          src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1920&auto=format&fit=crop" 
-          alt="Iraq Business"
-          className="w-full h-full object-cover opacity-20 scale-105 blur-[2px]"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-bg-dark/95 via-bg-dark/80 to-bg-dark" />
-        
-        {/* Animated Glows */}
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/10 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-accent/10 rounded-full blur-[120px] animate-pulse delay-1000" />
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-        <div className="flex flex-col items-center text-center">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mb-10 px-6 py-2.5 glass rounded-full border border-white/10 flex items-center gap-4 shadow-2xl"
-          >
-            <div className="flex -space-x-3">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="w-8 h-8 rounded-full border-2 border-bg-dark bg-slate-200 overflow-hidden shadow-lg">
-                  <img src={`https://i.pravatar.cc/100?u=${i + 20}`} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-            <div className="h-4 w-[1px] bg-white/20" />
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
-              <span className="text-[10px] font-black text-white uppercase tracking-[0.25em]">
-                {language === 'ar' ? 'أكثر من ١٠ آلاف مستخدم نشط' : language === 'ku' ? 'زیاتر لە ١٠ هەزار بەکارهێنەری چالاک' : '10k+ active users in Iraq'}
-              </span>
-            </div>
-          </motion.div>
-
-          {/* Slogan with Animation */}
-          <div className="h-24 sm:h-32 flex flex-col items-center justify-center w-full mb-8">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentSlogan}
-                initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="flex flex-col items-center"
-              >
-                <h1 className="text-4xl sm:text-7xl font-black text-white tracking-tighter poppins-bold leading-tight drop-shadow-2xl max-w-4xl uppercase text-center">
-                  {language === 'ar' ? 'شكو ماكو' : 'Shakumaku'}
-                </h1>
-                <p className="text-xl sm:text-2xl font-bold text-accent mt-4 uppercase tracking-[0.2em]">
-                  {SLOGANS[currentSlogan][language]}
-                </p>
-              </motion.div>
-            </AnimatePresence>
+    <div className="w-full px-4 mb-12">
+      <div className="max-w-5xl mx-auto">
+        <div className="relative overflow-hidden bg-bg-dark rounded-[32px] shadow-2xl border border-white/5">
+          {/* Background Elements */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop" 
+              alt="Iraq Business"
+              className="w-full h-full object-cover opacity-20 scale-105 blur-[1px]"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-bg-dark/95 via-bg-dark/80 to-bg-dark/90" />
+            
+            {/* Animated Glows */}
+            <div className="absolute -top-24 -left-24 w-64 h-64 bg-primary/10 rounded-full blur-[80px] animate-pulse" />
+            <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-accent/10 rounded-full blur-[80px] animate-pulse delay-1000" />
           </div>
 
-          {/* Search Bar - ChatGPT Inspired Design */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="w-full max-w-4xl relative group px-4"
-          >
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 rounded-[32px] blur-2xl opacity-0 group-focus-within:opacity-100 transition-all duration-1000" />
-            <div className="relative flex items-center bg-white/95 backdrop-blur-xl rounded-[24px] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.3)] overflow-hidden p-2 border border-white/20 group-focus-within:border-primary/50 transition-all duration-500">
-              <div className={`flex items-center flex-1 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div className="px-5 text-slate-400 group-focus-within:text-primary transition-colors">
-                  <Search className="w-5 h-5" />
+          <div className="relative z-10 p-8 sm:p-12 flex flex-col items-center text-center">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 px-4 py-1.5 bg-white/5 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-3"
+            >
+              <div className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+              <span className="text-[9px] font-black text-white/80 uppercase tracking-[0.2em]">
+                {language === 'ar' ? 'دليل العراق الموثوق' : language === 'ku' ? 'ڕێبەری باوەڕپێکراوی عێراق' : 'Iraq\'s Trusted Directory'}
+              </span>
+            </motion.div>
+
+            {/* Slogan with Animation */}
+            <div className="h-20 sm:h-24 flex flex-col items-center justify-center w-full mb-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentSlogan}
+                  initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="flex flex-col items-center"
+                >
+                  <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight poppins-bold leading-tight uppercase">
+                    {SLOGANS[currentSlogan][language]}
+                  </h1>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Search Bar */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="w-full max-w-2xl relative group"
+            >
+              <div className="relative flex items-center bg-white rounded-2xl shadow-xl overflow-hidden p-1.5 border border-white/20">
+                <div className={`flex items-center flex-1 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className="px-4 text-slate-400">
+                    <Search className="w-5 h-5" />
+                  </div>
+                  <input 
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={language === 'ar' ? 'ابحث عن أي شيء...' : language === 'ku' ? 'بگەڕێ بۆ هەر شتێک...' : 'Search for anything...'}
+                    className={`flex-1 py-3 text-sm font-bold text-bg-dark focus:outline-none bg-transparent placeholder:text-slate-400 ${isRTL ? 'text-right' : 'text-left'}`}
+                  />
                 </div>
-                <input 
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={language === 'ar' ? 'ابحث عن أي شيء في العراق...' : language === 'ku' ? 'بگەڕێ بۆ هەر شتێک لە عێراق...' : 'Search for anything in Iraq...'}
-                  className={`flex-1 py-4 text-base font-bold text-bg-dark focus:outline-none bg-transparent placeholder:text-slate-400 ${isRTL ? 'text-right' : 'text-left'}`}
-                />
-              </div>
-              <div className="flex items-center gap-2 px-2">
-                <button className="hidden sm:flex items-center gap-2 px-6 py-3 bg-bg-dark text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-[18px] hover:bg-primary hover:text-bg-dark transition-all active:scale-95 shadow-xl border border-white/10 group/btn">
+                <button className="px-6 py-3 bg-primary text-bg-dark font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-accent transition-all active:scale-95">
                   {language === 'ar' ? 'بحث' : language === 'ku' ? 'گەڕان' : 'Search'}
-                  <ArrowRight className={`w-4 h-4 transition-transform group-hover/btn:translate-x-1 ${isRTL ? 'rotate-180 group-hover/btn:-translate-x-1' : ''}`} />
                 </button>
               </div>
-            </div>
-          </motion.div>
-
-          {/* Live Activity Indicator */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mt-12 flex items-center gap-6"
-          >
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-2xl border border-white/5">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-              <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">
-                {language === 'ar' ? '١,٢٤٠ متصل الآن' : language === 'ku' ? '١,٢٤٠ کەس ئێستا چالاکن' : '1,240 Online Now'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-2xl border border-white/5">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">
-                {language === 'ar' ? '٥٠+ عمل جديد اليوم' : language === 'ku' ? '٥٠+ کارێکی نوێ ئەمڕۆ' : '50+ New Businesses Today'}
-              </span>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

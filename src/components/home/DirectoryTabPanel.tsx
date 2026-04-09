@@ -36,10 +36,7 @@ export default function DirectoryTabPanel({
   viewMode,
   setViewMode
 }: DirectoryTabPanelProps) {
-  const { language, setCategory } = useHomeStore();
-  const [categoryLimits, setCategoryLimits] = useState<Record<string, number>>(
-    CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat.id]: 3 }), {})
-  );
+  const { language, setCategory, selectedCategory } = useHomeStore();
 
   const translations = {
     showing: { en: 'Showing', ar: 'عرض', ku: 'پیشاندانی' },
@@ -52,23 +49,20 @@ export default function DirectoryTabPanel({
     loadLess: { en: 'Show Less', ar: 'عرض أقل', ku: 'کەمتر ببینە' }
   };
 
-  const handleLoadMoreCategory = (categoryId: string) => {
-    setCategoryLimits(prev => ({
-      ...prev,
-      [categoryId]: prev[categoryId] + 3
-    }));
-  };
-
-  const handleLoadLessCategory = (categoryId: string) => {
-    setCategoryLimits(prev => ({
-      ...prev,
-      [categoryId]: Math.max(3, prev[categoryId] - 3)
-    }));
-  };
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-      {/* 1. Main Category Selector */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      {/* 1. Hero Section */}
+      <HeroSection 
+        businesses={businesses} 
+        onBusinessClick={onBusinessClick}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
+
+      {/* 2. Location & Category Filters */}
+      <LocationFilter businesses={businesses} />
+
+      {/* 3. Main Category Selector */}
       <div className="mb-20">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-1.5 h-6 bg-accent rounded-full" />
@@ -119,62 +113,20 @@ export default function DirectoryTabPanel({
         <div className="space-y-32">
           {/* Category Sections - 3 per category + Independent Load More */}
           {CATEGORIES.map(category => {
+            // If a category is selected, only show that category
+            if (selectedCategory && selectedCategory !== category.id) return null;
+
             const categoryBusinesses = businesses.filter(b => b.category === category.id);
             if (categoryBusinesses.length === 0) return null;
 
-            const limit = categoryLimits[category.id] || 3;
-            const displayedBusinesses = categoryBusinesses.slice(0, limit);
-            const hasMoreInCategory = categoryBusinesses.length > limit;
-
             return (
-              <div key={category.id} id={`category-section-${category.id}`} className="space-y-10 scroll-mt-24">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center text-accent">
-                      <category.icon className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-black text-primary poppins-bold uppercase tracking-tight">
-                        {category.name[language]}
-                      </h3>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                        {categoryBusinesses.length} {language === 'ar' ? 'عمل تجاري' : 'Businesses'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {displayedBusinesses.map(business => (
-                    <BusinessCard 
-                      key={business.id} 
-                      biz={business} 
-                      onClick={onBusinessClick} 
-                    />
-                  ))}
-                </div>
-
-                <div className="flex justify-center gap-4 pt-4">
-                  {hasMoreInCategory && (
-                    <button
-                      onClick={() => handleLoadMoreCategory(category.id)}
-                      className="px-8 py-3 bg-white border border-slate-200 text-primary text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:border-accent hover:text-accent transition-all shadow-sm flex items-center gap-2"
-                    >
-                      {translations.loadMore[language]}
-                      <ChevronRight className={`w-4 h-4 ${language === 'ar' || language === 'ku' ? 'rotate-180' : ''}`} />
-                    </button>
-                  )}
-                  {limit > 3 && (
-                    <button
-                      onClick={() => handleLoadLessCategory(category.id)}
-                      className="px-8 py-3 bg-white border border-slate-200 text-slate-400 text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:border-red-500 hover:text-red-500 transition-all shadow-sm flex items-center gap-2"
-                    >
-                      {translations.loadLess[language]}
-                      <ChevronRight className={`w-4 h-4 rotate-90 ${language === 'ar' || language === 'ku' ? 'rotate-[-90deg]' : ''}`} />
-                    </button>
-                  )}
-                </div>
-              </div>
+              <CategorySection 
+                key={category.id}
+                category={category}
+                businesses={categoryBusinesses}
+                loading={loading}
+                onBusinessClick={onBusinessClick}
+              />
             );
           })}
 

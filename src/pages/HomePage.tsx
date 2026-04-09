@@ -7,6 +7,7 @@ import SocialFeed from "@/components/home/SocialFeed";
 import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
 import AddBusinessModal from "@/components/home/AddBusinessModal";
+import PWAInstallButton from "@/components/common/PWAInstallButton";
 import { useBusinesses } from "@/hooks/useBusinesses";
 import { useHomeStore } from "@/stores/homeStore";
 import type { Business } from "@/lib/supabase";
@@ -96,6 +97,8 @@ export default function HomePage() {
         onClose={() => setIsAddBusinessModalOpen(false)}
         onSuccess={() => refresh()}
       />
+
+      <PWAInstallButton />
 
       {/* Footer */}
       <footer className="bg-primary text-white pt-24 pb-12">
