@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutGrid, Map as MapIcon, Star, TrendingUp, Briefcase, Loader2, ChevronRight } from 'lucide-react';
+import { LayoutGrid, Map as MapIcon, Star, TrendingUp, Briefcase, Loader2, ChevronRight, Search } from 'lucide-react';
 import { motion } from 'motion/react';
 import HeroSection from './HeroSection';
 import LocationFilter from './LocationFilter';
@@ -58,6 +58,29 @@ export default function DirectoryTabPanel({
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
+
+      {/* 1.5 Sticky Search Bar */}
+      <div className="sticky top-[169px] z-40 py-4 bg-white/95 backdrop-blur-xl -mx-4 px-4 mb-12 border-b border-slate-100 shadow-sm">
+        <div className="max-w-2xl mx-auto relative group">
+          <div className="relative flex items-center bg-white rounded-2xl shadow-xl overflow-hidden p-1.5 border border-slate-200">
+            <div className={`flex items-center flex-1 ${language === 'ar' || language === 'ku' ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div className="px-4 text-slate-400">
+                <Search className="w-5 h-5" />
+              </div>
+              <input 
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={language === 'ar' ? 'ابحث عن أي شيء...' : language === 'ku' ? 'بگەڕێ بۆ هەر شتێک...' : 'Search for anything...'}
+                className={`flex-1 py-3 text-sm font-bold text-bg-dark focus:outline-none bg-transparent placeholder:text-slate-400 ${language === 'ar' || language === 'ku' ? 'text-right' : 'text-left'}`}
+              />
+            </div>
+            <button className="px-6 py-3 bg-primary text-bg-dark font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-accent transition-all active:scale-95">
+              {language === 'ar' ? 'بحث' : language === 'ku' ? 'گەڕان' : 'Search'}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* 2. Location & Category Filters */}
       <LocationFilter businesses={businesses} />

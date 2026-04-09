@@ -49,15 +49,20 @@ export default function HomeHeader({ onAddBusiness, onAuth }: HomeHeaderProps) {
         </div>
 
         {/* Center: Language Selection */}
-        <div className="hidden md:flex flex-1 justify-center">
-          <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-2xl border border-slate-100">
-            {['en', 'ar', 'ku'].map((lang) => (
+        <div className="flex flex-1 justify-center">
+          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-[20px] border border-slate-200">
+            {[
+              { id: 'en', label: 'English', flag: '🇬🇧' },
+              { id: 'ar', label: 'عربي', flag: '🇮🇶' },
+              { id: 'ku', label: 'کوردی', flag: '☀️' }
+            ].map((lang) => (
               <button 
-                key={lang}
-                onClick={() => setLanguage(lang as any)}
-                className={`px-5 py-2 rounded-xl text-[10px] font-black transition-all duration-500 uppercase tracking-widest ${language === lang ? 'bg-white text-primary shadow-premium' : 'text-slate-400 hover:text-primary'}`}
+                key={lang.id}
+                onClick={() => setLanguage(lang.id as any)}
+                className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all duration-500 uppercase tracking-widest flex items-center gap-2 ${language === lang.id ? 'bg-white text-primary shadow-premium scale-105' : 'text-slate-500 hover:text-primary'}`}
               >
-                {lang === 'en' ? 'English' : lang === 'ar' ? 'عربي' : 'کوردی'}
+                <span className="text-lg">{lang.flag}</span>
+                <span>{lang.label}</span>
               </button>
             ))}
           </div>

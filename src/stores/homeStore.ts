@@ -29,7 +29,7 @@ export const useHomeStore = create<HomeState>()(
       selectedCategory: null,
       searchQuery: "",
       sortBy: "trending",
-      language: "en",
+      language: "ar",
 
       setGovernorate: (governorate) =>
         set({ selectedGovernorate: governorate, selectedCity: null }),
@@ -56,7 +56,7 @@ export const useHomeStore = create<HomeState>()(
           selectedCategory: null,
           searchQuery: "",
           sortBy: "trending",
-          language: "en",
+          language: "ar",
         }),
     }),
     {
