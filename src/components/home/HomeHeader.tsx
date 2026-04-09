@@ -29,64 +29,57 @@ export default function HomeHeader({ onAddBusiness, onAuth }: HomeHeaderProps) {
 
   return (
     <header className="sticky top-0 z-[60] bg-white/95 backdrop-blur-2xl border-b border-slate-100 shadow-premium">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-6">
         {/* Left: Brand */}
         <div 
-          className="flex items-center gap-3 group cursor-pointer" 
+          className="flex items-center gap-2 sm:gap-3 group cursor-pointer shrink-0" 
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
-          <div className="w-11 h-11 bg-primary rounded-2xl flex items-center justify-center shadow-xl group-hover:rotate-[10deg] transition-all duration-500 border border-white/10">
-            <span className="text-accent font-black text-2xl poppins-bold">S</span>
+          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-primary rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl group-hover:rotate-[10deg] transition-all duration-500 border border-white/10">
+            <span className="text-accent font-black text-xl sm:text-2xl poppins-bold">S</span>
           </div>
           <div className="flex flex-col">
-            <h1 className="text-xl font-black text-primary poppins-bold tracking-tighter leading-none uppercase">
+            <h1 className="text-sm sm:text-xl font-black text-primary poppins-bold tracking-tighter leading-none uppercase">
               {language === 'ar' ? 'شكو ماكو' : 'Shaku Maku'}
             </h1>
-            <p className="text-[9px] text-accent font-black uppercase tracking-[0.3em] mt-1">
+            <p className="text-[7px] sm:text-[9px] text-accent font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] mt-0.5 sm:mt-1">
               {language === 'ar' ? 'دليل العراق' : 'Iraq Directory'}
             </p>
           </div>
         </div>
 
-        {/* Center: Language Selection */}
-        <div className="flex flex-1 justify-center">
-          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-[20px] border border-slate-200">
-            {[
-              { id: 'en', label: 'English', flag: '🇬🇧' },
-              { id: 'ar', label: 'عربي', flag: '🇮🇶' },
-              { id: 'ku', label: 'کوردی', flag: '☀️' }
-            ].map((lang) => (
-              <button 
-                key={lang.id}
-                onClick={() => setLanguage(lang.id as any)}
-                className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all duration-500 uppercase tracking-widest flex items-center gap-2 ${language === lang.id ? 'bg-white text-primary shadow-premium scale-105' : 'text-slate-500 hover:text-primary'}`}
-              >
-                <span className="text-lg">{lang.flag}</span>
-                <span>{lang.label}</span>
-              </button>
-            ))}
-          </div>
+        {/* Center: Language Toggle (Ultra-compact for mobile) */}
+        <div className="flex flex-1 justify-center min-w-0">
+          <button 
+            onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+            className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-slate-200 hover:bg-slate-200 transition-all active:scale-95"
+          >
+            <span className="text-sm sm:text-lg">{language === 'en' ? '🇮🇶' : '🇬🇧'}</span>
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-primary">
+              {language === 'en' ? 'عربي' : 'EN'}
+            </span>
+          </button>
         </div>
 
         {/* Right: User Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1 sm:gap-4 shrink-0">
           {authLoading ? (
-            <div className="w-10 h-10 rounded-xl bg-slate-50 animate-pulse" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-50 animate-pulse" />
           ) : (
             <>
               {!user ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <button 
                     onClick={() => onAuth('login')}
-                    className="px-6 py-3 text-text-muted text-[10px] font-black rounded-2xl hover:text-primary transition-all uppercase tracking-widest"
+                    className="px-2 sm:px-4 py-2 sm:py-3 text-text-muted text-[9px] sm:text-[10px] font-black rounded-xl hover:text-primary transition-all uppercase tracking-widest"
                   >
                     {translations.login[language]}
                   </button>
                   <button 
                     onClick={() => onAuth('signup')}
-                    className="flex items-center gap-3 px-8 py-3 bg-primary text-white text-[10px] font-black rounded-2xl shadow-premium hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3 bg-primary text-white text-[9px] sm:text-[10px] font-black rounded-xl sm:rounded-2xl shadow-premium hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
                   >
-                    <User className="w-5 h-5" />
+                    <User className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span className="hidden sm:inline">{translations.register[language]}</span>
                   </button>
                 </div>

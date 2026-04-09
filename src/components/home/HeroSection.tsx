@@ -80,21 +80,21 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
             <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-accent/10 rounded-full blur-[80px] animate-pulse delay-1000" />
           </div>
 
-          <div className="relative z-10 p-8 sm:p-12 flex flex-col items-center text-center">
+          <div className="relative z-10 p-4 sm:p-12 flex flex-col items-center text-center">
             {/* Badge */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 px-4 py-1.5 bg-white/5 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-3"
+              className="mb-4 sm:mb-6 px-3 py-1 bg-white/5 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-2 sm:gap-3"
             >
-              <div className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-              <span className="text-[9px] font-black text-white/80 uppercase tracking-[0.2em]">
+              <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+              <span className="text-[7px] sm:text-[9px] font-black text-white/80 uppercase tracking-[0.1em] sm:tracking-[0.2em]">
                 {language === 'ar' ? 'دليل العراق الموثوق' : language === 'ku' ? 'ڕێبەری باوەڕپێکراوی عێراق' : 'Iraq\'s Trusted Directory'}
               </span>
             </motion.div>
 
             {/* Slogans with Animation - Showing 3 languages at once */}
-            <div className="min-h-[160px] sm:min-h-[200px] flex flex-col items-center justify-center w-full mb-4">
+            <div className="min-h-[120px] sm:min-h-[200px] flex flex-col items-center justify-center w-full mb-2 sm:mb-4">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentSlogan}
@@ -102,15 +102,15 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
                   animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                   exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="flex flex-col items-center gap-4 sm:gap-6"
+                  className="flex flex-col items-center gap-2 sm:gap-6"
                 >
-                  <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight poppins-bold leading-tight uppercase text-center max-w-4xl">
+                  <h1 className="text-sm sm:text-3xl font-black text-white tracking-tight poppins-bold leading-tight uppercase text-center max-w-4xl">
                     {SLOGANS[currentSlogan].ar}
                   </h1>
-                  <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight poppins-bold leading-tight uppercase text-center max-w-4xl">
+                  <h1 className="text-sm sm:text-3xl font-black text-white tracking-tight poppins-bold leading-tight uppercase text-center max-w-4xl">
                     {SLOGANS[currentSlogan].ku}
                   </h1>
-                  <h1 className="text-lg sm:text-2xl font-bold text-white/80 tracking-tight poppins-bold leading-tight uppercase text-center max-w-4xl">
+                  <h1 className="text-xs sm:text-2xl font-bold text-white/80 tracking-tight poppins-bold leading-tight uppercase text-center max-w-4xl">
                     {SLOGANS[currentSlogan].en}
                   </h1>
                 </motion.div>

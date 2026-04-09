@@ -50,24 +50,24 @@ export default function DirectoryTabPanel({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
       {/* 1.5 Sticky Search Bar */}
-      <div className="sticky top-[169px] z-40 py-4 bg-white/95 backdrop-blur-xl -mx-4 px-4 mb-12 border-b border-slate-100 shadow-sm">
+      <div className="sticky top-[124px] sm:top-[169px] z-40 py-2 sm:py-4 bg-white/95 backdrop-blur-xl -mx-4 px-4 mb-6 sm:mb-12 border-b border-slate-100 shadow-sm transition-all duration-300">
         <div className="max-w-2xl mx-auto relative group">
-          <div className="relative flex items-center bg-white rounded-2xl shadow-xl overflow-hidden p-1.5 border border-slate-200">
+          <div className="relative flex items-center bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden p-1 sm:p-1.5 border border-slate-200">
             <div className={`flex items-center flex-1 ${language === 'ar' || language === 'ku' ? 'flex-row-reverse' : 'flex-row'}`}>
-              <div className="px-4 text-slate-400">
-                <Search className="w-5 h-5" />
+              <div className="px-2 sm:px-4 text-slate-400">
+                <Search className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <input 
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={language === 'ar' ? 'ابحث عن أي شيء...' : language === 'ku' ? 'بگەڕێ بۆ هەر شتێک...' : 'Search for anything...'}
-                className={`flex-1 py-3 text-sm font-bold text-bg-dark focus:outline-none bg-transparent placeholder:text-slate-400 ${language === 'ar' || language === 'ku' ? 'text-right' : 'text-left'}`}
+                className={`flex-1 py-2 sm:py-3 text-xs sm:text-sm font-bold text-bg-dark focus:outline-none bg-transparent placeholder:text-slate-400 ${language === 'ar' || language === 'ku' ? 'text-right' : 'text-left'}`}
               />
             </div>
-            <button className="px-6 py-3 bg-primary text-bg-dark font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-accent transition-all active:scale-95">
+            <button className="px-4 sm:px-6 py-2 sm:py-3 bg-primary text-bg-dark font-black text-[9px] sm:text-[10px] uppercase tracking-widest rounded-lg sm:rounded-xl hover:bg-accent transition-all active:scale-95">
               {language === 'ar' ? 'بحث' : language === 'ku' ? 'گەڕان' : 'Search'}
             </button>
           </div>

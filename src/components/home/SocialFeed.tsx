@@ -374,14 +374,14 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="bg-white rounded-[40px] border border-slate-100 shadow-card overflow-hidden"
+          className="bg-white rounded-[24px] sm:rounded-[40px] border border-slate-100 shadow-card overflow-hidden"
         >
           {/* Post Header */}
-          <div className="p-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="p-4 sm:p-6 flex items-center justify-between">
+            <div className="flex items-center gap-3 sm:gap-4">
               <button 
                 onClick={() => onBusinessClick?.({ id: post.businessId, name: post.authorName } as any)}
-                className="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden border border-slate-50 shadow-inner hover:scale-105 transition-transform"
+                className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-slate-100 overflow-hidden border border-slate-50 shadow-inner hover:scale-105 transition-transform"
               >
                 {post.authorAvatar ? (
                   <img 
@@ -391,7 +391,7 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-primary text-white font-black text-xl">
+                  <div className="w-full h-full flex items-center justify-center bg-primary text-white font-black text-sm sm:text-xl">
                     {post.authorName?.charAt(0) || 'B'}
                   </div>
                 )}
@@ -400,37 +400,37 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={() => onBusinessClick?.({ id: post.businessId, name: post.authorName } as any)}
-                    className="text-base font-black text-bg-dark poppins-bold leading-none hover:text-accent transition-colors block"
+                    className="text-sm sm:text-base font-black text-bg-dark poppins-bold leading-none hover:text-accent transition-colors block"
                   >
                     {post.authorName}
                   </button>
                   {((post as any).isVerified || (post as any).isHotel) && (
-                    <CheckCircle2 className="w-4 h-4 text-accent fill-accent/10" />
+                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-accent fill-accent/10" />
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                    <MapPin className="w-3 h-3" />
+                <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-1 sm:mt-2">
+                  <div className="flex items-center gap-1 text-[8px] sm:text-[10px] font-bold text-slate-400">
+                    <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                     <span>{language === 'ar' ? 'العراق' : 'Iraq'}</span>
                   </div>
                   {(post as any).isHotel && (
                     <>
-                      <span className="text-[10px] text-slate-300">•</span>
-                      <div className="flex items-center gap-1 text-[10px] font-black text-accent uppercase tracking-widest">
-                        <ShieldCheck className="w-3 h-3" />
+                      <span className="text-[8px] sm:text-[10px] text-slate-300">•</span>
+                      <div className="flex items-center gap-1 text-[8px] sm:text-[10px] font-black text-accent uppercase tracking-widest">
+                        <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                         <span>{language === 'ar' ? 'فندق فاخر' : 'Luxury Hotel'}</span>
                       </div>
                     </>
                   )}
-                  <span className="text-[10px] text-slate-300">•</span>
-                  <span className="text-[10px] font-bold text-slate-400">
+                  <span className="text-[8px] sm:text-[10px] text-slate-300">•</span>
+                  <span className="text-[8px] sm:text-[10px] font-bold text-slate-400">
                     {new Date(post.createdAt).toLocaleDateString(language === 'ar' ? 'ar-IQ' : 'en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
               </div>
             </div>
             <button className="p-2 text-slate-400 hover:text-bg-dark transition-colors">
-              <MoreHorizontal className="w-5 h-5" />
+              <MoreHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
@@ -447,49 +447,49 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
           )}
 
           {/* Post Actions */}
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-4">
                 <button 
                   onClick={() => handleLike(post.id)}
-                  className="flex items-center gap-2 group"
+                  className="flex items-center gap-1.5 sm:gap-2 group"
                 >
-                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+                  <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all ${
                     (post as any).isLiked ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-400 group-hover:bg-red-50 group-hover:text-red-500'
                   }`}>
-                    <Heart className={`w-5 h-5 ${(post as any).isLiked ? 'fill-current' : ''}`} />
+                    <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${(post as any).isLiked ? 'fill-current' : ''}`} />
                   </div>
-                  <span className="text-[12px] font-black text-slate-500">{formatMetric(post.likes)}</span>
+                  <span className="text-[10px] sm:text-[12px] font-black text-slate-500">{formatMetric(post.likes)}</span>
                 </button>
                 <button 
                   onClick={() => toggleComments(post.id)}
-                  className="flex items-center gap-2 group"
+                  className="flex items-center gap-1.5 sm:gap-2 group"
                 >
-                  <div className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">
-                    <MessageCircle className="w-5 h-5" />
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">
+                    <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <span className="text-[12px] font-black text-slate-500">{formatMetric(post.commentsCount || 0)}</span>
+                  <span className="text-[10px] sm:text-[12px] font-black text-slate-500">{formatMetric(post.commentsCount || 0)}</span>
                 </button>
-                <div className="flex items-center gap-2">
-                  <div className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400">
-                    <Eye className="w-5 h-5" />
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400">
+                    <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <span className="text-[12px] font-black text-slate-500">{formatMetric((post as any).views || 0)}</span>
+                  <span className="text-[10px] sm:text-[12px] font-black text-slate-500">{formatMetric((post as any).views || 0)}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-accent/10 hover:text-accent transition-all">
-                  <Bookmark className="w-5 h-5" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-accent/10 hover:text-accent transition-all">
+                  <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
-                <button className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-accent/10 hover:text-accent transition-all">
-                  <Share2 className="w-5 h-5" />
+                <button className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-accent/10 hover:text-accent transition-all">
+                  <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>
 
             {/* Caption */}
-            <div className="mb-6">
-              <p className="text-sm text-slate-600 leading-relaxed">
+            <div className="mb-4 sm:mb-6">
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                 <span className="font-black text-bg-dark mr-2">{post.authorName}</span>
                 {post.content}
               </p>
