@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Heart, MapPin, Sparkles, Eye, Award, Store } from "lucide-react";
 import { useHomeStore } from "@/stores/homeStore";
 import { supabase } from "@/lib/supabaseClient";
+import { getPostImage } from "@/config/categoryImages";
 
 interface ShakuMakuPost {
   id: string;
@@ -33,71 +34,8 @@ interface ShakumakuProps {
   onLoadMore: () => void;
 }
 
-// Category-based fallback images - visually relevant to business type
-const CATEGORY_IMAGES: Record<string, string> = {
-  dining: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80",
-  cafe: "https://images.unsplash.com/photo-1501339819398-ed495197ff21?w=600&q=80",
-  hotels: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80",
-  shopping: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80",
-  banks: "https://images.unsplash.com/photo-1501167786227-4cba60f6d58f?w=600&q=80",
-  education: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&q=80",
-  entertainment: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&q=80",
-  tourism: "https://images.unsplash.com/photo-1436491865332-7a61a109c0f3?w=600&q=80",
-  doctors: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=600&q=80",
-  lawyers: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&q=80",
-  hospitals: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&q=80",
-  medical: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80",
-  realestate: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80",
-  events: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&q=80",
-  pharmacy: "https://images.unsplash.com/photo-1587854692152-cbe660dbbb88?w=600&q=80",
-  gym: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80",
-  beauty: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&q=80",
-  supermarkets: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&q=80",
-  furniture: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=600&q=80",
-  general: "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&q=80",
-};
-
 // Default fallback if no category matches
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80";
-
-function getCategoryFromCaption(caption: string): string {
-  const lower = caption.toLowerCase();
-  if (lower.includes("????") || lower.includes("-restaurant") || lower.includes("????")) return "dining";
-  if (lower.includes("????") || lower.includes("coffee") || lower.includes("????")) return "cafe";
-  if (lower.includes("????") || lower.includes("hotel") || lower.includes("???")) return "hotels";
-  if (lower.includes("??????") || lower.includes("pharmacy") || lower.includes("????")) return "pharmacy";
-  if (lower.includes("??????") || lower.includes("hospital") || lower.includes("?????")) return "hospitals";
-  if (lower.includes("????") || lower.includes("clinic") || lower.includes("?????")) return "doctors";
-  if (lower.includes("?????") || lower.includes("beauty") || lower.includes("????")) return "beauty";
-  if (lower.includes("???") || lower.includes("gym") || lower.includes("?????")) return "gym";
-  if (lower.includes("???") || lower.includes("shop") || lower.includes("????")) return "shopping";
-  if (lower.includes("????") || lower.includes("supermarket") || lower.includes("?????")) return "supermarkets";
-  if (lower.includes("????") || lower.includes("real estate") || lower.includes("???")) return "realestate";
-  if (lower.includes("???") || lower.includes("event") || lower.includes("??????")) return "events";
-  if (lower.includes("???") || lower.includes("tourism") || lower.includes("????")) return "tourism";
-  if (lower.includes("???") || lower.includes("bank") || lower.includes("????")) return "banks";
-  if (lower.includes("?????") || lower.includes("school") || lower.includes("?????")) return "education";
-  if (lower.includes("?????") || lower.includes("lawyer") || lower.includes("?????")) return "lawyers";
-  if (lower.includes("????") || lower.includes("furniture") || lower.includes("?????")) return "furniture";
-  return "general";
-}
-
-function getFallbackImage(post: EnrichedPost): string {
-  // 1. Use post image if available
-  if (post.image_url && !post.image_url.includes("placeholder")) {
-    return post.image_url;
-  }
-  
-  // 2. Use business category if available
-  if (post.category) {
-    return CATEGORY_IMAGES[post.category] || DEFAULT_IMAGE;
-  }
-  
-  // 3. Infer from caption
-  const caption = post.caption_ar || post.caption || "";
-  const inferredCategory = getCategoryFromCaption(caption);
-  return CATEGORY_IMAGES[inferredCategory] || DEFAULT_IMAGE;
-}
 
 function formatCaption(caption: string | null): string {
   if (!caption) return "اكتشف هذا المكان المميز!";
@@ -124,7 +62,16 @@ function PostCard({
 }) {
   const { language } = useHomeStore();
   const isRTL = language === "ar" || language === "ku";
-  const image = getFallbackImage(post);
+  // Get image using the new 60-image category-based system (3 images per category)
+  const image = getPostImage(
+    { 
+      id: post.id, 
+      image_url: post.image_url, 
+      caption: post.caption, 
+      caption_ar: post.caption_ar 
+    },
+    post.category
+  );
   const caption = formatCaption(post.caption_ar || post.caption);
   
   // Determine business display name
