@@ -38,4 +38,10 @@ export interface Post {
   createdAt: Date;
   authorName?: string;
   authorAvatar?: string;
+  city?: string;
+  category?: string;
+  governorate?: string;
+  neighborhood?: string;
+  lat?: number;
+  lng?: number;
 }

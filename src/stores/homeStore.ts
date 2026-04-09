@@ -8,6 +8,8 @@ interface HomeState {
   searchQuery: string;
   sortBy: "trending" | "recent" | "rating";
   language: "en" | "ar" | "ku";
+  activeTab: "mycity" | "shakumaku";
+  expandedCategories: string[];
 
   // Actions
   setGovernorate: (governorate: string) => void;
@@ -16,6 +18,8 @@ interface HomeState {
   setSearchQuery: (query: string) => void;
   setSortBy: (sort: "trending" | "recent" | "rating") => void;
   setLanguage: (lang: "en" | "ar" | "ku") => void;
+  setActiveTab: (tab: "mycity" | "shakumaku") => void;
+  toggleCategoryExpansion: (categoryId: string) => void;
   reset: () => void;
 }
 
@@ -30,6 +34,8 @@ export const useHomeStore = create<HomeState>()(
       searchQuery: "",
       sortBy: "trending",
       language: "en",
+      activeTab: "mycity",
+      expandedCategories: [],
 
       setGovernorate: (governorate) =>
         set({ selectedGovernorate: governorate, selectedCity: null }),
@@ -49,6 +55,16 @@ export const useHomeStore = create<HomeState>()(
       setLanguage: (lang) =>
         set({ language: lang }),
 
+      setActiveTab: (tab) =>
+        set({ activeTab: tab }),
+
+      toggleCategoryExpansion: (categoryId) =>
+        set((state) => ({
+          expandedCategories: state.expandedCategories.includes(categoryId)
+            ? state.expandedCategories.filter(id => id !== categoryId)
+            : [...state.expandedCategories, categoryId]
+        })),
+
       reset: () =>
         set({
           selectedGovernorate: DEFAULT_GOVERNORATE,
@@ -57,6 +73,8 @@ export const useHomeStore = create<HomeState>()(
           searchQuery: "",
           sortBy: "trending",
           language: "en",
+          activeTab: "mycity",
+          expandedCategories: [],
         }),
     }),
     {

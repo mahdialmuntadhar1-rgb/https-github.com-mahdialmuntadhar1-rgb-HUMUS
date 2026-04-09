@@ -1,23 +1,17 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search, Briefcase, LayoutDashboard, Star, TrendingUp } from "lucide-react";
+import { User, PlusCircle, MapPin, LogOut, Settings, ChevronDown, Search, Briefcase, LayoutDashboard, Building2, Sparkles } from "lucide-react";
 import debounce from "lodash/debounce";
 import { motion, AnimatePresence } from "motion/react";
-import HeroSection from "@/components/home/HeroSection";
-import StorySection from "@/components/home/StorySection";
-import LocationFilter from "@/components/home/LocationFilter";
-import CategoryGrid from "@/components/home/CategoryGrid";
-import FeedComponent from "@/components/home/FeedComponent";
-import BusinessGrid from "@/components/home/BusinessGrid";
-import BusinessCard from "@/components/home/BusinessCard";
-import CategorySection from "@/components/home/CategorySection";
 import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
 import AddBusinessModal from "@/components/home/AddBusinessModal";
+import MyCity from "@/components/home/MyCity";
+import Shakumaku from "@/components/home/Shakumaku";
 import { useBusinesses } from "@/hooks/useBusinesses";
+import { useShakumaku } from "@/hooks/useShakumaku";
 import { useAuthStore } from "@/stores/authStore";
 import { useHomeStore } from "@/stores/homeStore";
-import { CATEGORIES } from "@/constants";
 import type { Business } from "@/lib/supabase";
 
 export default function HomePage() {
@@ -27,26 +21,14 @@ export default function HomePage() {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-
-  const toggleCategoryExpansion = (categoryId: string) => {
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
-      } else {
-        newSet.add(categoryId);
-      }
-      return newSet;
-    });
-  };
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const { user, profile, signOut, loading: authLoading } = useAuthStore();
   const { 
     language,
     setLanguage,
-    setCategory
+    activeTab,
+    setActiveTab
   } = useHomeStore();
   
   const { 
@@ -58,6 +40,14 @@ export default function HomePage() {
     loadMore,
     refresh
   } = useBusinesses(debouncedQuery);
+
+  const {
+    posts: shakumakuPosts,
+    loading: shakumakuLoading,
+    hasMore: shakumakuHasMore,
+    loadMore: loadMoreShakumaku,
+    likePost: likeShakumakuPost
+  } = useShakumaku();
 
   // Debounce search query
   const debouncedSetQuery = useMemo(
@@ -73,50 +63,20 @@ export default function HomePage() {
   const isRTL = language === 'ar' || language === 'ku';
 
   const translations = {
+    mycity: {
+      en: 'My City',
+      ar: 'مدينتي',
+      ku: 'شارەکەم'
+    },
+    shakumaku: {
+      en: 'Shaku Maku',
+      ar: 'شاكو ماكو',
+      ku: 'شاکۆ ماکۆ'
+    },
     explore: {
       en: 'Explore Businesses',
       ar: 'استكشف الشركات',
       ku: 'گەڕان بەدوای کارەکاندا'
-    },
-    directory: {
-      en: 'Directory',
-      ar: 'الدليل',
-      ku: 'دایرێکتۆری'
-    },
-    subtitle: {
-      en: 'Discover the best local services across Iraq',
-      ar: 'اكتشف أفضل الخدمات المحلية في جميع أنحاء العراق',
-      ku: 'باشترین خزمەتگوزارییە ناوخۆییەکان لە سەرانسەری عێراق بدۆزەرەوە'
-    },
-    showing: {
-      en: 'Showing',
-      ar: 'عرض',
-      ku: 'پیشاندانی'
-    },
-    of: {
-      en: 'of',
-      ar: 'من',
-      ku: 'لە'
-    },
-    services: {
-      en: 'local services across Iraq',
-      ar: 'خدمة محلية في العراق',
-      ku: 'خزمەتگوزاری ناوخۆیی لە عێراق'
-    },
-    grid: {
-      en: 'Grid',
-      ar: 'شبكة',
-      ku: 'تۆڕ'
-    },
-    map: {
-      en: 'Map',
-      ar: 'خريطة',
-      ku: 'نەخشە'
-    },
-    manage: {
-      en: 'Manage Business',
-      ar: 'إدارة الأعمال',
-      ku: 'بەڕێوەبردنی کار'
     },
     addBusiness: {
       en: 'Add Business',
@@ -158,10 +118,11 @@ export default function HomePage() {
         initialMode={authMode}
       />
       <BusinessDetailModal business={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
+      
       {/* Header */}
       <header className="sticky top-0 z-[60] bg-white/95 backdrop-blur-2xl border-b border-slate-100 shadow-[0_1px_10px_rgba(0,0,0,0.02)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-6">
-          {/* Left: Branch (English Only) */}
+          {/* Left: Logo */}
           <div 
             className="flex items-center gap-3 group cursor-pointer" 
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -175,424 +136,217 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Center: Language Selection with Flags */}
+          {/* Center: Tab Navigation */}
           <div className="hidden md:flex flex-1 justify-center">
-            <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
-              <button 
-                onClick={() => setLanguage('en')}
-                className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[10px] font-black transition-all duration-500 uppercase tracking-widest ${language === 'en' ? 'bg-white text-primary shadow-premium' : 'text-slate-400 hover:text-primary'}`}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl">
+              <button
+                onClick={() => setActiveTab('mycity')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[11px] font-black transition-all duration-300 uppercase tracking-wider ${
+                  activeTab === 'mycity'
+                    ? 'bg-white text-bg-dark shadow-lg'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
               >
-                <span className="text-sm">🇺🇸</span>
-                <span>English</span>
+                <Building2 className="w-4 h-4" />
+                {translations.mycity[language]}
               </button>
-              <button 
-                onClick={() => setLanguage('ar')}
-                className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[10px] font-black transition-all duration-500 uppercase tracking-widest ${language === 'ar' ? 'bg-white text-primary shadow-premium' : 'text-slate-400 hover:text-primary'}`}
+              <button
+                onClick={() => setActiveTab('shakumaku')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[11px] font-black transition-all duration-300 uppercase tracking-wider ${
+                  activeTab === 'shakumaku'
+                    ? 'bg-bg-dark text-white shadow-lg'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
               >
-                <span className="text-sm">🇮🇶</span>
-                <span>عربي</span>
-              </button>
-              <button 
-                onClick={() => setLanguage('ku')}
-                className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[10px] font-black transition-all duration-500 uppercase tracking-widest ${language === 'ku' ? 'bg-white text-primary shadow-premium' : 'text-slate-400 hover:text-primary'}`}
-              >
-                <span className="text-sm">☀️</span>
-                <span>کوردی</span>
+                <Sparkles className="w-4 h-4" />
+                {translations.shakumaku[language]}
               </button>
             </div>
           </div>
 
-          {/* Right: Registration/User */}
-          <div className="flex items-center gap-4">
-            {authLoading ? (
-              <div className="w-12 h-12 rounded-2xl bg-slate-50 animate-pulse" />
-            ) : (
-              <>
-                {user && (
-                  <button 
-                    onClick={() => setIsAddBusinessModalOpen(true)}
-                    className="hidden sm:flex items-center gap-3 px-6 py-3 bg-white border border-slate-100 text-text-main text-[10px] font-black rounded-2xl hover:border-primary hover:text-primary transition-all uppercase tracking-widest shadow-sm hover:shadow-premium"
-                  >
-                    <PlusCircle className="w-5 h-5" />
-                    <span>{translations.addBusiness[language]}</span>
-                  </button>
-                )}
-
-                {user && profile?.role === 'business_owner' && (
-                  <Link 
-                    to="/dashboard"
-                    className="hidden lg:flex items-center gap-3 px-6 py-3 bg-secondary text-bg-dark text-[10px] font-black rounded-2xl shadow-xl shadow-secondary/20 hover:bg-secondary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-                  >
-                    <Briefcase className="w-5 h-5" />
-                    <span>{translations.dashboard[language]}</span>
-                  </Link>
-                )}
-
-                {!user ? (
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={() => {
-                        setAuthMode('login');
-                        setIsAuthModalOpen(true);
-                      }}
-                      className="hidden sm:flex items-center gap-3 px-6 py-3 bg-white border border-slate-100 text-text-main text-[10px] font-black rounded-2xl hover:border-primary hover:text-primary transition-all uppercase tracking-widest shadow-sm hover:shadow-premium"
-                    >
-                      <PlusCircle className="w-5 h-5" />
-                      <span>{translations.addBusiness[language]}</span>
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setAuthMode('login');
-                        setIsAuthModalOpen(true);
-                      }}
-                      className="px-6 py-3 text-text-muted text-[10px] font-black rounded-2xl hover:text-primary transition-all uppercase tracking-widest"
-                    >
-                      {language === 'ar' ? 'دخول' : language === 'ku' ? 'چوونەژوورەوە' : 'Login'}
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setAuthMode('signup');
-                        setIsAuthModalOpen(true);
-                      }}
-                      className="flex items-center gap-3 px-8 py-3 bg-primary text-bg-dark text-[10px] font-black rounded-2xl shadow-2xl shadow-primary/20 hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
-                    >
-                      <User className="w-5 h-5" />
-                      <span className="hidden sm:inline">{language === 'ar' ? 'تسجيل' : language === 'ku' ? 'تۆمارکردن' : 'Register'}</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <button 
-                      onClick={() => setShowUserMenu(!showUserMenu)}
-                      className="flex items-center gap-3 p-1.5 rounded-2xl bg-white border border-slate-100 hover:border-primary transition-all shadow-sm group"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-bg-dark flex items-center justify-center text-white text-[12px] font-black group-hover:bg-primary transition-colors">
-                        {profile?.full_name?.charAt(0) || user.email?.charAt(0).toUpperCase()}
-                      </div>
-                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    <AnimatePresence>
-                      {showUserMenu && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-[70] overflow-hidden"
-                        >
-                          <div className="px-4 py-3 border-b border-slate-100 mb-2 bg-slate-50/50">
-                            <p className="text-[10px] font-black text-text-main truncate">{profile?.full_name || user.email}</p>
-                            <p className="text-[8px] font-bold text-text-muted truncate mt-0.5 opacity-60">{user.email}</p>
-                            {profile?.role === 'business_owner' && (
-                              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 bg-secondary/10 text-secondary rounded-full">
-                                <Briefcase className="w-2.5 h-2.5" />
-                                <span className="text-[7px] font-black uppercase tracking-widest">{translations.owner[language]}</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {profile?.role === 'business_owner' && (
-                            <Link 
-                              to="/dashboard"
-                              onClick={() => setShowUserMenu(false)}
-                              className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-text-muted hover:bg-slate-50 hover:text-secondary flex items-center gap-3 transition-colors"
-                            >
-                              <LayoutDashboard className="w-4 h-4" /> {translations.dashboard[language]}
-                            </Link>
-                          )}
-
-                          <button className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-text-muted hover:bg-slate-50 hover:text-primary flex items-center gap-3 transition-colors">
-                            <Settings className="w-4 h-4" /> {translations.settings[language]}
-                          </button>
-                          
-                          <div className="h-px bg-slate-100 my-1" />
-                          
-                          <button 
-                            onClick={() => {
-                              signOut();
-                              setShowUserMenu(false);
-                            }}
-                            className="w-full px-4 py-2.5 text-left text-[11px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
-                          >
-                            <LogOut className="w-4 h-4" /> {translations.signOut[language]}
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-
-      <main className="pb-24">
-        {/* 1. Hero Section */}
-        <HeroSection 
-          businesses={businesses} 
-          onBusinessClick={setSelectedBusiness} 
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-        />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          {/* 2. Quick Filters & Categories */}
-          <div className="max-w-4xl mx-auto pt-12">
-            {/* Dropdown Filters (Utility) */}
-            <LocationFilter businesses={businesses} />
-
-            {/* Popular Now Chips */}
-            <div className="flex items-center gap-4 mb-12 px-1 overflow-x-auto no-scrollbar pb-2">
-              <div className="flex items-center gap-2 px-4 py-2 bg-secondary/10 text-secondary rounded-full border border-secondary/20 whitespace-nowrap">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span className="text-[9px] font-black uppercase tracking-widest">Popular Now:</span>
-              </div>
-              {CATEGORIES.slice(0, 6).map((cat, idx) => (
-                <button 
-                  key={cat.id}
-                  onClick={() => setCategory(cat.id)}
-                  className="px-5 py-2 bg-white border border-slate-100 rounded-full text-[9px] font-black text-slate-500 uppercase tracking-widest hover:border-primary hover:text-primary transition-all shadow-sm whitespace-nowrap flex items-center gap-2 group"
+          {/* Right: Language & User */}
+          <div className="flex items-center gap-3">
+            {/* Language Switcher */}
+            <div className="hidden sm:flex items-center gap-1 bg-slate-50 p-1 rounded-xl">
+              {(['en', 'ar', 'ku'] as const).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => setLanguage(lang)}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                    language === lang
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-400 hover:text-slate-600'
+                  }`}
                 >
-                  <cat.icon className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-                  {cat.name[language]}
+                  {lang === 'en' ? 'EN' : lang === 'ar' ? 'ع' : 'کو'}
                 </button>
               ))}
             </div>
 
-            {/* Compact Category Grid (Discovery) */}
-            <div className="mb-20">
-              <div className="flex items-center justify-between mb-8 px-1">
-                <h2 className="text-xl font-black text-bg-dark poppins-bold uppercase tracking-tight">
-                  {language === 'ar' ? 'استكشف الفئات' : language === 'ku' ? 'پۆلەکان بگەڕێ' : 'Explore Categories'}
-                </h2>
-              </div>
-              <CategoryGrid />
-            </div>
-          </div>
-
-          <div className="space-y-32">
-            {/* 3. Featured Businesses */}
-            <div className="space-y-10">
-              <div className="flex items-center justify-end gap-4 px-1">
-                <div className="text-right">
-                  <h2 className="text-2xl font-black text-bg-dark poppins-bold leading-tight uppercase tracking-tight">
-                    {language === 'ar' ? 'أماكن مميزة' : language === 'ku' ? 'شوێنە دیارەکان' : 'Featured Businesses'}
-                  </h2>
-                  <p className="text-[11px] font-bold text-slate-400">
-                    {language === 'ar' ? 'أفضل الأماكن المختارة' : language === 'ku' ? 'باشترین شوێنەکان' : 'Handpicked top-rated establishments'}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-sm">
-                  <Star className="w-6 h-6" />
-                </div>
-              </div>
-              <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 sm:mx-0 sm:px-0">
-                {businesses.filter(b => b.isFeatured).slice(0, 10).map(business => (
-                  <div key={business.id}>
-                    <BusinessCard 
-                      biz={business}
-                      variant="featured"
-                      onClick={setSelectedBusiness}
-                    />
+            {authLoading ? (
+              <div className="w-10 h-10 rounded-xl bg-slate-100 animate-pulse" />
+            ) : !user ? (
+              <button
+                onClick={() => {
+                  setAuthMode('login');
+                  setIsAuthModalOpen(true);
+                }}
+                className="px-5 py-2.5 bg-bg-dark text-white text-[11px] font-black rounded-xl hover:bg-primary hover:text-bg-dark transition-all uppercase tracking-wider"
+              >
+                {language === 'ar' ? 'دخول' : language === 'ku' ? 'چوونەژوورەوە' : 'Login'}
+              </button>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-bg-dark flex items-center justify-center text-white text-xs font-black">
+                    {profile?.full_name?.charAt(0) || user.email?.charAt(0).toUpperCase()}
                   </div>
-                ))}
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {showUserMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-[70]"
+                    >
+                      <div className="px-4 py-3 border-b border-slate-100 mb-2">
+                        <p className="text-xs font-bold text-bg-dark truncate">{profile?.full_name || user.email}</p>
+                        {profile?.role === 'business_owner' && (
+                          <span className="text-[9px] font-bold text-primary uppercase">{translations.owner[language]}</span>
+                        )}
+                      </div>
+                      
+                      {profile?.role === 'business_owner' && (
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setShowUserMenu(false)}
+                          className="w-full px-4 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                        >
+                          <LayoutDashboard className="w-4 h-4" />
+                          {translations.dashboard[language]}
+                        </Link>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setIsAddBusinessModalOpen(true);
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        {translations.addBusiness[language]}
+                      </button>
+
+                      <Link
+                        to="/admin/shakumaku"
+                        onClick={() => setShowUserMenu(false)}
+                        className="w-full px-4 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        Manage Shakumaku
+                      </Link>
+
+                      <div className="h-px bg-slate-100 my-1" />
+                      
+                      <button
+                        onClick={() => {
+                          signOut();
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        {translations.signOut[language]}
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </div>
-
-            {/* 4. Trending / Discovery */}
-            <div className="space-y-10">
-              <div className="flex items-center justify-end gap-4 px-1">
-                <div className="text-right">
-                  <h2 className="text-2xl font-black text-bg-dark poppins-bold leading-tight uppercase tracking-tight">
-                    {language === 'ar' ? `رائج في ${useHomeStore.getState().selectedGovernorate || 'العراق'}` : language === 'ku' ? `لە ${useHomeStore.getState().selectedGovernorate || 'عێراق'} باوە` : `Trending in ${useHomeStore.getState().selectedGovernorate || 'Iraq'}`}
-                  </h2>
-                  <p className="text-[11px] font-bold text-slate-400">
-                    {language === 'ar' ? 'الأماكن الأكثر زيارة' : language === 'ku' ? 'زۆرترین سەردانیکراو' : 'Most visited places this week'}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-secondary/20 rounded-2xl flex items-center justify-center text-bg-dark border border-secondary/30 shadow-sm">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
-              </div>
-              <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 sm:mx-0 sm:px-0">
-                {businesses.slice(0, 12).map(business => (
-                  <div key={business.id}>
-                    <BusinessCard 
-                      biz={business}
-                      variant="compact"
-                      onClick={setSelectedBusiness}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 5. Platform Activity (Live Feed) */}
-            <div className="space-y-10">
-              <div className="flex items-center justify-end gap-4 px-1">
-                <div className="text-right">
-                  <h2 className="text-2xl font-black text-bg-dark poppins-bold leading-tight uppercase tracking-tight">
-                    {language === 'ar' ? 'آخر الأخبار والنشاطات' : language === 'ku' ? 'دوایین چالاکییەکان' : 'Live Platform Activity'}
-                  </h2>
-                  <p className="text-[11px] font-bold text-slate-400">
-                    {language === 'ar' ? 'تحديثات مباشرة من الشركات' : language === 'ku' ? 'نوێکارییەکان' : 'Real-time updates from local businesses'}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-accent/10 rounded-2xl flex items-center justify-center text-accent border border-accent/20 shadow-sm">
-                  <div className="w-3 h-3 rounded-full bg-accent animate-ping" />
-                </div>
-              </div>
-              <FeedComponent businesses={businesses} loading={businessesLoading} />
-            </div>
-
-            {/* 6. Main Business Listing Grouped by Category */}
-            <div id="business-grid" className="space-y-20">
-              {CATEGORIES.filter(cat => {
-                // Only show categories that have businesses in the current list
-                return businesses.some(b => b.category === cat.id);
-              }).map(category => {
-                const categoryBusinesses = businesses.filter(b => b.category === category.id);
-                if (categoryBusinesses.length === 0) return null;
-
-                return (
-                  <div key={category.id}>
-                    <CategorySection 
-                      category={category}
-                      businesses={categoryBusinesses}
-                      loading={businessesLoading}
-                      onBusinessClick={setSelectedBusiness}
-                    />
-                  </div>
-                );
-              })}
-
-              {/* General/Other Category */}
-              {businesses.filter(b => !CATEGORIES.some(c => c.id === b.category)).length > 0 && (
-                <CategorySection 
-                  category={{
-                    id: 'other',
-                    name: { en: 'Other', ar: 'أخرى', ku: 'ئەوانی تر' },
-                    icon: Briefcase
-                  }}
-                  businesses={businesses.filter(b => !CATEGORIES.some(c => c.id === b.category))}
-                  loading={businessesLoading}
-                  onBusinessClick={setSelectedBusiness}
-                />
-              )}
-
-              {/* Global Load More */}
-              {hasMore && (
-                <div className="flex flex-col items-center gap-8 py-20 bg-slate-50/50 rounded-[60px] border border-slate-100">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                      {translations.showing[language]} <span className="text-bg-dark">{businesses.length}</span> {translations.of[language]} <span className="text-bg-dark">{totalCount}</span> {translations.services[language]}
-                    </div>
-                    <div className="w-64 h-2 bg-slate-200 rounded-full overflow-hidden shadow-inner">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary to-accent"
-                        style={{ width: `${(businesses.length / totalCount) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                  <button
-                    onClick={loadMore}
-                    disabled={businessesLoading}
-                    className="px-16 py-6 bg-bg-dark text-white text-[12px] font-black uppercase tracking-[0.4em] rounded-[28px] hover:bg-primary hover:text-bg-dark transition-all duration-700 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.4)] hover:shadow-primary/30 active:scale-95"
-                  >
-                    {businessesLoading ? 'Loading...' : 'Load More Businesses'}
-                  </button>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
+
+        {/* Mobile Tab Bar */}
+        <div className="md:hidden border-t border-slate-100">
+          <div className="flex">
+            <button
+              onClick={() => setActiveTab('mycity')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-[11px] font-black uppercase tracking-wider transition-all ${
+                activeTab === 'mycity'
+                  ? 'text-bg-dark border-b-2 border-bg-dark'
+                  : 'text-slate-400'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+              {translations.mycity[language]}
+            </button>
+            <button
+              onClick={() => setActiveTab('shakumaku')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-[11px] font-black uppercase tracking-wider transition-all ${
+                activeTab === 'shakumaku'
+                  ? 'text-bg-dark border-b-2 border-bg-dark'
+                  : 'text-slate-400'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              {translations.shakumaku[language]}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <AnimatePresence mode="wait">
+          {activeTab === 'mycity' ? (
+            <motion.div
+              key="mycity"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <MyCity
+                businesses={businesses}
+                loading={businessesLoading}
+                hasMore={hasMore}
+                totalCount={totalCount}
+                onBusinessClick={setSelectedBusiness}
+                onLoadMore={loadMore}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="shakumaku"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Shakumaku
+                posts={shakumakuPosts}
+                loading={shakumakuLoading}
+                hasMore={shakumakuHasMore}
+                onLoadMore={loadMoreShakumaku}
+                onLike={likeShakumakuPost}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
-      <AddBusinessModal 
-        isOpen={isAddBusinessModalOpen} 
+      <AddBusinessModal
+        isOpen={isAddBusinessModalOpen}
         onClose={() => setIsAddBusinessModalOpen(false)}
         onSuccess={() => refresh()}
       />
-
-      {/* Footer */}
-      <footer className="bg-bg-dark text-white pt-24 pb-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-            <div className="lg:col-span-4">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20">
-                  <span className="text-white font-black text-2xl poppins-bold">B</span>
-                </div>
-                <h3 className="text-3xl font-black poppins-bold tracking-tighter">Belive</h3>
-              </div>
-              <p className="text-slate-400 leading-relaxed mb-10 text-base max-w-sm">
-                Iraq's most trusted business discovery platform. Connecting millions of users with local businesses across all 19 governorates.
-              </p>
-              <div className="flex gap-4">
-                {['facebook', 'instagram', 'twitter', 'linkedin'].map(social => (
-                  <a key={social} href="#" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:border-primary transition-all duration-500 group">
-                    <span className="text-[10px] font-black uppercase tracking-tighter group-hover:scale-110 transition-transform">{social.slice(0, 2)}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-            
-            <div className="lg:col-span-2">
-              <h4 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-8">Directory</h4>
-              <ul className="space-y-4 text-sm font-bold text-slate-400">
-                <li><a href="#" className="hover:text-white transition-colors">Browse Categories</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Popular Cities</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Featured Listings</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">New Businesses</a></li>
-              </ul>
-            </div>
-
-            <div className="lg:col-span-2">
-              <h4 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-8">For Business</h4>
-              <ul className="space-y-4 text-sm font-bold text-slate-400">
-                <li><a href="#" className="hover:text-white transition-colors">Claim Listing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Advertise</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Business Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Success Stories</a></li>
-              </ul>
-            </div>
-
-            <div className="lg:col-span-4">
-              <h4 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-8">Mobile App</h4>
-              <p className="text-sm text-slate-500 mb-8 font-medium">Download the Belive app for the best experience on the go.</p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a href="#" className="flex-1 bg-white/5 border border-white/10 p-4 rounded-[20px] flex items-center gap-4 hover:bg-white/10 transition-all group">
-                  <div className="text-3xl group-hover:scale-110 transition-transform">🍎</div>
-                  <div>
-                    <p className="text-[8px] uppercase font-black text-slate-500 tracking-widest">Available on</p>
-                    <p className="text-sm font-black">App Store</p>
-                  </div>
-                </a>
-                <a href="#" className="flex-1 bg-white/5 border border-white/10 p-4 rounded-[20px] flex items-center gap-4 hover:bg-white/10 transition-all group">
-                  <div className="text-3xl group-hover:scale-110 transition-transform">🤖</div>
-                  <div>
-                    <p className="text-[8px] uppercase font-black text-slate-500 tracking-widest">Get it on</p>
-                    <p className="text-sm font-black">Google Play</p>
-                  </div>
-                </a>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-t border-white/5 mt-24 pt-12 flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">
-            <p>&copy; {new Date().getFullYear()} Belive. ALL RIGHTS RESERVED.</p>
-            <div className="flex items-center gap-4">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/20 font-black text-[10px]">BL</div>
-              <div className="flex gap-12">
-                <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-                <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-                <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

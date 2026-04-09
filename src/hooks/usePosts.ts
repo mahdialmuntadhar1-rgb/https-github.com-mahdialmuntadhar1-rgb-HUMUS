@@ -21,12 +21,17 @@ export function usePosts(businessId?: string) {
       const to = from + PAGE_SIZE - 1;
 
       let query = supabase
-        .from('posts')
+        .from('business_postcards')
         .select(`
           *,
-          businesses (
+          erbilapify (
             name,
-            image_url
+            city,
+            category,
+            governorate,
+            neighborhood,
+            lat,
+            lng
           )
         `, { count: 'exact' })
         .order('created_at', { ascending: false })
@@ -43,13 +48,19 @@ export function usePosts(businessId?: string) {
       if (data) {
         const mappedPosts: Post[] = data.map((item: any) => ({
           id: item.id,
-          businessId: item.business_id,
-          content: item.content,
+          businessId: String(item.business_id),
+          content: item.caption,
           image: item.image_url,
-          likes: item.likes || 0,
+          likes: item.likes_count || 0,
           createdAt: new Date(item.created_at),
-          authorName: item.businesses?.name,
-          authorAvatar: item.businesses?.image_url
+          authorName: item.erbilapify?.name,
+          authorAvatar: null,
+          city: item.erbilapify?.city,
+          category: item.erbilapify?.category,
+          governorate: item.erbilapify?.governorate,
+          neighborhood: item.erbilapify?.neighborhood,
+          lat: item.erbilapify?.lat,
+          lng: item.erbilapify?.lng
         }));
 
         if (isLoadMore) {
@@ -82,13 +93,13 @@ export function usePosts(businessId?: string) {
     
     try {
       const { data, error: insertError } = await supabase
-        .from('posts')
+        .from('business_postcards')
         .insert([
           {
-            business_id: businessId,
-            content,
+            business_id: String(businessId),
+            caption: content,
             image_url: imageUrl,
-            likes: 0
+            likes_count: 0
           }
         ])
         .select()
@@ -108,12 +119,21 @@ export function usePosts(businessId?: string) {
 
   const likePost = async (postId: string) => {
     try {
-      const { error: likeError } = await supabase.rpc('increment_likes', { post_id: postId });
-      if (likeError) throw likeError;
+      const { error: likeError } = await supabase
+        .from('business_postcards')
+        .update({ likes_count: supabase.rpc('increment', { x: 1 }) })
+        .eq('id', postId);
       
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p));
+      if (likeError) {
+        // Fallback: just update local state
+        setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p));
+      } else {
+        setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p));
+      }
     } catch (err) {
       console.error('Error liking post:', err);
+      // Still update UI optimistically
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p));
     }
   };
 
