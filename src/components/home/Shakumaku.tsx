@@ -8,6 +8,7 @@ import { CATEGORIES } from '@/constants';
 interface ShakumakuProps {
   posts: ShakumakuPost[];
   loading: boolean;
+  error: string | null;
   hasMore: boolean;
   onLoadMore: () => void;
   onLike: (postId: string) => void;
@@ -25,7 +26,7 @@ const arabicCaptions = [
   "📍 اكتشفوا سر تميز {name} في قلب {city}! ✨",
 ];
 
-export default function Shakumaku({ posts, loading, hasMore, onLoadMore, onLike }: ShakumakuProps) {
+export default function Shakumaku({ posts, loading, error, hasMore, onLoadMore, onLike }: ShakumakuProps) {
   const { language } = useHomeStore();
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [selectedPost, setSelectedPost] = useState<ShakumakuPost | null>(null);
@@ -136,6 +137,26 @@ export default function Shakumaku({ posts, loading, hasMore, onLoadMore, onLike 
     }
   };
 
+  // Show error state
+  if (error && posts.length === 0) {
+    return (
+      <div className="text-center py-20">
+        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Sparkles className="w-8 h-8 text-red-400" />
+        </div>
+        <p className="text-red-500 font-bold mb-2">Feed Error</p>
+        <p className="text-slate-400 text-sm mb-4">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-bg-dark text-white rounded-lg text-sm font-bold"
+        >
+          Retry
+        </button>
+        <p className="text-slate-400 text-xs mt-4">Check browser console (F12) for details</p>
+      </div>
+    );
+  }
+
   if (loading && posts.length === 0) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -169,6 +190,9 @@ export default function Shakumaku({ posts, loading, hasMore, onLoadMore, onLike 
           </div>
           <p className="text-slate-400 font-bold">
             {translations.noPosts[language]}
+          </p>
+          <p className="text-slate-400 text-xs mt-2">
+            Check browser console (F12) for connection details
           </p>
         </div>
       ) : (

@@ -44,6 +44,7 @@ export default function HomePage() {
   const {
     posts: shakumakuPosts,
     loading: shakumakuLoading,
+    error: shakumakuError,
     hasMore: shakumakuHasMore,
     loadMore: loadMoreShakumaku,
     likePost: likeShakumakuPost
@@ -333,6 +334,7 @@ export default function HomePage() {
               <Shakumaku
                 posts={shakumakuPosts}
                 loading={shakumakuLoading}
+                error={shakumakuError}
                 hasMore={shakumakuHasMore}
                 onLoadMore={loadMoreShakumaku}
                 onLike={likeShakumakuPost}

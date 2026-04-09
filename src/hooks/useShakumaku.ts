@@ -98,28 +98,37 @@ export function useShakumaku(): UseShakumakuResult {
       let data: any[] = [];
       let count = 0;
 
+      console.log('[Shakumaku] Fetching from shakumaku_posts table...');
+      
       if (exists) {
-        // Fetch from shakumaku_posts
+        // Fetch from shakumaku_posts - use correct camelCase column names
         const result = await supabase
           .from('shakumaku_posts')
           .select(`
             *,
-            businesses (
+            businesses!inner (
               name,
-              name_ar,
+              "nameAr",
               category,
+              subcategory,
               governorate,
               city,
-              neighborhood,
               phone,
-              lat,
-              lng
+              "imageUrl",
+              "isPremium",
+              "isFeatured"
             )
           `, { count: 'exact' })
           .eq('is_active', true)
           .order('is_featured', { ascending: false })
           .order('created_at', { ascending: false })
           .range(from, to);
+
+        console.log('[Shakumaku] Query result:', { 
+          error: result.error?.message, 
+          dataLength: result.data?.length,
+          count: result.count 
+        });
 
         if (result.error) throw result.error;
         data = result.data || [];
@@ -154,34 +163,35 @@ export function useShakumaku(): UseShakumakuResult {
         count = result.count || 0;
       }
 
-      if (data) {
-        const mappedPosts: ShakumakuPost[] = data.map((item: any) => {
-          // Handle both shakumaku_posts format and businesses fallback format
-          const biz = item.businesses || item;
-          return {
+      console.log('[Shakumaku] Mapping', data.length, 'posts');
+      
+      if (data && data.length > 0) {
+        const mappedPosts: ShakumakuPost[] = data.map((item: any, idx: number) => {
+          // Handle joined business data with safe fallbacks
+          const biz = item.businesses || {};
+          const post = {
             id: item.id,
-            businessId: item.business_id || item.id,
-            caption: item.caption_ar || item.caption || generateCaption(biz),
+            businessId: item.business_id,
+            caption: item.caption_ar || item.caption || '✨ اكتشف هذا المكان المميز!',
             captionAr: item.caption_ar || item.caption,
-            captionEn: item.caption_en,
-            image: item.image_url || biz.image_url || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80`,
+            captionEn: item.caption_en || '',
+            image: item.image_url || biz.imageUrl || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80`,
             likes: item.likes_count || 0,
             views: item.views_count || 0,
             isFeatured: item.is_featured || false,
             isActive: item.is_active ?? true,
             createdAt: new Date(item.created_at),
             updatedAt: new Date(item.updated_at),
-            businessName: biz.name,
-            businessNameAr: biz.name_ar,
-            category: biz.category,
-            governorate: biz.governorate,
-            city: biz.city,
-            neighborhood: biz.neighborhood,
-            phone: biz.phone,
-            lat: biz.lat,
-            lng: biz.lng,
-            adminNotes: item.admin_notes
+            businessName: biz.name || 'مجهول',
+            businessNameAr: biz.nameAr || biz.name || 'مجهول',
+            category: biz.category || 'عام',
+            governorate: biz.governorate || 'العراق',
+            city: biz.city || biz.governorate || 'العراق',
+            phone: biz.phone || '',
+            adminNotes: item.admin_notes || ''
           };
+          if (idx === 0) console.log('[Shakumaku] First post mapped:', post);
+          return post;
         });
 
         setPosts(prev => {
