@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, MapPin, Sparkles, TrendingUp, Users, ShieldCheck, LayoutDashboard, ArrowRight } from 'lucide-react';
+import { Search, MapPin, Sparkles, TrendingUp, Users, ShieldCheck, LayoutDashboard, ArrowRight, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Business } from '@/lib/supabase';
 import { useHomeStore } from '@/stores/homeStore';
@@ -32,22 +32,55 @@ const SLOGANS = [
 ];
 
 export default function HeroSection({ businesses, onBusinessClick, searchQuery, setSearchQuery }: HeroSectionProps) {
-  const featured = businesses.filter(b => b.isFeatured).slice(0, 5);
-  const [currentSlogan, setCurrentSlogan] = React.useState(0);
+  const [currentSlogan, setCurrentSlogan] = useState(0);
   const { language } = useHomeStore();
   const { profile } = useAuthStore();
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   const isRTL = language === 'ar' || language === 'ku';
 
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlogan((prev) => (prev + 1) % SLOGANS.length);
     }, 5000);
-    return () => clearInterval(timer);
+
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
   
   return (
     <section className="w-full relative overflow-hidden bg-bg-dark pt-12 pb-20 sm:pt-20 sm:pb-32 border-b border-white/5">
+      {/* PWA Install Button */}
+      {deferredPrompt && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          onClick={handleInstallClick}
+          className="fixed bottom-8 right-8 z-[100] w-16 h-16 bg-accent text-bg-dark rounded-full shadow-[0_0_30px_rgba(245,158,11,0.5)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all animate-bounce"
+        >
+          <Download className="w-8 h-8" />
+        </motion.button>
+      )}
+
       {/* Background Elements */}
       <div className="absolute inset-0 z-0">
         <img 
@@ -80,7 +113,7 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
             </div>
             <div className="h-4 w-[1px] bg-white/20" />
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_10px_rgba(212,175,55,0.8)]" />
+              <div className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
               <span className="text-[10px] font-black text-white uppercase tracking-[0.25em]">
                 {language === 'ar' ? 'أكثر من ١٠ آلاف مستخدم نشط' : language === 'ku' ? 'زیاتر لە ١٠ هەزار بەکارهێنەری چالاک' : '10k+ active users in Iraq'}
               </span>
@@ -98,9 +131,12 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 className="flex flex-col items-center"
               >
-                <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter poppins-bold leading-tight drop-shadow-2xl max-w-4xl uppercase text-center">
-                  {SLOGANS[currentSlogan][language]}
+                <h1 className="text-4xl sm:text-7xl font-black text-white tracking-tighter poppins-bold leading-tight drop-shadow-2xl max-w-4xl uppercase text-center">
+                  {language === 'ar' ? 'شكو ماكو' : 'Shaku Maku'}
                 </h1>
+                <p className="text-xl sm:text-2xl font-bold text-accent mt-4 uppercase tracking-[0.2em]">
+                  {SLOGANS[currentSlogan][language]}
+                </p>
               </motion.div>
             </AnimatePresence>
           </div>

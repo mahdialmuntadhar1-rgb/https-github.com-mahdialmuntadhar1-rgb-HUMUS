@@ -26,11 +26,14 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
   const { selectedGovernorate, selectedCategory, selectedCity } = useHomeStore();
 
   const fetchBusinesses = useCallback(async (isRefresh = false) => {
-    setLoading(true);
     setError(null);
     
     const currentPage = isRefresh ? 1 : page;
     
+    if (isRefresh) {
+      setLoading(true);
+    }
+
     try {
       let query = supabase
         .from('businesses')
@@ -44,9 +47,10 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
         query = query.eq('city', selectedCity);
       }
       if (selectedCategory) {
-        // Map frontend categories to database values if needed
         query = query.eq('category', selectedCategory);
       }
+
+      // Search filter: apply as OR within name/description only
       if (searchQuery) {
         query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
@@ -56,7 +60,6 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult {
       if (fetchError) throw fetchError;
       
       if (data) {
-        // Map database columns to frontend interface if they differ
         const mappedBusinesses: Business[] = data.map((item: any) => ({
           id: item.id,
           name: item.name,
