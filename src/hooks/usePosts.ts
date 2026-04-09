@@ -21,19 +21,21 @@ export function usePosts(businessId?: string) {
       const to = from + PAGE_SIZE - 1;
 
       let query = supabase
-        .from('business_postcards')
+        .from('shakumaku_posts')
         .select(`
           *,
-          erbilapify (
+          businesses (
             name,
+            "nameAr",
             city,
             category,
             governorate,
-            neighborhood,
-            lat,
-            lng
+            phone,
+            "imageUrl"
           )
         `, { count: 'exact' })
+        .eq('is_active', true)
+        .order('is_featured', { ascending: false })
         .order('created_at', { ascending: false })
         .range(from, to);
 
@@ -46,22 +48,22 @@ export function usePosts(businessId?: string) {
       if (fetchError) throw fetchError;
 
       if (data) {
-        const mappedPosts: Post[] = data.map((item: any) => ({
-          id: item.id,
-          businessId: String(item.business_id),
-          content: item.caption,
-          image: item.image_url,
-          likes: item.likes_count || 0,
-          createdAt: new Date(item.created_at),
-          authorName: item.erbilapify?.name,
-          authorAvatar: null,
-          city: item.erbilapify?.city,
-          category: item.erbilapify?.category,
-          governorate: item.erbilapify?.governorate,
-          neighborhood: item.erbilapify?.neighborhood,
-          lat: item.erbilapify?.lat,
-          lng: item.erbilapify?.lng
-        }));
+        const mappedPosts: Post[] = data.map((item: any) => {
+          const biz = item.businesses || {};
+          return {
+            id: item.id,
+            businessId: String(item.business_id),
+            content: item.caption_ar || item.caption,
+            image: item.image_url || biz.imageUrl,
+            likes: item.likes_count || 0,
+            createdAt: new Date(item.created_at),
+            authorName: biz.nameAr || biz.name,
+            authorAvatar: null,
+            city: biz.city || biz.governorate,
+            category: biz.category,
+            governorate: biz.governorate
+          };
+        });
 
         if (isLoadMore) {
           setPosts(prev => [...prev, ...mappedPosts]);
@@ -93,13 +95,15 @@ export function usePosts(businessId?: string) {
     
     try {
       const { data, error: insertError } = await supabase
-        .from('business_postcards')
+        .from('shakumaku_posts')
         .insert([
           {
             business_id: String(businessId),
             caption: content,
+            caption_ar: content,
             image_url: imageUrl,
-            likes_count: 0
+            likes_count: 0,
+            is_active: true
           }
         ])
         .select()
@@ -120,7 +124,7 @@ export function usePosts(businessId?: string) {
   const likePost = async (postId: string) => {
     try {
       const { error: likeError } = await supabase
-        .from('business_postcards')
+        .from('shakumaku_posts')
         .update({ likes_count: supabase.rpc('increment', { x: 1 }) })
         .eq('id', postId);
       
