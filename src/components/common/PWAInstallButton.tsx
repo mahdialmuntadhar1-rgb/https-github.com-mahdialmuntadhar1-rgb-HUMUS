@@ -5,16 +5,13 @@ import { useHomeStore } from '@/stores/homeStore';
 
 export default function PWAInstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true); // Always visible by default
   const { language } = useHomeStore();
 
   useEffect(() => {
     const handler = (e: any) => {
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
-      setIsVisible(true);
     };
 
     window.addEventListener('beforeinstallprompt', handler);
@@ -28,21 +25,20 @@ export default function PWAInstallButton() {
   }, []);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      // Fallback for browsers that don't support beforeinstallprompt or if it hasn't fired
+      alert(language === 'ar' 
+        ? 'لتثبيت التطبيق، يرجى النقر على أيقونة المشاركة في متصفحك واختيار "إضافة إلى الشاشة الرئيسية".' 
+        : 'To install the app, please click the share icon in your browser and select "Add to Home Screen".');
+      return;
+    }
 
-    // Show the prompt
     deferredPrompt.prompt();
-
-    // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
     
     if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
       setIsVisible(false);
-    } else {
-      console.log('User dismissed the install prompt');
     }
-
     setDeferredPrompt(null);
   };
 
@@ -58,30 +54,45 @@ export default function PWAInstallButton() {
       >
         <button
           onClick={handleInstall}
-          className="group relative flex items-center gap-3 bg-accent text-bg-dark px-6 py-4 rounded-3xl shadow-2xl shadow-accent/40 hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden"
+          className="group relative flex items-center gap-4 bg-primary text-white px-8 py-5 rounded-[32px] shadow-[0_0_30px_rgba(255,159,28,0.6)] hover:shadow-[0_0_50px_rgba(255,159,28,0.8)] hover:scale-105 active:scale-95 transition-all duration-500 overflow-hidden border-2 border-white/20"
         >
-          {/* Glowing Background Effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+          {/* Intense Glowing Animation */}
+          <motion.div
+            animate={{ 
+              opacity: [0.4, 0.8, 0.4],
+              scale: [1, 1.05, 1]
+            }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 bg-accent/20 blur-xl"
+          />
           
-          <div className="relative flex items-center justify-center w-10 h-10 bg-bg-dark/10 rounded-2xl">
-            <Smartphone className="w-5 h-5" />
+          {/* Scanning Light Effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] transition-transform" />
+          
+          <div className="relative flex items-center justify-center w-12 h-12 bg-white/20 rounded-2xl backdrop-blur-md">
+            <Download className="w-6 h-6 animate-bounce" />
             <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
+              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="absolute inset-0 rounded-2xl border-2 border-bg-dark/20"
+              className="absolute inset-0 rounded-2xl border-2 border-white"
             />
           </div>
 
           <div className="relative flex flex-col items-start">
-            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
-              {language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
-            </span>
-            <span className="text-sm font-black poppins-bold">
-              {language === 'ar' ? 'بي لايف' : 'BeLive'}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent animate-pulse">
+                {language === 'ar' ? 'تثبيت الآن' : 'Install Now'}
+              </span>
+              <div className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+            </div>
+            <span className="text-lg font-black poppins-bold tracking-tight">
+              {language === 'ar' ? 'تحميل شكو ماكو' : 'Download Shaku Maku'}
             </span>
           </div>
 
-          <Download className="w-5 h-5 ml-2 animate-bounce" />
+          <div className="relative ml-2 p-2 bg-accent rounded-xl text-primary">
+            <Smartphone className="w-5 h-5" />
+          </div>
         </button>
       </motion.div>
     </AnimatePresence>

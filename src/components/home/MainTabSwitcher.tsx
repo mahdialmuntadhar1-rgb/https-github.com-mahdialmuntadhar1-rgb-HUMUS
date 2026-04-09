@@ -28,8 +28,8 @@ export default function MainTabSwitcher({ activeTab, onTabChange }: MainTabSwitc
             <div className="flex flex-col items-start gap-1">
               <span className="text-[11px] font-black uppercase tracking-[0.3em] opacity-60 leading-none">Social Feed</span>
               <div className="flex flex-col items-start">
-                <span className="text-xl sm:text-2xl font-black uppercase tracking-tight poppins-bold leading-tight">شـبـكـة</span>
-                <span className="text-sm font-bold opacity-80 leading-none">شەبەک • Shabak</span>
+                <span className="text-xl sm:text-2xl font-black uppercase tracking-tight poppins-bold leading-tight">شكو ماكو</span>
+                <span className="text-sm font-bold opacity-80 leading-none">چی هەیە چی نیە • Shaku Maku</span>
               </div>
             </div>
           </button>

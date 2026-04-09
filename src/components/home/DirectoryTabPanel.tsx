@@ -51,14 +51,6 @@ export default function DirectoryTabPanel({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      {/* 1. Hero Section */}
-      <HeroSection 
-        businesses={businesses} 
-        onBusinessClick={onBusinessClick}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
-
       {/* 1.5 Sticky Search Bar */}
       <div className="sticky top-[169px] z-40 py-4 bg-white/95 backdrop-blur-xl -mx-4 px-4 mb-12 border-b border-slate-100 shadow-sm">
         <div className="max-w-2xl mx-auto relative group">

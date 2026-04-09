@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
 import HomeHeader from "@/components/home/HomeHeader";
+import HeroSection from "@/components/home/HeroSection";
 import MainTabSwitcher from "@/components/home/MainTabSwitcher";
 import DirectoryTabPanel from "@/components/home/DirectoryTabPanel";
 import SocialFeed from "@/components/home/SocialFeed";
@@ -54,6 +55,13 @@ export default function HomePage() {
           setAuthMode(mode);
           setIsAuthModalOpen(true);
         }}
+      />
+
+      <HeroSection 
+        businesses={businesses} 
+        onBusinessClick={setSelectedBusiness}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
       />
 
       <MainTabSwitcher 
@@ -110,7 +118,7 @@ export default function HomePage() {
                   <span className="text-bg-dark font-black text-2xl poppins-bold">S</span>
                 </div>
                 <h3 className="text-3xl font-black poppins-bold tracking-tighter uppercase">
-                  {language === 'ar' ? 'شبكة' : 'Shabak'}
+                  {language === 'ar' ? 'شكو ماكو' : 'Shaku Maku'}
                 </h3>
               </div>
               <p className="text-slate-400 leading-relaxed mb-10 text-base max-w-sm">
@@ -125,7 +133,7 @@ export default function HomePage() {
                 {language === 'ar' ? 'تطبيق الهاتف' : 'Mobile App'}
               </h4>
               <p className="text-sm text-slate-500 mb-8 font-medium">
-                {language === 'ar' ? 'قم بتحميل تطبيق شبكة للحصول على أفضل تجربة.' : 'Download the Shabak app for the best experience on the go.'}
+                {language === 'ar' ? 'قم بتحميل تطبيق شكو ماكو للحصول على أفضل تجربة.' : 'Download the Shaku Maku app for the best experience on the go.'}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 bg-white/5 border border-white/10 p-4 rounded-[20px] flex items-center gap-4 group hover:bg-white/10 transition-all cursor-pointer">
@@ -147,7 +155,7 @@ export default function HomePage() {
           </div>
           
           <div className="border-t border-white/5 mt-24 pt-12 flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">
-            <p>&copy; {new Date().getFullYear()} Shabak. ALL RIGHTS RESERVED.</p>
+            <p>&copy; {new Date().getFullYear()} Shaku Maku. ALL RIGHTS RESERVED.</p>
             <div className="flex gap-12">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-white transition-colors">Terms of Service</a>

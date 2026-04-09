@@ -181,34 +181,25 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
         await signUp(email, password, {
           full_name: name,
           role: role,
+          business_name: role === 'business_owner' ? businessName : undefined,
+          phone: role === 'business_owner' ? phone : undefined,
+          governorate: role === 'business_owner' ? governorate : undefined,
+          category: role === 'business_owner' ? category : undefined,
+          city: role === 'business_owner' ? city : undefined,
+          description: role === 'business_owner' ? description : undefined,
         });
         setSuccess(language === 'ar' ? 'تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب.' : 'Account created! Please check your email to verify your account.');
         return;
       }
       onClose();
-    } catch (err: any) {
-      console.error('Auth error payload:', {
-        message: err?.message,
-        code: err?.code,
-        status: err?.status,
-        name: err?.name,
-        details: err?.details,
-        hint: err?.hint,
-        raw: err,
-      });
-
+    } catch (err) {
+      console.error('Auth error:', err);
       let message = 'An error occurred during authentication';
       if (err instanceof Error) {
         message = err.message;
         if (message.includes('Failed to fetch')) {
           message = 'Network error: Could not connect to authentication server. Please check your internet connection or Supabase configuration.';
         }
-        if (message === 'Database error saving new user') {
-          message = 'Signup failed in Supabase Auth database (likely a broken auth.users trigger/function). See SUPABASE_SIGNUP_FIX.md for exact checks.';
-        }
-      }
-      if (err?.code || err?.status) {
-        message = `${message} (${[err?.code, err?.status && `HTTP ${err.status}`].filter(Boolean).join(' • ')})`;
       }
       setError(message);
     } finally {
