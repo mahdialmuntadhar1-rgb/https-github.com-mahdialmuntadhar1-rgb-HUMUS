@@ -48,25 +48,29 @@ export function useAuth() {
           // Profile doesn't exist, create it with required fields
           console.log('[PROFILE] Profile not found, creating fallback profile');
           
-          // Get user email from auth
-          const { data: { user } } = await supabase.auth.getUser();
-          
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert([{ 
-              id: userId, 
-              email: user?.email || '',
-              role: 'user',
-              created_at: new Date().toISOString() 
-            }])
-            .select()
-            .single();
-          
-          if (!createError) {
-            console.log('[PROFILE] Fallback profile created successfully');
-            setProfile(newProfile);
-          } else {
-            console.error('[PROFILE] Error creating fallback profile:', createError);
+          try {
+            // Get user email from auth
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            const { data: newProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert([{ 
+                id: userId, 
+                email: user?.email || 'unknown@example.com',
+                role: 'user',
+                created_at: new Date().toISOString() 
+              }])
+              .select()
+              .single();
+            
+            if (!createError) {
+              console.log('[PROFILE] Fallback profile created successfully');
+              setProfile(newProfile);
+            } else {
+              console.error('[PROFILE] Error creating fallback profile:', createError);
+            }
+          } catch (err) {
+            console.error('[PROFILE] Unexpected error creating fallback profile:', err);
           }
         } else {
           throw error;
