@@ -32,6 +32,8 @@ export function useAuth() {
   }, []);
 
   const fetchProfile = async (userId: string) => {
+    console.log('[PROFILE] Fetching profile for user:', userId);
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -40,27 +42,47 @@ export function useAuth() {
         .single();
 
       if (error) {
+        console.error('[PROFILE] Error fetching profile:', error);
+        
         if (error.code === 'PGRST116') {
-          // Profile doesn't exist, create it
+          // Profile doesn't exist, create it with required fields
+          console.log('[PROFILE] Profile not found, creating fallback profile');
+          
+          // Get user email from auth
+          const { data: { user } } = await supabase.auth.getUser();
+          
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
-            .insert([{ id: userId, created_at: new Date().toISOString() }])
+            .insert([{ 
+              id: userId, 
+              email: user?.email || '',
+              role: 'user',
+              created_at: new Date().toISOString() 
+            }])
             .select()
             .single();
           
-          if (!createError) setProfile(newProfile);
+          if (!createError) {
+            console.log('[PROFILE] Fallback profile created successfully');
+            setProfile(newProfile);
+          } else {
+            console.error('[PROFILE] Error creating fallback profile:', createError);
+          }
         } else {
           throw error;
         }
       } else {
+        console.log('[PROFILE] Profile fetched successfully');
         setProfile(data);
       }
     } catch (err) {
-      console.error('Error fetching profile:', err);
+      console.error('[PROFILE] Unexpected error:', err);
     }
   };
 
   const signUp = async (email: string, password: string, metadata?: any) => {
+    console.log('[SIGNUP] Starting signup process', { email, metadata });
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -68,7 +90,18 @@ export function useAuth() {
         data: metadata
       }
     });
-    if (error) throw error;
+    
+    if (error) {
+      console.error('[SIGNUP] Supabase auth error:', error);
+      throw error;
+    }
+    
+    console.log('[SIGNUP] Supabase auth success:', { 
+      user: !!data.user, 
+      session: !!data.session,
+      userId: data.user?.id 
+    });
+    
     return data;
   };
 
