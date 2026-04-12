@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Download, Smartphone, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useHomeStore } from '@/stores/homeStore';
@@ -13,7 +13,7 @@ const isSafari = () => {
 };
 
 export default function PWAInstallButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const deferredPrompt = useRef<any>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [showInstructions, setShowInstructions] = useState(false);
   const [installFailed, setInstallFailed] = useState(false);
@@ -23,13 +23,16 @@ export default function PWAInstallButton() {
 
   useEffect(() => {
     const handler = (e: any) => {
+      console.log('[PWA Install] beforeinstallprompt event fired', e);
       e.preventDefault();
-      setDeferredPrompt(e);
+      deferredPrompt.current = e;
+      console.log('[PWA Install] Deferred prompt stored');
     };
 
     window.addEventListener('beforeinstallprompt', handler);
 
     if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('[PWA Install] App already installed (standalone mode)');
       setIsVisible(false);
     }
 
@@ -37,14 +40,20 @@ export default function PWAInstallButton() {
   }, []);
 
   const handleInstall = async () => {
+    console.log('[PWA Install] Button clicked');
+    console.log('[PWA Install] Platform:', isIOSSafari ? 'iOS Safari' : 'Android/Desktop');
+    console.log('[PWA Install] Deferred prompt exists:', !!deferredPrompt.current);
+
     // iOS Safari: show instructions (no native install)
     if (isIOSSafari) {
+      console.log('[PWA Install] iOS Safari detected - showing instructions');
       setShowInstructions(true);
       return;
     }
 
     // Android/Desktop: use native install prompt
-    if (!deferredPrompt) {
+    if (!deferredPrompt.current) {
+      console.log('[PWA Install] No deferred prompt available - install not available');
       // No install prompt available - show clear message
       setInstallFailed(true);
       setTimeout(() => setInstallFailed(false), 5000);
@@ -52,16 +61,21 @@ export default function PWAInstallButton() {
     }
 
     try {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+      console.log('[PWA Install] Calling prompt()');
+      deferredPrompt.current.prompt();
+      const { outcome } = await deferredPrompt.current.userChoice;
+      console.log('[PWA Install] User choice:', outcome);
       
       if (outcome === 'accepted') {
+        console.log('[PWA Install] Install accepted - hiding button');
         setIsVisible(false);
       } else if (outcome === 'dismissed') {
+        console.log('[PWA Install] Install dismissed - clearing prompt');
         // User dismissed - clear the prompt so they can try again later
-        setDeferredPrompt(null);
+        deferredPrompt.current = null;
       }
     } catch (error) {
+      console.error('[PWA Install] Install failed:', error);
       // Install failed - show clear message
       setInstallFailed(true);
       setTimeout(() => setInstallFailed(false), 5000);
