@@ -7,8 +7,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import HomePage from '@/pages/HomePage';
 import Scraper from '@/pages/Scraper';
 import Review from '@/pages/Review';
-import ResetPassword from '@/pages/ResetPassword';
 import BusinessDashboard from '@/components/dashboard/BusinessDashboard';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import './styles/humus-design.css';
 
 export default function App() {
@@ -25,8 +25,8 @@ export default function App() {
         {/* Business Dashboard */}
         <Route path="/dashboard" element={<BusinessDashboard />} />
 
-        {/* Password Reset */}
-        <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Auth Routes */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Catch-all 404 route */}
         <Route path="*" element={<Navigate to="/" replace />} />

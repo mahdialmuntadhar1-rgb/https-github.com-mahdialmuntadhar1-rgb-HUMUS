@@ -64,17 +64,19 @@ export default function CategoryGrid() {
 
                 {/* Content */}
                 <div className="relative z-10 flex flex-col items-center justify-center p-4 text-center h-full w-full">
-                  <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-3 transition-all duration-500 ${
+                  <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500 ${
                     isActive ? 'bg-accent text-bg-dark scale-110 rotate-12 shadow-lg' : 'bg-white/20 backdrop-blur-md text-white group-hover:bg-accent group-hover:text-bg-dark group-hover:rotate-12'
                   }`}>
                     <Icon className="w-5 h-5 sm:w-7 sm:h-7" strokeWidth={2.5} />
                   </div>
 
-                  <h3 className={`text-[10px] sm:text-[12px] font-black uppercase tracking-widest text-white drop-shadow-md transition-all duration-300 ${
-                    isActive ? 'scale-110' : 'group-hover:scale-105'
-                  }`}>
-                    {cat.name[language]}
-                  </h3>
+                  <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                    <h3 className={`text-xs sm:text-lg font-black uppercase tracking-tight text-white drop-shadow-lg transition-all duration-300 ${
+                      isActive ? 'scale-105' : 'group-hover:scale-105'
+                    }`}>
+                      {cat.name[language]}
+                    </h3>
+                  </div>
                   
                   {isActive && (
                     <motion.div 

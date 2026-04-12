@@ -273,19 +273,21 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
               <form onSubmit={handleSubmit} className="space-y-4">
                 {!isLogin && !isForgot && (
                   <>
-                    <div className="relative">
-                      <div className={`absolute ${language === 'en' ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 text-[#6B7280]`}>
-                        <User className="w-4 h-4" />
+                    {role === 'user' && (
+                      <div className="relative">
+                        <div className={`absolute ${language === 'en' ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 text-[#6B7280]`}>
+                          <User className="w-4 h-4" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder={translations.fullName[language]}
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className={`w-full ${language === 'en' ? 'pl-11 pr-4' : 'pr-11 pl-4'} py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm`}
+                          required={role === 'user'}
+                        />
                       </div>
-                      <input
-                        type="text"
-                        placeholder={translations.fullName[language]}
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className={`w-full ${language === 'en' ? 'pl-11 pr-4' : 'pr-11 pl-4'} py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm`}
-                        required={!isLogin && !isForgot}
-                      />
-                    </div>
+                    )}
 
                     {/* Role Selection */}
                     <div className="grid grid-cols-2 gap-3 p-1 bg-[#F5F7F9] rounded-2xl border border-[#E5E7EB]">
@@ -328,7 +330,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                             placeholder={translations.businessName[language]}
                             value={businessName}
                             onChange={(e) => setBusinessName(e.target.value)}
-                            className={`w-full ${language === 'en' ? 'px-4' : 'px-4'} py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm`}
+                            className={`w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm`}
                             required={role === 'business_owner'}
                           />
                         </div>
@@ -358,37 +360,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                             <option value="Kirkuk">Kirkuk</option>
                           </select>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <select
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm"
-                            required={role === 'business_owner'}
-                          >
-                            <option value="">{translations.category[language]}</option>
-                            <option value="hotels">Hotels</option>
-                            <option value="dining">Restaurants</option>
-                            <option value="cafe">Cafes</option>
-                            <option value="gym">Gyms</option>
-                            <option value="hospitals">Hospitals</option>
-                            <option value="shopping">Shopping</option>
-                          </select>
-                          <input
-                            type="text"
-                            placeholder={translations.city[language]}
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                            className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm"
-                            required={role === 'business_owner'}
-                          />
-                        </div>
-                        <textarea
-                          placeholder={translations.description[language]}
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
-                          className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm min-h-[80px] resize-none"
-                          required={role === 'business_owner'}
-                        />
                       </motion.div>
                     )}
                   </>

@@ -10,9 +10,6 @@ import { Business, Post } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 
 const formatMetric = (num: number) => {
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'k';
-  }
   return num.toString();
 };
 
@@ -33,43 +30,17 @@ interface SocialFeedProps {
 }
 
 const ARABIC_POST_TEMPLATES = [
-  "أهلاً بكم في {name}، حيث تلتقي الفخامة بالراحة في قلب {city}. نحن هنا لخدمتكم بأفضل المعايير. ✨ #العراق #شكو_ماكو",
-  "استمتع بتجربة {category} عالمية في {name} بـ {governorate}. وجهة بارزة لمن يبحث عن التميز. 🌟 #تجربة_فريدة",
-  "اكتشف النكهات الرائعة في {name} في {address}. رحلة لا تُنسى من المذاق والأناقة. 🍢🔥 #مطاعم_العراق",
-  "انغمس في الأجواء الراقية لـ {name}. يقع في {city}، ونقدم مرافق لا مثيل لها. 🏨💎 #إقامة_فاخرة #بغداد",
-  "نخدم مجتمع {city} بكل فخر وتميز. {name} هو وجهتكم الأولى لـ {category}. 🛍️✨ #تميز #كردستان"
-];
-
-const HOTEL_POST_TEMPLATES_AR = [
-  "فندق {name} في {city} يعد من أرقى الفنادق في المنطقة. استمتع بإقامة ملكية وخدمات خمس نجوم. 🏨✨ #فنادق_العراق #فخامة",
-  "هل تبحث عن الراحة والتميز؟ فندق {name} في {governorate} يوفر لك كل ما تحتاجه لإقامة لا تُنسى. 🌟🏨",
-  "إطلالة ساحرة وخدمة استثنائية في فندق {name} بقلب {city}. وجهتكم المثالية للعمل أو الاستجمام. 💎✨"
-];
-
-const HOTEL_POST_TEMPLATES_EN = [
-  "Hotel {name} in {city} is one of the most prestigious hotels in the region. Enjoy a royal stay and five-star services. 🏨✨ #IraqHotels #Luxury",
-  "Looking for comfort and distinction? {name} in {governorate} provides everything you need for an unforgettable stay. 🌟🏨",
-  "Stunning views and exceptional service at {name} in the heart of {city}. Your perfect destination for business or leisure. 💎✨"
-];
-
-const ARABIC_TESTIMONIES = [
-  "بصراحة، {name} من أفضل الأماكن اللي زرتها في {city}. الخدمة تجنن والأجواء كلش راقية. ❤️",
-  "تجربتي في {name} كانت خيالية. أنصح الكل يزورهم إذا كانوا في {governorate}. ⭐⭐⭐⭐⭐",
-  "ما شاء الله على الرقي والنظافة في {name}. فعلاً مكان يرفع الرأس. ✨",
-  "أحلى شي في {name} هو التعامل الراقي والاهتمام بالتفاصيل. شكراً شكو ماكو على هذا الاكتشاف! 🙌"
+  "نحن في {name} ملتزمون بتقديم أعلى مستويات الجودة والخدمة في {city}. تفضلوا بزيارتنا لتجربة استثنائية.",
+  "يعلن {name} عن توفر خدمات جديدة تلبي تطلعاتكم في {governorate}. الجودة هي شعارنا دائماً.",
+  "اكتشفوا معايير جديدة للتميز في {name} بـ {city}. نسعى دائماً لتقديم الأفضل لزبائننا الكرام."
 ];
 
 const ARABIC_COMMENTS = [
-  "مكان رائع جداً، أنصح به بشدة! ⭐⭐⭐⭐⭐",
-  "الخدمة ممتازة والأجواء خيالية.",
-  "أفضل مكان زرته في العراق حتى الآن.",
-  "تجربة فريدة من نوعها، شكراً لكم.",
-  "كل شيء كان مثالي، من الاستقبال حتى الوداع.",
-  "مطعم راقي جداً والأكل طعمه لذيذ.",
-  "فندق فخم وخدمة خمس نجوم.",
-  "أجمل إطلالة ممكن تشوفها في أربيل.",
-  "دائماً أختار هذا المكان لمناسباتي الخاصة.",
-  "تطبيق رائع جداً وسهل الاستخدام!"
+  "خدمة ممتازة جداً.",
+  "مكان راقي ويستحق الزيارة.",
+  "تعامل محترف وجودة عالية.",
+  "شكراً لكم على حسن الاستقبال.",
+  "من أفضل الأماكن في المنطقة."
 ];
 
 const CATEGORY_IMAGES: Record<string, string[]> = {
@@ -194,9 +165,9 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
 
           const captionResponse = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Generate a unique, natural, business-like social media caption in Iraqi Arabic dialect for a ${category} named "${bizName}" located in ${city}. The tone should be inviting and authentic. Include a light call to action like "زورونا" or "احجز الآن". Max 120 characters. No hashtags.`,
+            contents: `Generate a professional, high-end business announcement in Iraqi Arabic dialect for a ${category} named "${bizName}" in ${city}. The tone should be like a trusted corporate brand (e.g. Toyota or a luxury hotel). Focus on quality, service, and professionalism. No emojis, no hashtags. Max 100 characters.`,
           });
-          const caption = captionResponse.text?.trim() || "أهلاً بكم في مشروعنا الجديد!";
+          const caption = captionResponse.text?.trim() || "نحن ملتزمون بتقديم أفضل الخدمات لزبائننا الكرام.";
 
           const promptResponse = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
@@ -438,100 +409,37 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
             </div>
           )}
 
-          {/* Post Actions */}
+          {/* Post Actions - Simplified */}
           <div className="p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <div className="flex items-center gap-2 sm:gap-6">
-                <button 
-                  onClick={() => handleLike(post.id)}
-                  className="flex items-center gap-2 group"
-                >
-                  <Heart className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors ${
-                    (post as any).isLiked ? 'text-red-500 fill-current' : 'text-slate-400 group-hover:text-red-500'
-                  }`} />
-                  <span className="text-[11px] sm:text-[13px] font-black text-slate-600">{formatMetric(post.likes)}</span>
-                </button>
-                <button 
-                  onClick={() => toggleComments(post.id)}
-                  className="flex items-center gap-2 group"
-                >
-                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                  <span className="text-[11px] sm:text-[13px] font-black text-slate-600">{formatMetric(post.commentsCount || 0)}</span>
-                </button>
-                <div className="flex items-center gap-2">
-                  <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
-                  <span className="text-[11px] sm:text-[13px] font-black text-slate-600">{formatMetric((post as any).views || 0)}</span>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <div className="px-3 py-1 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    {language === 'ar' ? 'تحديث رسمي' : 'Official Update'}
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <button className="text-slate-400 hover:text-accent transition-colors">
-                  <Bookmark className="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
-                <button className="text-slate-400 hover:text-accent transition-colors">
-                  <Share2 className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <Share2 className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
             {/* Caption */}
-            <div className="mb-4 sm:mb-6">
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                <span className="font-black text-bg-dark mr-2">{post.authorName}</span>
+            <div className="mb-6">
+              <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-medium">
                 {post.content}
               </p>
             </div>
 
-            {/* Comments Section */}
-            {showComments[post.id] && (
-              <div className="mb-6 space-y-4 border-t border-slate-50 pt-6">
-                <div className="space-y-4 max-h-60 overflow-y-auto no-scrollbar">
-                  {activeComments[post.id]?.map((comment) => (
-                    <div key={comment.id} className="flex gap-3 items-start">
-                      <div className="w-8 h-8 rounded-xl bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-200">
-                        <img 
-                          src={comment.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${comment.user_id}`} 
-                          alt={comment.profiles?.full_name} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-2xl rounded-tl-none flex-1 border border-slate-100">
-                        <p className="text-[10px] font-black text-bg-dark mb-1">{comment.profiles?.full_name || 'User'}</p>
-                        <p className="text-[11px] text-slate-600 leading-snug">{comment.content}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {user ? (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={commentInputs[post.id] || ''}
-                      onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
-                      placeholder={language === 'ar' ? 'أضف تعليقاً...' : 'Add a comment...'}
-                      className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-accent"
-                    />
-                    <button
-                      onClick={() => handleComment(post.id)}
-                      className="bg-accent text-bg-dark px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                    >
-                      {language === 'ar' ? 'نشر' : 'Post'}
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-[10px] text-slate-400 text-center italic">
-                    {language === 'ar' ? 'سجل الدخول للتعليق' : 'Login to comment'}
-                  </p>
-                )}
-              </div>
-            )}
-
             {/* CTA Button */}
             <button 
               onClick={() => onBusinessClick?.({ id: post.businessId, name: post.authorName } as any)}
-              className="w-full py-4 bg-bg-dark text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-accent hover:text-bg-dark transition-all group"
+              className="w-full py-4 bg-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-accent hover:text-bg-dark transition-all group shadow-lg shadow-primary/10"
             >
-              <span>{language === 'ar' ? 'عرض النشاط التجاري' : language === 'ku' ? 'بینینی کارەکە' : 'View Business'}</span>
+              <span>{language === 'ar' ? 'عرض التفاصيل' : language === 'ku' ? 'بینینی زانیارییەکان' : 'View Details'}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
