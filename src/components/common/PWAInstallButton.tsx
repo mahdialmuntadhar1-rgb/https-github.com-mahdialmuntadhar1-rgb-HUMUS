@@ -142,8 +142,8 @@ export default function PWAInstallButton() {
 
                 <div className="w-full space-y-3 text-left">
                   <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                      <span className="text-lg">📤</span>
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 font-bold text-slate-700">
+                      1
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-slate-900">
@@ -156,15 +156,29 @@ export default function PWAInstallButton() {
                   </div>
 
                   <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                      <span className="text-lg">➕</span>
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 font-bold text-slate-700">
+                      2
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {language === 'ar' ? 'مرر للأسفل' : 'Scroll down'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {language === 'ar' ? 'في القائمة' : 'In the menu'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 font-bold text-slate-700">
+                      3
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-slate-900">
                         {language === 'ar' ? 'اختر "إضافة للشاشة الرئيسية"' : 'Tap "Add to Home Screen"'}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {language === 'ar' ? 'من القائمة المنبثقة' : 'From the menu'}
+                        {language === 'ar' ? 'لإضافة التطبيق' : 'To add the app'}
                       </p>
                     </div>
                   </div>
