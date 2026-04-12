@@ -12,16 +12,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Saku Maku" />
     
-    <!-- PWA Manifest - absolute path for GitHub Pages -->
-    <link rel="manifest" href="/manifest.json" />
+    <!-- PWA Manifest - absolute path with subdirectory for GitHub Pages -->
+    <link rel="manifest" href="/belive/manifest.json" />
     
-    <!-- Icons - absolute paths for GitHub Pages -->
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+    <!-- Icons - absolute paths with subdirectory for GitHub Pages -->
+    <link rel="apple-touch-icon" href="/belive/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/belive/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/belive/icons/icon-512.png" />
     
     <!-- PWA Install Styles -->
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/belive/style.css" />
     
     <!-- Basic page styles -->
     <style>
@@ -159,7 +159,7 @@
     <div id="install-container"></div>
     
     <!-- PWA Install Handler -->
-    <script src="/install.js"></script>
+    <script src="/belive/install.js"></script>
     
     <!-- Service Worker Registration -->
     <script>
@@ -167,7 +167,7 @@
       // IMPORTANT: Scope must be '/belive/' for GitHub Pages subdirectory
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js', { scope: '/belive/' })
+          navigator.serviceWorker.register('/belive/sw.js', { scope: '/belive/' })
             .then((registration) => {
               console.log('[PWA] Service Worker registered successfully:', registration.scope);
               

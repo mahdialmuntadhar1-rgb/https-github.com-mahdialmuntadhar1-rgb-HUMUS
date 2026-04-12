@@ -10,7 +10,7 @@ const DYNAMIC_CACHE = 'saku-maku-dynamic-v1';
 const BASE_PATH = '/belive/';
 
 // App shell files to cache on install
-// All paths are absolute from root for GitHub Pages
+// All paths are absolute from root for GitHub Pages with /belive/ subdirectory
 const APP_SHELL_FILES = [
   '/belive/',
   '/belive/index.html',
@@ -18,10 +18,10 @@ const APP_SHELL_FILES = [
   '/belive/sw.js',
   '/belive/install.js',
   '/belive/style.css',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-maskable-192.png',
-  '/icons/icon-maskable-512.png'
+  '/belive/icons/icon-192.png',
+  '/belive/icons/icon-512.png',
+  '/belive/icons/icon-maskable-192.png',
+  '/belive/icons/icon-maskable-512.png'
 ];
 
 // Install event - cache the app shell
