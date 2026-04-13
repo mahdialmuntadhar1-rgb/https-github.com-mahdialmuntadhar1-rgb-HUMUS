@@ -18,8 +18,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import './styles/humus-design.css';
 
 export default function App() {
-  const { user, profile } = useAuthStore();
-  const isAdmin = profile?.role === 'admin' || user?.email === 'safaribosafar@gmail.com';
+  const { profile } = useAuthStore();
+  
+  // Debug log for role detection
+  console.log("USER ROLE:", profile?.role);
+
+  // Admin visibility logic: Check role OR show always in DEV mode
+  const showAdminFAB = profile?.role === 'admin' || (import.meta.env.DEV);
 
   return (
     <Router>
@@ -56,7 +61,7 @@ export default function App() {
 
       {/* Global Admin Access FAB */}
       <AnimatePresence>
-        {isAdmin && (
+        {showAdminFAB && (
           <motion.div
             initial={{ opacity: 0, scale: 0, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -65,12 +70,12 @@ export default function App() {
           >
             <Link
               to="/admin"
-              className="w-16 h-16 bg-primary text-white rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center hover:scale-110 hover:bg-primary-dark transition-all group relative"
+              className="w-16 h-16 bg-[#0F7B6C] text-[#C8A96A] rounded-full shadow-2xl shadow-[#0F7B6C]/40 flex items-center justify-center hover:scale-110 hover:bg-[#0d6b5e] transition-all group relative"
               title="Admin Dashboard"
             >
               <ShieldCheck className="w-8 h-8" />
-              <div className="absolute right-full mr-4 px-4 py-2 bg-white text-primary text-[10px] font-black uppercase tracking-widest rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-slate-100">
-                Open Admin Panel
+              <div className="absolute right-full mr-4 px-4 py-2 bg-white text-[#0F7B6C] text-[10px] font-black uppercase tracking-widest rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-slate-100">
+                Open Admin Panel {import.meta.env.DEV && profile?.role !== 'admin' && "(DEV MODE)"}
               </div>
             </Link>
           </motion.div>

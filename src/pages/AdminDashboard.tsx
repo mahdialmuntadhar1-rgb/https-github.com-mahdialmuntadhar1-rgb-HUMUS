@@ -46,7 +46,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'summary' | 'businesses' | 'posts' | 'media' | 'featured' | 'content' | 'settings'>('summary');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const isAdmin = profile?.role === 'admin' || user?.email === 'safaribosafar@gmail.com';
+  const isAdmin = profile?.role === 'admin';
 
   // Mock Summary Data
   const mockSummary = {
