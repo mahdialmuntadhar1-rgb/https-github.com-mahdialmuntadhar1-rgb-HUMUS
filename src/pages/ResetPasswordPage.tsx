@@ -11,6 +11,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isRecoverySession, setIsRecoverySession] = useState(false);
   const { language } = useHomeStore();
   const navigate = useNavigate();
 
@@ -57,10 +58,76 @@ export default function ResetPasswordPage() {
     }
   };
 
+  // Check for recovery session on mount
+  useEffect(() => {
+    const handleRecovery = async () => {
+      // Check URL hash for recovery tokens
+      const hash = window.location.hash;
+      const query = window.location.search;
+      
+      // Try to get session - Supabase automatically handles tokens in URL
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        setError(language === 'ar' 
+          ? 'رابط إعادة تعيين كلمة المرور غير صالح أو منتهي الصلاحية. يرجى طلب رابط جديد.'
+          : 'Invalid or expired password reset link. Please request a new one.');
+        return;
+      }
+
+      if (session) {
+        // User has a session from the recovery link
+        console.log('[ResetPassword] Recovery session detected');
+        setIsRecoverySession(true);
+      } else {
+        // No session - check if we need to exchange code
+        const params = new URLSearchParams(query);
+        const code = params.get('code');
+        
+        if (code) {
+          // Exchange code for session
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) {
+            console.error('Code exchange error:', exchangeError);
+            setError(language === 'ar'
+              ? 'فشل استعادة الجلسة. يرجى طلب رابط إعادة تعيين جديد.'
+              : 'Failed to restore session. Please request a new reset link.');
+          } else {
+            setIsRecoverySession(true);
+          }
+        } else {
+          setError(language === 'ar'
+            ? 'رابط إعادة تعيين كلمة المرور غير صالح. يرجى طلب رابط جديد.'
+            : 'Invalid password reset link. Please request a new one.');
+        }
+      }
+    };
+
+    handleRecovery();
+  }, [language]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isRecoverySession) {
+      setError(language === 'ar'
+        ? 'لا توجد جلسة صالحة. يرجى طلب رابط إعادة تعيين جديد.'
+        : 'No valid session. Please request a new reset link.');
+      return;
+    }
+    
     if (password !== confirmPassword) {
       setError(translations.matchError[language]);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError(language === 'ar'
+        ? 'يجب أن تكون كلمة المرور 6 أحرف على الأقل'
+        : language === 'ku'
+        ? 'وشەی نهێنی دەبێت بەلایەن 6 پیت بێت'
+        : 'Password must be at least 6 characters');
       return;
     }
 
@@ -72,15 +139,26 @@ export default function ResetPasswordPage() {
         password: password
       });
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Password update error:', updateError);
+        throw updateError;
+      }
+      
+      console.log('[ResetPassword] Password updated successfully');
       setSuccess(true);
+      
+      // Sign out after password change for security
+      await supabase.auth.signOut();
       
       // Redirect to home after 3 seconds
       setTimeout(() => {
         navigate('/');
       }, 3000);
     } catch (err: any) {
-      setError(err.message);
+      console.error('Password reset error:', err);
+      setError(err.message || (language === 'ar' 
+        ? 'فشل تحديث كلمة المرور'
+        : 'Failed to update password'));
     } finally {
       setLoading(false);
     }
@@ -105,6 +183,17 @@ export default function ResetPasswordPage() {
             {translations.desc[language]}
           </p>
         </div>
+
+        {!isRecoverySession && !error && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl text-xs text-amber-700 font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {language === 'ar' 
+              ? 'جاري التحقق من الرابط...'
+              : language === 'ku'
+              ? 'پشتڕاستکردنەوەی لینک...'
+              : 'Verifying link...'}
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-600 font-bold flex items-center gap-2">
@@ -137,7 +226,8 @@ export default function ResetPasswordPage() {
                 placeholder={translations.password[language]}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full ${language === 'en' ? 'pl-11 pr-4' : 'pr-11 pl-4'} py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm`}
+                disabled={!isRecoverySession || loading}
+                className={`w-full ${language === 'en' ? 'pl-11 pr-4' : 'pr-11 pl-4'} py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
                 required
                 minLength={6}
               />
@@ -152,7 +242,8 @@ export default function ResetPasswordPage() {
                 placeholder={translations.confirmPassword[language]}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full ${language === 'en' ? 'pl-11 pr-4' : 'pr-11 pl-4'} py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm`}
+                disabled={!isRecoverySession || loading}
+                className={`w-full ${language === 'en' ? 'pl-11 pr-4' : 'pr-11 pl-4'} py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
                 required
                 minLength={6}
               />
@@ -160,7 +251,7 @@ export default function ResetPasswordPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={!isRecoverySession || loading}
               className="w-full py-3.5 bg-primary hover:bg-bg-dark text-white font-bold rounded-2xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (

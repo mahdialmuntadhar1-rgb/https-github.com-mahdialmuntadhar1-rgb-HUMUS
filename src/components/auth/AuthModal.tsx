@@ -35,11 +35,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
   
   // Business Owner Fields
   const [businessName, setBusinessName] = useState('');
-  const [phone, setPhone] = useState('');
   const [governorate, setGovernorate] = useState('');
-  const [category, setCategory] = useState('');
-  const [city, setCity] = useState('');
-  const [description, setDescription] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -69,11 +65,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
   const translations = {
     businessName: { en: 'Business Name', ar: 'اسم العمل التجاري', ku: 'ناوی کار' },
-    phone: { en: 'Phone Number', ar: 'رقم الهاتف', ku: 'ژمارەی تەلەفۆن' },
     governorate: { en: 'Governorate', ar: 'المحافظة', ku: 'پارێزگا' },
-    category: { en: 'Category', ar: 'التصنيف', ku: 'پۆلێن' },
-    city: { en: 'City', ar: 'المدينة', ku: 'شار' },
-    description: { en: 'Short Description', ar: 'وصف قصير', ku: 'وەسفێکی کورت' },
     forgotTitle: {
       en: 'Reset Password',
       ar: 'إعادة تعيين كلمة المرور',
@@ -233,11 +225,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
               full_name: name,
               role,
               business_name: role === 'business_owner' ? businessName : undefined,
-              phone: role === 'business_owner' ? phone : undefined,
-              governorate: role === 'business_owner' ? governorate : undefined,
-              category: role === 'business_owner' ? category : undefined,
-              city: role === 'business_owner' ? city : undefined,
-              description: role === 'business_owner' ? description : undefined
+              governorate: role === 'business_owner' ? governorate : undefined
             },
             emailRedirectTo: window.location.origin
           }
@@ -452,32 +440,22 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                             required={role === 'business_owner'}
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <input
-                            type="text"
-                            placeholder={translations.phone[language]}
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm"
-                            required={role === 'business_owner'}
-                          />
-                          <select
-                            value={governorate}
-                            onChange={(e) => setGovernorate(e.target.value)}
-                            className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm"
-                            required={role === 'business_owner'}
-                          >
-                            <option value="">{translations.governorate[language]}</option>
-                            <option value="Baghdad">Baghdad</option>
-                            <option value="Erbil">Erbil</option>
-                            <option value="Basra">Basra</option>
-                            <option value="Sulaymaniyah">Sulaymaniyah</option>
-                            <option value="Najaf">Najaf</option>
-                            <option value="Karbala">Karbala</option>
-                            <option value="Dohuk">Dohuk</option>
-                            <option value="Kirkuk">Kirkuk</option>
-                          </select>
-                        </div>
+                        <select
+                          value={governorate}
+                          onChange={(e) => setGovernorate(e.target.value)}
+                          className="w-full px-4 py-3 bg-[#F5F7F9] border border-[#E5E7EB] focus:border-accent rounded-2xl focus:outline-none transition-all text-sm"
+                          required={role === 'business_owner'}
+                        >
+                          <option value="">{translations.governorate[language]}</option>
+                          <option value="Baghdad">Baghdad</option>
+                          <option value="Erbil">Erbil</option>
+                          <option value="Basra">Basra</option>
+                          <option value="Sulaymaniyah">Sulaymaniyah</option>
+                          <option value="Najaf">Najaf</option>
+                          <option value="Karbala">Karbala</option>
+                          <option value="Dohuk">Dohuk</option>
+                          <option value="Kirkuk">Kirkuk</option>
+                        </select>
                       </motion.div>
                     )}
                   </>
