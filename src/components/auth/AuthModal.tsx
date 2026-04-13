@@ -43,8 +43,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showResendButton, setShowResendButton] = useState(false);
   const { language } = useHomeStore();
 
   // Cooldown timer for rate limit
@@ -55,6 +57,15 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
     }, 1000);
     return () => clearInterval(timer);
   }, [cooldown]);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown(c => c > 0 ? c - 1 : 0);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const translations = {
     businessName: { en: 'Business Name', ar: 'اسم العمل التجاري', ku: 'ناوی کار' },
@@ -148,6 +159,31 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       ar: 'نسيت كلمة المرور؟',
       ku: 'وشەی نهێنیت لەبیرچووە؟'
     },
+    accountExists: {
+      en: 'Account already exists. Please log in.',
+      ar: 'الحساب موجود بالفعل. يرجى تسجيل الدخول.',
+      ku: 'هەژمار پێشتر هەبووە. تکایە بچۆ ژوورەوە.'
+    },
+    accountUnconfirmed: {
+      en: 'Account exists but is not confirmed. Please check your email or resend confirmation.',
+      ar: 'الحساب موجود لكن لم يتم تأكيده. يرجى التحقق من بريدك الإلكتروني أو إعادة إرسال التأكيد.',
+      ku: 'هەژمار هەیە بەڵام پشتڕاست نەکراوەتەوە. تکایە سەیری ئیمەیڵەکەت بکە یان دووبارە ناردنەوەی پشتڕاستکردنەوە.'
+    },
+    resendConfirmation: {
+      en: 'Resend Confirmation Email',
+      ar: 'إعادة إرسال بريد التأكيد',
+      ku: 'دووبارە ناردنی ئیمەیڵی پشتڕاستکردنەوە'
+    },
+    confirmationSent: {
+      en: 'Confirmation email sent. Please check your inbox.',
+      ar: 'تم إرسال بريد التأكيد. يرجى التحقق من صندوق الوارد.',
+      ku: 'ئیمەیڵی پشتڕاستکردنەوە نێردرا. تکایە سەیری ئینبۆکسەکەت بکە.'
+    },
+    checkEmailVerify: {
+      en: 'Check your email to verify your account.',
+      ar: 'تحقق من بريدك الإلكتروني لتأكيد حسابك.',
+      ku: 'سەیری ئیمەیڵەکەت بکە بۆ پشتڕاستکردنەوەی هەژمارەکەت.'
+    },
     or: {
       en: 'Or continue with',
       ar: 'أو استمر بواسطة',
@@ -188,18 +224,52 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       if (isLogin) {
         await signIn(email, password);
       } else {
-        await signUp(email, password, {
-          full_name: name,
-          role: role,
-          business_name: role === 'business_owner' ? businessName : undefined,
-          phone: role === 'business_owner' ? phone : undefined,
-          governorate: role === 'business_owner' ? governorate : undefined,
-          category: role === 'business_owner' ? category : undefined,
-          city: role === 'business_owner' ? city : undefined,
-          description: role === 'business_owner' ? description : undefined,
+        // Signup with proper error handling
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+              role,
+              business_name: role === 'business_owner' ? businessName : undefined,
+              phone: role === 'business_owner' ? phone : undefined,
+              governorate: role === 'business_owner' ? governorate : undefined,
+              category: role === 'business_owner' ? category : undefined,
+              city: role === 'business_owner' ? city : undefined,
+              description: role === 'business_owner' ? description : undefined
+            },
+            emailRedirectTo: window.location.origin
+          }
         });
-        setSuccess(language === 'ar' ? 'تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب.' : 'Account created! Please check your email to verify your account.');
-        return;
+
+        if (error) {
+          // Handle specific error cases
+          if (error.message.includes('User already registered')) {
+            setError(translations.accountExists[language]);
+            setIsLogin(true);
+            setShowResendButton(false);
+          } else {
+            setError(error.message);
+          }
+          setLoading(false);
+          return;
+        }
+
+        // User created but not confirmed (no session)
+        if (data.user && !data.session) {
+          setSuccess(translations.checkEmailVerify[language]);
+          setShowResendButton(false);
+          setLoading(false);
+          return;
+        }
+
+        // User created and auto-confirmed (has session)
+        if (data.user && data.session) {
+          setSuccess(language === 'ar' ? 'تم إنشاء الحساب بنجاح!' : 'Account created successfully!');
+          setLoading(false);
+          return;
+        }
       }
       onClose();
     } catch (err) {
@@ -217,6 +287,11 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
             ? `سنوور تێپەڕ کرا. تکایە ${cooldown} چرکە چاوەڕێک بکە پێش ئەوەی دووبارە هەوڵ بدەیتەوە.`
             : `Rate limit exceeded. Please wait ${cooldown} seconds before trying again.`;
           setError(cooldownMessage);
+          setLoading(false);
+          return;
+        } else if (message.includes('Email not confirmed')) {
+          setError(translations.accountUnconfirmed[language]);
+          setShowResendButton(true);
           setLoading(false);
           return;
         }
@@ -281,6 +356,29 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
               {success && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-2xl text-xs text-green-600 font-bold">
                   {success}
+                </div>
+              )}
+
+              {showResendButton && (
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl">
+                  <button
+                    onClick={async () => {
+                      if (resendCooldown > 0) return;
+                      try {
+                        await supabase.auth.resend({ type: 'signup', email });
+                        setSuccess(translations.confirmationSent[language]);
+                        setResendCooldown(60);
+                      } catch (err: any) {
+                        setError(err.message);
+                      }
+                    }}
+                    disabled={resendCooldown > 0}
+                    className="w-full py-2.5 bg-accent text-white rounded-xl text-sm font-bold disabled:opacity-50 transition-all"
+                  >
+                    {resendCooldown > 0
+                      ? (language === 'ar' ? `انتظار ${resendCooldown} ثانية` : language === 'ku' ? `چاوەڕێ ${resendCooldown} چرکە` : `Wait ${resendCooldown}s`)
+                      : translations.resendConfirmation[language]}
+                  </button>
                 </div>
               )}
 
