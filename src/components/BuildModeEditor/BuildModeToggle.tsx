@@ -6,9 +6,12 @@
 import React from 'react';
 import { Settings } from 'lucide-react';
 import { useBuildMode } from '@/hooks/useBuildMode';
+import { canAccessBuildMode } from '@/lib/buildModeAccess';
 
 export default function BuildModeToggle() {
   const { buildModeEnabled, toggleBuildMode } = useBuildMode();
+
+  if (!canAccessBuildMode()) return null;
 
   return (
     <button 

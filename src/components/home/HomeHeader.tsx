@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/hooks/useAuth';
 import { useHomeStore } from '@/stores/homeStore';
 import { useBuildMode } from '@/hooks/useBuildMode';
+import { canAccessBuildMode } from '@/lib/buildModeAccess';
 
 interface HomeHeaderProps {
   onAddBusiness: () => void;
@@ -18,6 +19,7 @@ export default function HomeHeader({ onAddBusiness, onAuth }: HomeHeaderProps) {
   const { buildModeEnabled, toggleBuildMode } = useBuildMode();
 
   const isRTL = language === 'ar' || language === 'ku';
+  const hasBuildModeAccess = canAccessBuildMode();
 
   const translations = {
     addBusiness: { en: 'Add Business', ar: 'أضف عملك', ku: 'کارەکەت زیاد بکە' },
@@ -72,16 +74,18 @@ export default function HomeHeader({ onAddBusiness, onAuth }: HomeHeaderProps) {
           </div>
 
           {/* BUILD MODE ONLY - Toggle Button */}
-          <button 
-            onClick={toggleBuildMode}
-            className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
-              buildModeEnabled 
-                ? 'bg-primary text-white border-primary shadow-lg' 
-                : 'bg-white text-slate-400 border-slate-100 hover:border-primary hover:text-primary'
-            }`}
-          >
-            Build Mode
-          </button>
+          {hasBuildModeAccess && (
+            <button 
+              onClick={toggleBuildMode}
+              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
+                buildModeEnabled 
+                  ? 'bg-primary text-white border-primary shadow-lg' 
+                  : 'bg-white text-slate-400 border-slate-100 hover:border-primary hover:text-primary'
+              }`}
+            >
+              Build Mode
+            </button>
+          )}
         </div>
 
         {/* Right: User Actions */}

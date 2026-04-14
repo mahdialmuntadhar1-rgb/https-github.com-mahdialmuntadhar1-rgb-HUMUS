@@ -21,11 +21,17 @@ import { useBuildMode } from '@/hooks/useBuildMode';
 import BuildModeToggle from './BuildModeToggle';
 import SlideList from './SlideList';
 import ImageUploader from './ImageUploader';
+import { disableBuildModeAccess, canAccessBuildMode } from '@/lib/buildModeAccess';
 
 export default function BuildModeEditor() {
   const { buildModeEnabled, toggleBuildMode, lastSaved, resetToOriginal } = useBuildMode();
   const [activeSection, setActiveSection] = useState<'hero' | null>(null);
   const [showSaved, setShowSaved] = useState(false);
+
+  // Ensure access is initialized (checks URL ?builder=1)
+  React.useEffect(() => {
+    canAccessBuildMode();
+  }, []);
 
   // Show "Saved" feedback briefly when lastSaved changes
   React.useEffect(() => {
@@ -35,6 +41,13 @@ export default function BuildModeEditor() {
       return () => clearTimeout(timer);
     }
   }, [lastSaved]);
+
+  const handleDisableAccess = () => {
+    if (confirm('Disable Build Mode access? You will need the private URL to enable it again.')) {
+      disableBuildModeAccess();
+      window.location.reload();
+    }
+  };
 
   return (
     <>
@@ -107,10 +120,18 @@ export default function BuildModeEditor() {
             </div>
 
             {/* Footer */}
-            <div className="p-8 border-t border-slate-100 bg-slate-50/50">
+            <div className="p-8 border-t border-slate-100 bg-slate-50/50 space-y-4">
               <p className="text-[10px] text-slate-400 font-medium italic text-center">
                 Changes are saved to local storage for this session.
               </p>
+              {!import.meta.env.DEV && (
+                <button 
+                  onClick={handleDisableAccess}
+                  className="w-full py-2 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  Disable Builder Access
+                </button>
+              )}
             </div>
           </motion.div>
         )}
