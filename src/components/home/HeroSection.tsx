@@ -50,7 +50,7 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
       setAppSettings(settings);
     };
     loadSettings();
-  }, []);
+  }, [admin.fetchAppSettings]);
 
   const isRTL = language === 'ar' || language === 'ku';
   

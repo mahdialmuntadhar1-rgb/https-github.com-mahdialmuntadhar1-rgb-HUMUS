@@ -322,6 +322,8 @@ export function useAdmin() {
     fetchPosts,
     updatePost,
     createPost,
-    bulkUploadBusinesses
+    bulkUploadBusinesses,
+    fetchAppSettings,
+    updateAppSettings
   };
 }
