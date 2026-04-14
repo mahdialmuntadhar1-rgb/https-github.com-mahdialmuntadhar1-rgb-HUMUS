@@ -22,9 +22,10 @@ import BuildModeToggle from './BuildModeToggle';
 import SlideList from './SlideList';
 import ImageUploader from './ImageUploader';
 import { disableBuildModeAccess, canAccessBuildMode } from '@/lib/buildModeAccess';
+import { Save, Loader2 } from 'lucide-react';
 
 export default function BuildModeEditor() {
-  const { buildModeEnabled, toggleBuildMode, lastSaved, resetToOriginal } = useBuildMode();
+  const { buildModeEnabled, toggleBuildMode, lastSaved, resetToOriginal, saveToRepo, isSaving } = useBuildMode();
   const [activeSection, setActiveSection] = useState<'hero' | null>(null);
   const [showSaved, setShowSaved] = useState(false);
 
@@ -94,6 +95,25 @@ export default function BuildModeEditor() {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-8 space-y-6">
               
+              {/* Save to Repo Button - CRITICAL */}
+              <div className="mb-8">
+                <button 
+                  onClick={saveToRepo}
+                  disabled={isSaving}
+                  className="w-full py-6 bg-emerald-500 text-white rounded-[32px] shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:scale-100"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Save className="w-5 h-5" />
+                  )}
+                  <div className="flex flex-col items-start">
+                    <span className="text-xs font-black uppercase tracking-widest">Save to Repository</span>
+                    <span className="text-[8px] font-bold opacity-70 uppercase tracking-tight">Persist changes to source code</span>
+                  </div>
+                </button>
+              </div>
+
               {/* Hero Section Editor */}
               <SectionCollapse 
                 title="Hero Section" 

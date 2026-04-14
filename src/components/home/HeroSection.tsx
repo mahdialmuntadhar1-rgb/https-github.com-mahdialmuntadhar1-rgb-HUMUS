@@ -7,6 +7,7 @@ import { useHomeStore } from '@/stores/homeStore';
 import { useAuthStore } from '@/stores/authStore';
 import { heroService, HeroSlide as DbHeroSlide } from '@/lib/heroService';
 import { useBuildMode } from '@/hooks/useBuildMode';
+import { heroContent } from '@/data/heroContent';
 
 interface HeroSectionProps {
   businesses: Business[];
@@ -39,7 +40,7 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
     fetchSlides();
   }, []);
 
-  // Use playground slides if build mode is enabled, otherwise use DB slides (or fallback)
+  // Use playground slides if build mode is enabled, otherwise use DB slides (or fallback to heroContent)
   const slidesToUse = buildModeEnabled && playgroundSlides.length > 0
     ? playgroundSlides.map(s => ({
         id: s.id,
@@ -58,7 +59,7 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
           ctaLink: s.cta_link,
           image: s.image_url
         }))
-      : playgroundSlides.map(s => ({
+      : heroContent.map(s => ({
           id: s.id,
           title: s.title,
           subtitle: s.subtitle,
@@ -172,14 +173,14 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
             </div>
 
             {/* Action Area */}
-            {currentSlide.cta_link && (
+            {currentSlide.ctaLink && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
                 <Link 
-                  to={currentSlide.cta_link}
+                  to={currentSlide.ctaLink}
                   className="group flex items-center gap-3 sm:gap-4 px-6 py-3 sm:px-8 sm:py-4 bg-[#C8A96A] text-[#0F7B6C] rounded-2xl transition-all duration-500 shadow-xl hover:scale-105 hover:bg-white active:scale-95"
                 >
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#0F7B6C]/10 flex items-center justify-center group-hover:bg-[#0F7B6C]/20 transition-colors">
