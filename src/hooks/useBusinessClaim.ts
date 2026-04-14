@@ -56,53 +56,65 @@ export function useBusinessClaim() {
       console.log('[Business Claim] Querying table: public.businesses');
       const { data, error: queryError } = await supabase
         .from('businesses')
-        .select('id, name, name_ar, phone, city, governorate, address, category, owner_id');
+        .select('id, name, name_ar, phone, phone_1, phone_2, city, governorate, address, category, owner_id');
 
       console.log('[Business Claim] Query result - Error:', queryError, 'Total rows checked:', data?.length);
 
       if (queryError) {
         console.error('[Business Claim] Query error:', queryError);
-        setError(`Database error: ${queryError.message}`);
+        setError('Database error: Unable to search businesses. Please try again.');
         return [];
       }
 
       if (!data || data.length === 0) {
         console.log('[Business Claim] No businesses found in database');
-        setError('No businesses found in database');
+        setError('No businesses found in database. Please contact support.');
         return [];
       }
 
       console.log('[Business Claim] Processing', data.length, 'businesses for phone match');
 
-      // Map and filter for phone matches
+      // Map and filter for phone matches (check phone, phone_1, and phone_2)
       const matchedBusinesses: BusinessMatch[] = [];
 
       for (const business of data) {
-        if (business.phone) {
-          const businessPhone = normalizePhoneForDb(business.phone);
-          console.log('[Business Claim] Comparing:', normalized, 'vs', businessPhone, 'for', business.name);
+        const phoneFields = [business.phone, business.phone_1, business.phone_2];
+        let matched = false;
+        let matchedField = '';
 
-          if (businessPhone === normalized) {
-            console.log('[Business Claim] ✓ MATCH:', business.name);
-            matchedBusinesses.push({
-              id: business.id,
-              name: business.name,
-              nameAr: business.name_ar,
-              phone: business.phone,
-              city: business.city,
-              governorate: business.governorate,
-              address: business.address,
-              category: business.category,
-              ownerId: business.owner_id,
-            });
+        for (const phoneField of phoneFields) {
+          if (phoneField) {
+            const businessPhone = normalizePhoneForDb(phoneField);
+            console.log('[Business Claim] Comparing:', normalized, 'vs', businessPhone, 'for', business.name);
+
+            if (businessPhone === normalized) {
+              console.log('[Business Claim] ✓ MATCH:', business.name, 'in field:', matchedField || 'phone');
+              matched = true;
+              matchedField = phoneField === business.phone ? 'phone' : phoneField === business.phone_1 ? 'phone_1' : 'phone_2';
+              break;
+            }
           }
+        }
+
+        if (matched) {
+          matchedBusinesses.push({
+            id: business.id,
+            name: business.name,
+            nameAr: business.name_ar,
+            phone: business.phone,
+            city: business.city,
+            governorate: business.governorate,
+            address: business.address,
+            category: business.category,
+            ownerId: business.owner_id,
+          });
         }
       }
 
       console.log('[Business Claim] Found', matchedBusinesses.length, 'matching businesses');
 
       if (matchedBusinesses.length === 0) {
-        setError('No businesses found with that phone number');
+        setError('No businesses found with that phone number. Please verify the number is correct.');
         return [];
       }
 
@@ -125,8 +137,15 @@ export function useBusinessClaim() {
   const claimBusiness = async (businessId: string): Promise<boolean> => {
     console.log('[Business Claim] Claiming business:', businessId);
 
-    if (!user || profile?.role !== 'business_owner') {
-      const errorMsg = 'Only business owners can claim businesses';
+    if (!user) {
+      const errorMsg = 'You must be logged in to claim a business. Please sign in or create an account.';
+      console.error('[Business Claim]', errorMsg);
+      setError(errorMsg);
+      return false;
+    }
+
+    if (profile?.role !== 'business_owner') {
+      const errorMsg = 'Your account is not set up as a business owner. Please contact support to upgrade your account.';
       console.error('[Business Claim]', errorMsg);
       setError(errorMsg);
       return false;
@@ -145,7 +164,11 @@ export function useBusinessClaim() {
 
       if (updateError) {
         console.error('[Business Claim] Update error:', updateError);
-        setError(`Failed to claim business: ${updateError.message}`);
+        if (updateError.message.includes('owner_id')) {
+          setError('This business is already claimed by another owner. Please contact support if you believe this is an error.');
+        } else {
+          setError(`Failed to claim business: ${updateError.message}. Please try again or contact support.`);
+        }
         return false;
       }
 
@@ -155,7 +178,7 @@ export function useBusinessClaim() {
       return true;
     } catch (err) {
       console.error('[Business Claim] Exception:', err);
-      const message = err instanceof Error ? err.message : 'Failed to claim business';
+      const message = err instanceof Error ? err.message : 'Failed to claim business. Please try again.';
       setError(message);
       return false;
     } finally {

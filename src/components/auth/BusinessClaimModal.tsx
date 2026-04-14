@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Phone, Search, CheckCircle2, AlertCircle, Loader2, Building2 } from 'lucide-react';
+import { X, Phone, Search, CheckCircle2, AlertCircle, Loader2, Building2, User, Shield, Info } from 'lucide-react';
 import { useBusinessClaim } from '@/hooks/useBusinessClaim';
 import { useHomeStore } from '@/stores/homeStore';
+import { useAuthStore } from '@/stores/authStore';
 
 interface BusinessClaimModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export default function BusinessClaimModal({
   onClaimSuccess,
 }: BusinessClaimModalProps) {
   const { language } = useHomeStore();
+  const { user, profile } = useAuthStore();
   const { searchBusinessesByPhone, claimBusiness, clearSearch, loading, error, matches } =
     useBusinessClaim();
 
@@ -34,6 +36,66 @@ export default function BusinessClaimModal({
       en: 'Enter your business phone number to find and claim your business listing.',
       ar: 'أدخل رقم هاتفك التجاري للعثور على تصنيفك والمطالبة به.',
       ku: 'ژمارەی تێلەفۆنی کارەکەت بنووسە بۆ دۆزینەوە و داوای فێڵێسەتەکەت.',
+    },
+    accountStatus: {
+      en: 'Account Status',
+      ar: 'حالة الحساب',
+      ku: 'دۆخی هەژمار',
+    },
+    loggedIn: {
+      en: 'Logged in as',
+      ar: 'مسجل الدخول كـ',
+      ku: 'چوونەژوورەوە وەک',
+    },
+    notLoggedIn: {
+      en: 'Not logged in',
+      ar: 'غير مسجل الدخول',
+      ku: 'چوونەژوورەوە نەکراوە',
+    },
+    role: {
+      en: 'Role',
+      ar: 'الدور',
+      ku: 'ڕۆڵ',
+    },
+    eligible: {
+      en: 'Eligible to claim',
+      ar: 'مؤهل للمطالبة',
+      ku: 'دەتوانی داوا بکەیت',
+    },
+    notEligible: {
+      en: 'Not eligible to claim',
+      ar: 'غير مؤهل للمطالبة',
+      ku: 'ناتوانی داوای بکەیت',
+    },
+    helperTitle: {
+      en: 'How to claim your business',
+      ar: 'كيفية المطالبة بعملك',
+      ku: 'چۆن داوای کارەکەت بکەیت',
+    },
+    step1: {
+      en: '1. Log in or create an account',
+      ar: '1. سجل الدخول أو أنشئ حساباً',
+      ku: '1. بچۆژورەوە یان هەژمار دروست بکە',
+    },
+    step2: {
+      en: '2. Make sure your role is "business_owner"',
+      ar: '2. تأكد من أن دورك هو "business_owner"',
+      ku: '2. دڵنیابە لەوەی کە ڕۆڵەکەت "business_owner"یە',
+    },
+    step3: {
+      en: '3. Enter the phone number linked to your business listing',
+      ar: '3. أدخل رقم الهاتف المرتبط بقائمتك التجارية',
+      ku: '3. ژمارەی تێلەفۆنی پەیوەندیدار بە لیستی کارەکەت بنووسە',
+    },
+    step4: {
+      en: '4. Select and claim your business',
+      ar: '4. اختر عملك واطلب به',
+      ku: '4. کارەکەت هەڵبژێرە و داوای بکە',
+    },
+    step5: {
+      en: '5. Manage your dashboard and create Shaku Maku posts',
+      ar: '5. إدارة لوحة التحكم الخاصة بك وإنشاء منشورات شاكو ماكو',
+      ku: '5. بەڕێوەبەرایەتی داشبۆردەکەت بکە و پۆستەکانی شاکو ماکو دروست بکە',
     },
     phoneLabel: {
       en: 'Business Phone Number',
@@ -166,6 +228,68 @@ export default function BusinessClaimModal({
             <div className="p-8 sm:p-10" dir={language === 'en' ? 'ltr' : 'rtl'}>
               {!claimSuccess ? (
                 <>
+                  {/* Account Status Display */}
+                  <div className="mb-6 p-4 bg-[#F9FAFB] rounded-2xl border border-[#E5E7EB]">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-[#6B7280]" />
+                        <span className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                          {translations.accountStatus[language]}
+                        </span>
+                      </div>
+                      {user && profile?.role === 'business_owner' ? (
+                        <div className="flex items-center gap-1 text-green-600">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span className="text-xs font-bold">
+                            {translations.eligible[language]}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-red-600">
+                          <AlertCircle className="w-4 h-4" />
+                          <span className="text-xs font-bold">
+                            {translations.notEligible[language]}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[#6B7280]">
+                          {user ? translations.loggedIn[language] : translations.notLoggedIn[language]}
+                        </span>
+                        <span className="font-bold text-[#2B2F33]">
+                          {user?.email || '-'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[#6B7280]">
+                          {translations.role[language]}
+                        </span>
+                        <span className="font-bold text-[#2B2F33]">
+                          {profile?.role || '-'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Helper Text */}
+                  <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                    <div className="flex items-start gap-2 mb-2">
+                      <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-xs font-bold text-blue-900">
+                        {translations.helperTitle[language]}
+                      </span>
+                    </div>
+                    <ul className="space-y-1 text-xs text-blue-800">
+                      <li>{translations.step1[language]}</li>
+                      <li>{translations.step2[language]}</li>
+                      <li>{translations.step3[language]}</li>
+                      <li>{translations.step4[language]}</li>
+                      <li>{translations.step5[language]}</li>
+                    </ul>
+                  </div>
+
                   <div className="mb-8">
                     <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 mx-auto">
                       <Building2 className="w-8 h-8 text-primary" />
