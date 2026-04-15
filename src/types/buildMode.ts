@@ -6,10 +6,6 @@
 export interface HeroSlide {
   id: string;
   image: string; // base64 or URL
-  title?: string;
-  subtitle?: string;
-  buttonText?: string;
-  buttonLink?: string;
 }
 
 export interface BuildModeData {

@@ -14,10 +14,6 @@ export default function SlideList() {
   const handleAddSlide = () => {
     addSlide({
       id: Math.random().toString(36).substr(2, 9),
-      title: 'New Slide',
-      subtitle: 'New Subtitle',
-      buttonText: 'Learn More',
-      buttonLink: '#',
       image: 'https://picsum.photos/seed/new/1200/600'
     });
   };

@@ -60,46 +60,6 @@ export default function HeroSlideEditor({ slide, index, total }: HeroSlideEditor
           onChange={(base64) => updateSlide(slide.id, { image: base64 })} 
           onUrlChange={(url) => updateSlide(slide.id, { image: url })}
         />
-        
-        <div className="space-y-1.5">
-          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
-          <input 
-            type="text"
-            value={slide.title}
-            onChange={(e) => updateSlide(slide.id, { title: e.target.value })}
-            className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary text-xs font-medium"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Subtitle</label>
-          <textarea 
-            value={slide.subtitle}
-            onChange={(e) => updateSlide(slide.id, { subtitle: e.target.value })}
-            className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary text-xs font-medium min-h-[80px] leading-relaxed"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Button Text</label>
-            <input 
-              type="text"
-              value={slide.buttonText}
-              onChange={(e) => updateSlide(slide.id, { buttonText: e.target.value })}
-              className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary text-xs font-medium"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Button Link</label>
-            <input 
-              type="text"
-              value={slide.buttonLink}
-              onChange={(e) => updateSlide(slide.id, { buttonLink: e.target.value })}
-              className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary text-xs font-medium"
-            />
-          </div>
-        </div>
       </div>
     </div>
   );
