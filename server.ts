@@ -64,7 +64,36 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    
+    // Explicitly serve manifest with correct headers to avoid 401
+    app.get('/manifest.webmanifest', (req, res) => {
+      const manifestPath = path.join(distPath, 'manifest.webmanifest');
+      if (fs.existsSync(manifestPath)) {
+        res.setHeader('Content-Type', 'application/manifest+json');
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        return res.sendFile(manifestPath);
+      }
+      // Fallback to public if not in dist
+      const publicManifestPath = path.join(process.cwd(), 'public', 'manifest.webmanifest');
+      if (fs.existsSync(publicManifestPath)) {
+        res.setHeader('Content-Type', 'application/manifest+json');
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        return res.sendFile(publicManifestPath);
+      }
+      res.status(404).send('Not found');
+    });
+
+    app.use(express.static(distPath, {
+      setHeaders: (res, path) => {
+        if (path.endsWith('.webmanifest')) {
+          res.setHeader('Content-Type', 'application/manifest+json');
+        }
+        res.setHeader('Access-Control-Allow-Origin', '*');
+      }
+    }));
+
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });

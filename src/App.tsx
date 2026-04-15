@@ -10,8 +10,6 @@ import Review from '@/pages/Review';
 import BusinessDashboard from '@/pages/BusinessDashboard';
 import ClaimPage from '@/pages/ClaimPage';
 import AdminDashboard from '@/pages/AdminDashboard';
-import AdminClaimsDashboard from '@/pages/AdminClaimsDashboard';
-import ShakuMakuAdmin from '@/pages/ShakuMakuAdmin';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import AdminRoute from '@/components/auth/AdminRoute';
 import BuildModeEditor from '@/components/BuildModeEditor/BuildModeEditor';
@@ -42,26 +40,6 @@ export default function App() {
           element={
             <AdminRoute>
               <AdminDashboard />
-            </AdminRoute>
-          } 
-        />
-
-        {/* Admin Claims Dashboard - Protected */}
-        <Route 
-          path="/admin/claims" 
-          element={
-            <AdminRoute>
-              <AdminClaimsDashboard />
-            </AdminRoute>
-          } 
-        />
-
-        {/* Shaku Maku Admin - Protected */}
-        <Route 
-          path="/admin/shaku-maku" 
-          element={
-            <AdminRoute>
-              <ShakuMakuAdmin />
             </AdminRoute>
           } 
         />
