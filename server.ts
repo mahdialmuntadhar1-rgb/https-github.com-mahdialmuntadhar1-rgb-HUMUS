@@ -49,7 +49,74 @@ async function startServer() {
     res.status(404).send('Not found');
   });
 
-  // API Route to save hero content
+  // 3. Explicitly serve feed images
+  app.get('/feed/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const distFeedPath = path.join(distPath, 'feed', filename);
+    const publicFeedPath = path.join(publicPath, 'feed', filename);
+    const finalPath = fs.existsSync(distFeedPath) ? distFeedPath : publicFeedPath;
+
+    if (fs.existsSync(finalPath)) {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.sendFile(finalPath);
+    }
+    res.status(404).send('Not found');
+  });
+
+  // API Route to save all build mode content
+  app.post('/api/build-mode/save-all', async (req, res) => {
+    try {
+      const { slides, feedItems } = req.body;
+      
+      // Process Hero Slides
+      const heroDir = path.join(process.cwd(), 'public', 'hero');
+      if (!fs.existsSync(heroDir)) fs.mkdirSync(heroDir, { recursive: true });
+
+      const processedSlides = (slides || []).map((slide: any, index: number) => {
+        if (slide.image && slide.image.startsWith('data:image')) {
+          const base64Data = slide.image.replace(/^data:image\/\w+;base64,/, '');
+          const extension = slide.image.split(';')[0].split('/')[1] || 'jpg';
+          const fileName = `hero-${index + 1}-${Date.now()}.${extension}`;
+          const filePath = path.join(heroDir, fileName);
+          fs.writeFileSync(filePath, base64Data, 'base64');
+          return { ...slide, image: `/hero/${fileName}` };
+        }
+        return slide;
+      });
+
+      // Process Feed Items
+      const feedDir = path.join(process.cwd(), 'public', 'feed');
+      if (!fs.existsSync(feedDir)) fs.mkdirSync(feedDir, { recursive: true });
+
+      const processedFeedItems = (feedItems || []).map((item: any, index: number) => {
+        if (item.image && item.image.startsWith('data:image')) {
+          const base64Data = item.image.replace(/^data:image\/\w+;base64,/, '');
+          const extension = item.image.split(';')[0].split('/')[1] || 'jpg';
+          const fileName = `feed-${index + 1}-${Date.now()}.${extension}`;
+          const filePath = path.join(feedDir, fileName);
+          fs.writeFileSync(filePath, base64Data, 'base64');
+          return { ...item, image: `/feed/${fileName}` };
+        }
+        return item;
+      });
+
+      // Write to data files
+      const heroContentFile = path.join(process.cwd(), 'src', 'data', 'heroContent.ts');
+      fs.writeFileSync(heroContentFile, `import { HeroSlide } from '@/types/buildMode';\n\nexport const heroContent: HeroSlide[] = ${JSON.stringify(processedSlides, null, 2)};\n`);
+
+      const feedContentFile = path.join(process.cwd(), 'src', 'data', 'feedContent.ts');
+      fs.writeFileSync(feedContentFile, `import { FeedItem } from '@/types/buildMode';\n\nexport const feedContent: FeedItem[] = ${JSON.stringify(processedFeedItems, null, 2)};\n`);
+
+      res.json({ success: true, slides: processedSlides, feedItems: processedFeedItems });
+    } catch (error) {
+      console.error('Error saving all content:', error);
+      res.status(500).json({ error: 'Failed to save content' });
+    }
+  });
+
+  // API Route to save hero content (legacy support)
   app.post('/api/build-mode/save-hero', async (req, res) => {
     try {
       const { slides } = req.body;

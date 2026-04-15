@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const admin = useAdmin();
   
-  const [activeTab, setActiveTab] = useState<'summary' | 'businesses' | 'posts' | 'media' | 'hero' | 'featured' | 'content' | 'settings'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'businesses' | 'featured' | 'settings'>('summary');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const isAdmin = profile?.role === 'admin';
@@ -128,38 +128,10 @@ export default function AdminDashboard() {
             collapsed={!isSidebarOpen}
           />
           <NavItem 
-            icon={<MessageSquare />} 
-            label="Posts & Feed" 
-            active={activeTab === 'posts'} 
-            onClick={() => setActiveTab('posts')}
-            collapsed={!isSidebarOpen}
-          />
-          <NavItem 
-            icon={<ImageIcon />} 
-            label="Media Assets" 
-            active={activeTab === 'media'} 
-            onClick={() => setActiveTab('media')}
-            collapsed={!isSidebarOpen}
-          />
-          <NavItem 
-            icon={<Plus />} 
-            label="Hero Manager" 
-            active={activeTab === 'hero'} 
-            onClick={() => setActiveTab('hero')}
-            collapsed={!isSidebarOpen}
-          />
-          <NavItem 
             icon={<Star />} 
             label="Featured" 
             active={activeTab === 'featured'} 
             onClick={() => setActiveTab('featured')}
-            collapsed={!isSidebarOpen}
-          />
-          <NavItem 
-            icon={<FileText />} 
-            label="Content Editor" 
-            active={activeTab === 'content'} 
-            onClick={() => setActiveTab('content')}
             collapsed={!isSidebarOpen}
           />
           <NavItem 
@@ -185,11 +157,7 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-black uppercase tracking-widest poppins-bold text-text-main">
             {activeTab === 'summary' && 'Platform Overview'}
             {activeTab === 'businesses' && 'Business Management'}
-            {activeTab === 'posts' && 'Feed & Post Control'}
-            {activeTab === 'media' && 'Media Management'}
-            {activeTab === 'hero' && 'Hero Section Manager'}
             {activeTab === 'featured' && 'Featured & Trending'}
-            {activeTab === 'content' && 'Content Editor'}
             {activeTab === 'settings' && 'System Settings'}
           </h2>
           
@@ -269,11 +237,7 @@ export default function AdminDashboard() {
               )}
 
               {activeTab === 'businesses' && <BusinessManager admin={admin} />}
-              {activeTab === 'posts' && <ContentManager admin={admin} />}
-              {activeTab === 'media' && <MediaManager />}
-              {activeTab === 'hero' && <HeroManager />}
               {activeTab === 'featured' && <FeaturedManager />}
-              {activeTab === 'content' && <TextContentManager />}
               {activeTab === 'settings' && <SettingsManager />}
             </AnimatePresence>
           </div>
@@ -594,231 +558,6 @@ function BusinessManager({ admin }: { admin: any }) {
                   className="px-12 py-4 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary-dark transition-all uppercase tracking-widest text-[10px]"
                 >
                   Save Changes
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function HeroManager() {
-  const { 
-    heroSlides, 
-    addSlide, 
-    deleteSlide, 
-    updateSlide, 
-    reorderSlides, 
-    saveToRepo, 
-    isSaving,
-    hasUnsavedChanges
-  } = useBuildMode();
-
-  const [editingSlide, setEditingSlide] = useState<any | null>(null);
-  const [uploading, setUploading] = useState(false);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File is too large. Max 5MB.');
-      return;
-    }
-
-    setUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const MAX_WIDTH = 1200;
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const base64 = canvas.toDataURL('image/jpeg', 0.7);
-          if (editingSlide) {
-            setEditingSlide({ ...editingSlide, image: base64 });
-          }
-        }
-        setUploading(false);
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleSave = async () => {
-    if (!editingSlide) return;
-    if (editingSlide.isNew) {
-      addSlide({ id: crypto.randomUUID(), image: editingSlide.image });
-    } else {
-      updateSlide(editingSlide.id, { image: editingSlide.image });
-    }
-    setEditingSlide(null);
-  };
-
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${hasUnsavedChanges ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`} />
-            <p className="text-sm font-medium text-slate-500">
-              {hasUnsavedChanges ? 'You have unsaved changes' : 'All changes synced to playground'}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          {hasUnsavedChanges && (
-            <button 
-              onClick={() => saveToRepo()}
-              disabled={isSaving}
-              className="px-8 py-4 bg-[#0F7B6C] text-white font-black rounded-2xl hover:bg-[#0d6b5e] transition-all uppercase tracking-widest text-[10px] flex items-center gap-3 shadow-xl shadow-[#0F7B6C]/20 disabled:opacity-50"
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save to Repository
-            </button>
-          )}
-          <button 
-            onClick={() => setEditingSlide({ image: '', isNew: true })}
-            className="px-8 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary-dark transition-all uppercase tracking-widest text-[10px] flex items-center gap-3 shadow-xl shadow-primary/20"
-          >
-            <Plus className="w-4 h-4" /> Add New Slide
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {heroSlides.map((slide, index) => (
-          <div key={slide.id} className="bg-white rounded-[40px] border border-slate-100 shadow-premium overflow-hidden group">
-            <div className="aspect-video relative overflow-hidden bg-slate-100">
-              <img src={slide.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" referrerPolicy="no-referrer" />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <button 
-                  onClick={() => setEditingSlide(slide)}
-                  className="p-4 bg-white text-primary rounded-2xl hover:scale-110 transition-transform shadow-xl"
-                >
-                  <Edit3 className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => deleteSlide(slide.id)}
-                  className="p-4 bg-white text-red-500 rounded-2xl hover:scale-110 transition-transform shadow-xl"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="absolute top-4 left-4 flex items-center gap-2">
-                <div className="px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest text-primary shadow-lg">
-                  Slide {index + 1}
-                </div>
-              </div>
-            </div>
-            <div className="p-6 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => reorderSlides(slide.id, 'up')}
-                  disabled={index === 0}
-                  className="p-2 hover:bg-white rounded-lg text-slate-400 disabled:opacity-20 transition-colors"
-                >
-                  <ArrowUp className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => reorderSlides(slide.id, 'down')}
-                  disabled={index === heroSlides.length - 1}
-                  className="p-2 hover:bg-white rounded-lg text-slate-400 disabled:opacity-20 transition-colors"
-                >
-                  <ArrowDown className="w-4 h-4" />
-                </button>
-              </div>
-              <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">ID: {slide.id.slice(0, 8)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Edit Slide Modal */}
-      <AnimatePresence>
-        {editingSlide && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setEditingSlide(null)}
-              className="absolute inset-0 bg-primary-dark/60 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-2xl overflow-hidden flex flex-col"
-            >
-              <div className="p-10 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="text-2xl font-black poppins-bold uppercase tracking-tight">
-                  {editingSlide.isNew ? 'Add New Slide' : 'Edit Slide'}
-                </h3>
-                <button onClick={() => setEditingSlide(null)} className="p-3 hover:bg-slate-50 rounded-2xl transition-colors">
-                  <XCircle className="w-6 h-6 text-slate-300" />
-                </button>
-              </div>
-              <div className="p-10 space-y-8">
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Slide Image</label>
-                  <div className="aspect-video rounded-[32px] overflow-hidden bg-slate-100 border-2 border-dashed border-slate-200 flex items-center justify-center relative group">
-                    {editingSlide.image ? (
-                      <img src={editingSlide.image} className="w-full h-full object-cover" alt="" />
-                    ) : (
-                      <ImageIcon className="w-12 h-12 text-slate-200" />
-                    )}
-                    {uploading && (
-                      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-4">
-                    <label className="w-full px-6 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl hover:bg-slate-200 transition-all uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 cursor-pointer">
-                      <Upload className="w-4 h-4" />
-                      {uploading ? 'Processing...' : 'Upload New Image'}
-                      <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
-                    </label>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Or Image URL</label>
-                      <input 
-                        type="text" 
-                        value={editingSlide.image} 
-                        onChange={e => setEditingSlide({...editingSlide, image: e.target.value})}
-                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary text-sm font-medium"
-                        placeholder="https://..."
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="p-10 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-4">
-                <button 
-                  onClick={() => setEditingSlide(null)}
-                  className="px-8 py-4 text-slate-400 font-black uppercase tracking-widest text-[10px] hover:text-slate-600"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleSave}
-                  disabled={!editingSlide.image}
-                  className="px-12 py-4 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary-dark transition-all uppercase tracking-widest text-[10px] disabled:opacity-50"
-                >
-                  {editingSlide.isNew ? 'Add Slide' : 'Update Slide'}
                 </button>
               </div>
             </motion.div>
