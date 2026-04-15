@@ -83,7 +83,7 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
   return (
     <div className="w-full px-4 mb-12 sm:mb-20">
       <div className="max-w-6xl mx-auto">
-        <div className="relative overflow-hidden rounded-[48px] aspect-square flex items-end group">
+        <div className="relative overflow-hidden rounded-[48px] aspect-square">
           <AnimatePresence initial={false} custom={direction}>
             <motion.div 
               key={currentSlide.id}
@@ -106,37 +106,6 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
               />
             </motion.div>
           </AnimatePresence>
-
-          {/* Navigation Controls */}
-          {slidesToUse.length > 1 && (
-            <>
-              <div className={`absolute bottom-6 sm:bottom-10 ${isRTL ? 'left-6 sm:left-10' : 'right-6 sm:right-10'} flex items-center gap-2 sm:gap-4 z-20`}>
-                <button 
-                  onClick={prevSlide}
-                  className="p-2 sm:p-4 border border-white/20 rounded-xl sm:rounded-2xl text-white hover:bg-white hover:text-[#0F7B6C] transition-all"
-                >
-                  <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
-                </button>
-                <button 
-                  onClick={nextSlide}
-                  className="p-2 sm:p-4 border border-white/20 rounded-xl sm:rounded-2xl text-white hover:bg-white hover:text-[#0F7B6C] transition-all"
-                >
-                  <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
-                </button>
-              </div>
-
-              {/* Indicators */}
-              <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 z-20">
-                {slidesToUse.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentIndex(idx)}
-                    className={`h-1 sm:h-1.5 rounded-full transition-all duration-500 ${idx === currentIndex ? 'w-6 sm:w-10 bg-[#C8A96A]' : 'w-1.5 sm:w-2 bg-white/30 hover:bg-white/50'}`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
         </div>
       </div>
     </div>
