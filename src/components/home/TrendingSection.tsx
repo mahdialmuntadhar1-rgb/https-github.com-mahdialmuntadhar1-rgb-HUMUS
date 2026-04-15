@@ -103,7 +103,12 @@ export default function TrendingSection({ businesses, loading, onBusinessClick }
             </p>
           </div>
           <button 
-            onClick={() => document.getElementById('explore-section')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => {
+              const element = document.getElementById('explore-section');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
             className="group flex items-center gap-4 px-8 py-4 bg-white text-bg-dark text-[10px] font-black rounded-2xl hover:bg-bg-dark hover:text-white transition-all duration-700 uppercase tracking-[0.25em] border-2 border-slate-100 shadow-xl shadow-slate-200/50"
           >
             {translations.seeAll[language]} 

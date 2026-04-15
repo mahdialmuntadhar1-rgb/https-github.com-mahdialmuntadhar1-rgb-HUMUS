@@ -8,7 +8,11 @@ import { Plus } from 'lucide-react';
 import { useBuildMode } from '@/hooks/useBuildMode';
 import HeroSlideEditor from './HeroSlideEditor';
 
+import { canAccessBuildMode } from '@/lib/buildModeAccess';
+
 export default function SlideList() {
+  if (!canAccessBuildMode()) return null;
+
   const { heroSlides, addSlide } = useBuildMode();
 
   const handleAddSlide = () => {

@@ -126,42 +126,59 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult & { feat
 
   const fetchFeatured = async () => {
     try {
+      // Try is_featured first, then fallback to isFeatured if needed
       const { data, error: fetchError } = await supabase
         .from('businesses')
         .select('*')
         .eq('is_featured', true)
         .limit(5);
       
-      if (fetchError) throw fetchError;
-      if (data) {
-        setFeaturedBusinesses(data.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          nameAr: item.nameAr || item.name_ar,
-          nameKu: item.nameKu || item.name_ku,
-          category: item.category,
-          governorate: item.governorate,
-          city: item.city,
-          address: item.address,
-          phone: item.phone,
-          rating: item.rating || 0,
-          reviewCount: item.reviewCount || item.review_count || 0,
-          isFeatured: true,
-          isVerified: item.isVerified || item.is_verified || false,
-          image: item.imageUrl || item.image_url || item.image || `https://picsum.photos/seed/${item.id}/600/400`,
-          website: item.website,
-          socialLinks: item.social_links || {},
-          description: item.description,
-          descriptionAr: item.descriptionAr || item.description_ar,
-          openingHours: item.openHours || item.opening_hours,
-          ownerId: item.owner_id,
-          createdAt: new Date(item.createdAt || item.created_at),
-          updatedAt: new Date(item.updatedAt || item.updated_at || item.created_at)
-        })));
+      if (fetchError) {
+        // If is_featured fails, try isFeatured
+        const { data: altData, error: altError } = await supabase
+          .from('businesses')
+          .select('*')
+          .eq('isFeatured', true)
+          .limit(5);
+        
+        if (altError) throw altError;
+        if (altData) {
+          mapFeaturedData(altData);
+        }
+      } else if (data) {
+        mapFeaturedData(data);
       }
     } catch (err) {
       console.error('Error fetching featured businesses:', err);
+      // Fail silently, don't block homepage
     }
+  };
+
+  const mapFeaturedData = (data: any[]) => {
+    setFeaturedBusinesses(data.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      nameAr: item.nameAr || item.name_ar,
+      nameKu: item.nameKu || item.name_ku,
+      category: item.category,
+      governorate: item.governorate,
+      city: item.city,
+      address: item.address,
+      phone: item.phone,
+      rating: item.rating || 0,
+      reviewCount: item.reviewCount || item.review_count || 0,
+      isFeatured: true,
+      isVerified: item.isVerified || item.is_verified || false,
+      image: item.imageUrl || item.image_url || item.image || `https://picsum.photos/seed/${item.id}/600/400`,
+      website: item.website,
+      socialLinks: item.social_links || {},
+      description: item.description,
+      descriptionAr: item.descriptionAr || item.description_ar,
+      openingHours: item.openHours || item.opening_hours,
+      ownerId: item.owner_id,
+      createdAt: new Date(item.createdAt || item.created_at),
+      updatedAt: new Date(item.updatedAt || item.updated_at || item.created_at)
+    })));
   };
 
   const fetchBusinesses = useCallback(async (isRefresh = false) => {

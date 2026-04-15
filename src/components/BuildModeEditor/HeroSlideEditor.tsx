@@ -15,7 +15,11 @@ interface HeroSlideEditorProps {
   total: number;
 }
 
+import { canAccessBuildMode } from '@/lib/buildModeAccess';
+
 export default function HeroSlideEditor({ slide, index, total }: HeroSlideEditorProps) {
+  if (!canAccessBuildMode()) return null;
+
   const { updateSlide, deleteSlide, reorderSlides, setActiveSlideId } = useBuildMode();
 
   const handleFocus = () => {

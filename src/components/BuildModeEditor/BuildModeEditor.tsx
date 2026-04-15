@@ -25,6 +25,8 @@ import { disableBuildModeAccess, canAccessBuildMode } from '@/lib/buildModeAcces
 import { Save, Loader2, CloudUpload, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function BuildModeEditor() {
+  if (!canAccessBuildMode()) return null;
+
   const { 
     buildModeEnabled, 
     toggleBuildMode, 
@@ -47,11 +49,6 @@ export default function BuildModeEditor() {
       return () => clearTimeout(timer);
     }
   }, [heroSlides, hasUnsavedChanges, isSaving, saveToRepo]);
-
-  // Ensure access is initialized (checks URL ?builder=1)
-  useEffect(() => {
-    canAccessBuildMode();
-  }, []);
 
   // Show "Saved" feedback briefly when lastSaved changes
   React.useEffect(() => {

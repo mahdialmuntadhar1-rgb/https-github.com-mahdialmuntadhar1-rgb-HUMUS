@@ -13,7 +13,11 @@ interface ImageUploaderProps {
   label?: string;
 }
 
+import { canAccessBuildMode } from '@/lib/buildModeAccess';
+
 export default function ImageUploader({ value, onChange, onUrlChange, label = "Image" }: ImageUploaderProps) {
+  if (!canAccessBuildMode()) return null;
+
   const [isUploading, setIsUploading] = React.useState(false);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

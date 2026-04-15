@@ -29,13 +29,16 @@ export function useAdmin() {
         { count: businessCount },
         { count: postCount },
         { count: claimCount },
-        { count: featuredCount },
+        featuredRes,
         { count: verifiedCount }
       ] = await Promise.all([
         supabase.from('businesses').select('*', { count: 'exact', head: true }),
         supabase.from('posts').select('*', { count: 'exact', head: true }),
         supabase.from('claim_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('businesses').select('*', { count: 'exact', head: true }).eq('is_featured', true),
+        supabase.from('businesses').select('*', { count: 'exact', head: true }).eq('is_featured', true).then(res => {
+          if (res.error) return supabase.from('businesses').select('*', { count: 'exact', head: true }).eq('isFeatured', true);
+          return res;
+        }),
         supabase.from('businesses').select('*', { count: 'exact', head: true }).eq('is_verified', true)
       ]);
 
@@ -43,7 +46,7 @@ export function useAdmin() {
         totalBusinesses: businessCount || 0,
         totalPosts: postCount || 0,
         pendingClaims: claimCount || 0,
-        featuredBusinesses: featuredCount || 0,
+        featuredBusinesses: featuredRes.count || 0,
         verifiedBusinesses: verifiedCount || 0
       };
     } catch (err) {

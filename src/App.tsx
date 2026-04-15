@@ -22,11 +22,8 @@ import './styles/humus-design.css';
 export default function App() {
   const { profile } = useAuthStore();
   
-  // Debug log for role detection
-  console.log("USER ROLE:", profile?.role);
-
   // Admin visibility logic: Check role OR show always in DEV mode
-  const showAdminFAB = profile?.role === 'admin' || (import.meta.env.DEV);
+  const showAdminFAB = (profile?.role === 'admin') || (import.meta.env.DEV);
 
   // Build Mode Access Check
   const hasBuildModeAccess = canAccessBuildMode();
