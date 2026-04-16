@@ -17,7 +17,8 @@ interface HeroSectionProps {
 
 export default function HeroSection({ businesses, onBusinessClick, searchQuery, setSearchQuery }: HeroSectionProps) {
   const { language } = useHomeStore();
-  const { buildModeEnabled, heroSlides: playgroundSlides, activeSlideId } = useBuildMode();
+  const { fetchHeroSlides, loading } = useAdminDB();
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const isRTL = language === 'ar' || language === 'ku';
@@ -110,6 +111,25 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
     })
   };
 
+  // Get localized content
+  const getTitle = (slide: HeroSlide) => {
+    if (language === 'ar') return slide.title_ar || slide.title_en || '';
+    if (language === 'ku') return slide.title_ku || slide.title_en || '';
+    return slide.title_en || '';
+  };
+
+  const getSubtitle = (slide: HeroSlide) => {
+    if (language === 'ar') return slide.subtitle_ar || slide.subtitle_en || '';
+    if (language === 'ku') return slide.subtitle_ku || slide.subtitle_en || '';
+    return slide.subtitle_en || '';
+  };
+
+  const getCTAText = (slide: HeroSlide) => {
+    if (language === 'ar') return slide.cta_text_ar || slide.cta_text_en || '';
+    if (language === 'ku') return slide.cta_text_ku || slide.cta_text_en || '';
+    return slide.cta_text_en || '';
+  };
+
   return (
     <div className="w-full px-4 mb-12 sm:mb-20">
       <div className="max-w-6xl mx-auto">
@@ -129,7 +149,7 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
               className="absolute inset-0"
             >
               <img 
-                src={currentSlide.image} 
+                src={currentSlide.image_url} 
                 alt="Hero Image"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
