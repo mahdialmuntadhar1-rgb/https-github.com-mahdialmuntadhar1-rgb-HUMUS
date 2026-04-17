@@ -132,7 +132,7 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult & { feat
         .select('*')
         .eq('is_featured', true)
         .limit(5);
-      
+
       if (fetchError) {
         // If is_featured fails, try isFeatured
         const { data: altData, error: altError } = await supabase
@@ -140,9 +140,18 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult & { feat
           .select('*')
           .eq('isFeatured', true)
           .limit(5);
-        
-        if (altError) throw altError;
-        if (altData) {
+
+        if (altError) {
+          // If both fail, just fetch first 5 businesses as featured
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('businesses')
+            .select('*')
+            .limit(5);
+          if (fallbackError) throw fallbackError;
+          if (fallbackData) {
+            mapFeaturedData(fallbackData);
+          }
+        } else if (altData) {
           mapFeaturedData(altData);
         }
       } else if (data) {

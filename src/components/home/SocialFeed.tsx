@@ -5,7 +5,9 @@ import { Smartphone, Heart, MessageCircle, Share2, MapPin, MoreHorizontal, Bookm
 import { useHomeStore } from '@/stores/homeStore';
 import { usePosts } from '@/hooks/usePosts';
 import { useBusinesses } from '@/hooks/useBusinesses';
+import { useBuildMode } from '@/hooks/useBuildMode';
 import { Business, Post } from '@/lib/supabase';
+import EditablePost from '@/components/buildMode/EditablePost';
 
 import { useAuth } from '@/hooks/useAuth';
 
@@ -85,6 +87,7 @@ const FALLBACK_POST_TEMPLATES = [
 export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
   const { language } = useHomeStore();
   const { user } = useAuth();
+  const { isBuildModeEnabled } = useBuildMode();
   const { posts: realPosts, loading: postsLoading, error, hasMore, loadMore, likePost, createPost, addComment, fetchComments, refresh: fetchPosts } = usePosts();
   const { businesses, featuredBusinesses, loading: bizLoading } = useBusinesses("");
   const [isSeeding, setIsSeeding] = React.useState(false);
@@ -93,8 +96,14 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
   const [activeComments, setActiveComments] = React.useState<Record<string, Comment[]>>({});
   const [commentInputs, setCommentInputs] = React.useState<Record<string, string>>({});
   const [showComments, setShowComments] = React.useState<Record<string, boolean>>({});
-  
+  const [displayPosts, setDisplayPosts] = React.useState<Post[]>([]);
+
   const isRTL = language === 'ar' || language === 'ku';
+
+  // Update display posts when real posts change
+  React.useEffect(() => {
+    setDisplayPosts(realPosts);
+  }, [realPosts]);
 
   const handleLike = async (postId: string) => {
     await likePost(postId, user?.id);
@@ -207,8 +216,17 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
     seedPosts();
   }, [realPosts, businesses, postsLoading, bizLoading, isSeeding]);
 
-  // Use real posts only
-  const displayPosts = realPosts;
+  const handlePostUpdate = (updatedPost: Post) => {
+    if (updatedPost.id === '') {
+      // Post was deleted
+      setDisplayPosts(prev => prev.filter(p => p.id !== updatedPost.id));
+    } else {
+      // Post was updated
+      setDisplayPosts(prev =>
+        prev.map(p => p.id === updatedPost.id ? updatedPost : p)
+      );
+    }
+  };
 
   const isLoading = postsLoading || (realPosts.length === 0 && bizLoading);
 
@@ -307,13 +325,18 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
       </div>
 
       {displayPosts.map((post) => (
-        <motion.div 
+        <EditablePost
           key={post.id}
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="bg-white rounded-[40px] border border-slate-100 shadow-2xl overflow-hidden group"
+          post={post}
+          onUpdate={handlePostUpdate}
         >
+          <motion.div
+            key={post.id}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="bg-white rounded-[40px] border border-slate-100 shadow-2xl overflow-hidden group"
+          >
           {/* Post Header */}
           <div className="p-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -411,7 +434,8 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
               <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
             </button>
           </div>
-        </motion.div>
+          </motion.div>
+        </EditablePost>
       ))}
 
       {/* End of Feed */}

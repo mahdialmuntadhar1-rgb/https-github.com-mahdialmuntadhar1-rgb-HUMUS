@@ -42,6 +42,7 @@ import { useAdmin, ClaimRequest } from '@/hooks/useAdmin';
 import { Business, Post } from '@/lib/supabase';
 import { heroService, HeroSlide } from '@/lib/heroService';
 import { CATEGORIES, GOVERNORATES } from '@/constants';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function AdminDashboard() {
   const { profile, user } = useAuthStore();
@@ -1226,6 +1227,7 @@ function ContentManager({ admin }: { admin: any }) {
   const [editingPost, setEditingPost] = useState<any | null>(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [newPost, setNewPost] = useState({ businessId: '', title: '', content: '', caption: '', image_url: '', likes: 0, views: 0 });
+  const [uploadingPostImage, setUploadingPostImage] = useState(false);
 
   const loadPosts = async () => {
     setLoading(true);
@@ -1249,13 +1251,48 @@ function ContentManager({ admin }: { admin: any }) {
   };
 
   const handleCreate = async () => {
+    if (!newPost.image_url) {
+      alert('Please upload an image for the post');
+      return;
+    }
     try {
-      await admin.createPost(newPost);
+      // Convert empty string to NULL for business_id
+      const postData = {
+        ...newPost,
+        business_id: newPost.businessId || null
+      };
+      await admin.createPost(postData);
       loadPosts();
       setShowCreatePost(false);
       setNewPost({ businessId: '', title: '', content: '', caption: '', image_url: '', likes: 0, views: 0 });
     } catch (err) {
-      alert('Failed to create post');
+      alert('Failed to create post: ' + (err as any).message);
+    }
+  };
+
+  const handlePostImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPostImage(true);
+    try {
+      const fileName = `${Date.now()}-${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('feed-images')
+        .upload(`posts/${fileName}`, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('feed-images')
+        .getPublicUrl(`posts/${fileName}`);
+
+      setNewPost({ ...newPost, image_url: publicUrl });
+    } catch (error) {
+      alert('Failed to upload image: ' + (error as any).message);
+      console.error(error);
+    } finally {
+      setUploadingPostImage(false);
     }
   };
 
@@ -1396,6 +1433,34 @@ function ContentManager({ admin }: { admin: any }) {
                   />
                 </div>
                 <FormInput label="Post Title" value={newPost.title} onChange={(v: string) => setNewPost({...newPost, title: v})} />
+                
+                {/* Image Upload Section */}
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Post Image <span className="text-red-500">*</span></label>
+                  <div className="flex flex-col md:flex-row items-center gap-8">
+                    <div className="w-full md:w-80 aspect-video rounded-3xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-200 flex items-center justify-center relative group">
+                      {newPost.image_url ? (
+                        <img src={newPost.image_url} className="w-full h-full object-cover" alt="" />
+                      ) : (
+                        <ImageIcon className="w-12 h-12 text-slate-200" />
+                      )}
+                      {uploadingPostImage && (
+                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-4 w-full">
+                      <label className="flex-1 px-6 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary-dark transition-all uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 cursor-pointer shadow-xl shadow-primary/20">
+                        <Upload className="w-4 h-4" />
+                        {uploadingPostImage ? 'Uploading...' : 'Upload Image'}
+                        <input type="file" className="hidden" accept="image/*" onChange={handlePostImageUpload} disabled={uploadingPostImage} />
+                      </label>
+                      <p className="text-[9px] text-slate-400 font-medium">Upload an image from your device. Image will be stored in Supabase Storage.</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Caption / Content</label>
                   <textarea 
@@ -1405,7 +1470,6 @@ function ContentManager({ admin }: { admin: any }) {
                     placeholder="Write in Arabic or English..."
                   />
                 </div>
-                <FormInput label="Image URL" value={newPost.image_url} onChange={(v: string) => setNewPost({...newPost, image_url: v})} />
                 
                 <div className="grid grid-cols-2 gap-6">
                   <FormInput label="Fake Likes" type="number" value={newPost.likes} onChange={(v: string) => setNewPost({...newPost, likes: parseInt(v) || 0})} />

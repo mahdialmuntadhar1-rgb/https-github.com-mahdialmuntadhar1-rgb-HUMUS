@@ -13,6 +13,14 @@ DROP POLICY IF EXISTS "Admins can upload hero images" ON storage.objects;
 DROP POLICY IF EXISTS "Admins can update hero images" ON storage.objects;
 DROP POLICY IF EXISTS "Admins can delete hero images" ON storage.objects;
 
+-- Drop new policies in case they already exist
+DROP POLICY IF EXISTS "Authenticated can upload feed images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated can update feed images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated can delete feed images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated can upload hero images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated can update hero images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated can delete hero images" ON storage.objects;
+
 -- New policies for feed-images (more permissive for authenticated users)
 CREATE POLICY "Public can view feed images"
   ON storage.objects FOR SELECT
