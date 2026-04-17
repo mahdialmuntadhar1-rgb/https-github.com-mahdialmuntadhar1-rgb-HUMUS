@@ -1,15 +1,14 @@
 /**
- * ADMIN ONLY - Build Mode Editor
- * Access controlled by profile.role === 'admin' only
- * No URL param or localStorage-based access
+ * // BUILD MODE ONLY
+ * Main Build Mode Editor panel.
  */
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import {
-  X,
-  Layout,
-  MessageSquare,
+import { 
+  X, 
+  Layout, 
+  MessageSquare, 
   Star,
   ChevronRight,
   ChevronDown,
@@ -30,15 +29,12 @@ export default function BuildModeEditor() {
   const location = useLocation();
   if (!canAccessBuildMode(location.search)) return null;
 
-  // Admin-only access control
-  if (profile?.role !== 'admin') return null;
-
-  const {
-    buildModeEnabled,
-    toggleBuildMode,
-    lastSaved,
-    resetToOriginal,
-    saveToRepo,
+  const { 
+    buildModeEnabled, 
+    toggleBuildMode, 
+    lastSaved, 
+    resetToOriginal, 
+    saveToRepo, 
     isSaving,
     heroSlides,
     feedItems,
@@ -64,6 +60,13 @@ export default function BuildModeEditor() {
       return () => clearTimeout(timer);
     }
   }, [lastSaved]);
+
+  const handleDisableAccess = () => {
+    if (confirm('Disable Build Mode access? You will need the private URL to enable it again.')) {
+      disableBuildModeAccess();
+      window.location.reload();
+    }
+  };
 
   return (
     <>
@@ -201,8 +204,16 @@ export default function BuildModeEditor() {
             {/* Footer */}
             <div className="p-8 border-t border-slate-100 bg-slate-50/50 space-y-4">
               <p className="text-[10px] text-slate-400 font-medium italic text-center">
-                Admin-only access. Changes are synced to Supabase.
+                Changes are synced directly to the repository source files.
               </p>
+              {!import.meta.env.DEV && (
+                <button 
+                  onClick={handleDisableAccess}
+                  className="w-full py-2 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  Disable Builder Access
+                </button>
+              )}
             </div>
           </motion.div>
         )}

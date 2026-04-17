@@ -12,13 +12,13 @@ import ClaimPage from '@/pages/ClaimPage';
 import AdminDashboard from '@/pages/AdminDashboard';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import AdminRoute from '@/components/auth/AdminRoute';
-import BuildModeEditor from '@/components/BuildModeEditor/BuildModeEditor';
-import BuildModeToggle from '@/components/BuildModeEditor/BuildModeToggle';
-import { canAccessBuildMode } from '@/lib/buildModeAccess';
-import { useBuildMode } from '@/hooks/useBuildMode';
+import PageEditor from '@/components/PageEditor';
 import { useAuthStore } from '@/stores/authStore';
 import { ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Toaster } from 'sonner';
+import { BuildModeProvider } from '@/contexts/BuildModeContext';
+import BuildModeImageReplacer from '@/components/BuildModeEditor/BuildModeImageReplacer';
 import './styles/humus-design.css';
 
 export default function App() {
@@ -29,15 +29,12 @@ export default function App() {
   // Hiding from homepage as per user request to avoid confusion with Build Mode
   const isHomePage = location.pathname === '/';
   
-  // Build Mode Access Check - Reactive to location changes
-  // Requirement: URL ?builder=1 AND localStorage owner_builder_access="true"
-  const hasBuildModeAccess = canAccessBuildMode(location.search);
-
-  // Hide Admin FAB if on homepage OR if Build Mode is available
-  const showAdminFAB = !isHomePage && !hasBuildModeAccess && ((profile?.role === 'admin') || (import.meta.env.DEV));
+  // Hide Admin FAB if on homepage
+  const showAdminFAB = !isHomePage && ((profile?.role === 'admin') || (import.meta.env.DEV));
 
   return (
-    <>
+    <BuildModeProvider>
+      <Toaster position="top-center" richColors />
       <Routes>
         {/* Main Homepage - Version 1 Design */}
         <Route path="/" element={<HomePage />} />
@@ -69,13 +66,11 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* Build Mode - Owner Only */}
-      {hasBuildModeAccess && (
-        <>
-          <BuildModeToggle />
-          <BuildModeEditor />
-        </>
-      )}
+      {/* Build Mode Sidebar */}
+      <PageEditor />
+
+      {/* Direct Image Replacement Toolbar */}
+      <BuildModeImageReplacer />
 
       {/* Global Admin Access FAB */}
       <AnimatePresence>
@@ -99,6 +94,6 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </BuildModeProvider>
   );
 }

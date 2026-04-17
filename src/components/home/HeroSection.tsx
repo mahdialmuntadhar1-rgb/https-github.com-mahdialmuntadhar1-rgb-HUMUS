@@ -5,6 +5,9 @@ import { Link } from 'react-router-dom';
 import { Business } from '@/lib/supabase';
 import { useHomeStore } from '@/stores/homeStore';
 import { useBuildMode } from '@/hooks/useBuildMode';
+import { useAdminDB } from '@/hooks/useAdminDB';
+import { useAuthStore } from '@/stores/authStore';
+import { EditableImage } from '../BuildModeEditor/EditableImage';
 import { heroContent } from '@/data/heroContent';
 import { Upload } from 'lucide-react';
 
@@ -17,55 +20,37 @@ interface HeroSectionProps {
 
 export default function HeroSection({ businesses, onBusinessClick, searchQuery, setSearchQuery }: HeroSectionProps) {
   const { language } = useHomeStore();
-  const { fetchHeroSlides, loading } = useAdminDB();
-  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
+  const { profile } = useAuthStore();
+  const { heroSlides: slides, buildModeEnabled, updateSlide } = useBuildMode();
+  const { updateHeroSlide } = useAdminDB();
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  const isRTL = language === 'ar' || language === 'ku';
-
-  // Single Source of Truth: Use playground slides in Build Mode, otherwise use heroContent.ts
-  // Ensure we fallback to heroContent if playground is empty or build mode is disabled
-  const slidesToUse = useMemo(() => {
-    if (buildModeEnabled && playgroundSlides && playgroundSlides.length > 0) {
-      return playgroundSlides;
-    }
-    return heroContent && heroContent.length > 0 ? heroContent : [];
-  }, [buildModeEnabled, playgroundSlides]);
-
-  // Sync currentIndex with activeSlideId in Build Mode
-  useEffect(() => {
-    if (buildModeEnabled && activeSlideId && slidesToUse.length > 0) {
-      const index = slidesToUse.findIndex(s => s.id === activeSlideId);
-      if (index !== -1) {
-        setCurrentIndex(index);
-      }
-    }
-  }, [activeSlideId, buildModeEnabled, slidesToUse]);
-
   const [direction, setDirection] = useState(0);
 
+  const isAdmin = profile?.role === 'admin';
+  const isRTL = language === 'ar' || language === 'ku';
+
   const nextSlide = () => {
-    if (slidesToUse.length === 0) return;
+    if (slides.length === 0) return;
     setDirection(1);
-    setCurrentIndex((prev) => (prev + 1) % slidesToUse.length);
+    setCurrentIndex((prev) => (prev + 1) % slides.length);
   };
 
   const prevSlide = () => {
-    if (slidesToUse.length === 0) return;
+    if (slides.length === 0) return;
     setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + slidesToUse.length) % slidesToUse.length);
+    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
   useEffect(() => {
-    if (slidesToUse.length <= 1) return;
+    if (slides.length <= 1) return;
     const timer = setInterval(() => {
       nextSlide();
     }, 5000);
     return () => clearInterval(timer);
-  }, [slidesToUse.length]);
+  }, [slides.length]);
 
   // Fallback if no slides
-  if (!slidesToUse || slidesToUse.length === 0) {
+  if (!slides || slides.length === 0) {
     return (
       <div className="w-full px-4 mb-12 sm:mb-20">
         <div className="max-w-6xl mx-auto">
@@ -77,22 +62,8 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
     );
   }
 
-  const currentSlide = slidesToUse[currentIndex] || slidesToUse[0];
+  const currentSlide = slides[currentIndex] || slides[0];
   if (!currentSlide) return null;
-
-  const { updateSlide } = useBuildMode();
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      updateSlide(currentSlide.id, { image: base64 });
-    };
-    reader.readAsDataURL(file);
-  };
 
   const slideVariants = {
     enter: (direction: number) => ({
@@ -109,25 +80,6 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
       x: direction < 0 ? '100%' : '-100%',
       opacity: 0
     })
-  };
-
-  // Get localized content
-  const getTitle = (slide: HeroSlide) => {
-    if (language === 'ar') return slide.title_ar || slide.title_en || '';
-    if (language === 'ku') return slide.title_ku || slide.title_en || '';
-    return slide.title_en || '';
-  };
-
-  const getSubtitle = (slide: HeroSlide) => {
-    if (language === 'ar') return slide.subtitle_ar || slide.subtitle_en || '';
-    if (language === 'ku') return slide.subtitle_ku || slide.subtitle_en || '';
-    return slide.subtitle_en || '';
-  };
-
-  const getCTAText = (slide: HeroSlide) => {
-    if (language === 'ar') return slide.cta_text_ar || slide.cta_text_en || '';
-    if (language === 'ku') return slide.cta_text_ku || slide.cta_text_en || '';
-    return slide.cta_text_en || '';
   };
 
   return (
@@ -148,31 +100,17 @@ export default function HeroSection({ businesses, onBusinessClick, searchQuery, 
               }}
               className="absolute inset-0"
             >
-              <img 
-                src={currentSlide.image_url} 
+              <EditableImage
+                src={currentSlide.image}
                 alt="Hero Image"
                 className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/belive-fallback/1200/600';
+                folder="hero"
+                isAdmin={isAdmin}
+                onSave={(newUrl) => {
+                  updateSlide(currentSlide.id, { image: newUrl });
+                  updateHeroSlide(currentSlide.id, { image_url: newUrl });
                 }}
               />
-
-              {/* Build Mode Overlay Controls */}
-              {buildModeEnabled && (
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <label className="cursor-pointer bg-white/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 hover:scale-105 transition-transform group">
-                    <Upload className="w-5 h-5 text-primary" />
-                    <span className="text-xs font-black uppercase tracking-widest text-primary">Replace Background</span>
-                    <input 
-                      type="file" 
-                      className="hidden" 
-                      accept="image/*" 
-                      onChange={handleImageUpload}
-                    />
-                  </label>
-                </div>
-              )}
             </motion.div>
           </AnimatePresence>
         </div>

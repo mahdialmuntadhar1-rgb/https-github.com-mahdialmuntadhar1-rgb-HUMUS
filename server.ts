@@ -3,6 +3,7 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,11 +12,50 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Multer config for image uploads
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const type = req.body.type || 'misc';
+      const dir = path.join(process.cwd(), 'public', 'images', type);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+      cb(null, `${Date.now()}-${file.originalname}`);
+    }
+  });
+  const upload = multer({ storage });
+
   // Increase payload limit for base64 images
   app.use(express.json({ limit: '50mb' }));
 
   const distPath = path.join(process.cwd(), 'dist');
   const publicPath = path.join(process.cwd(), 'public');
+
+  // API: Upload Image
+  app.post("/api/upload", upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const type = req.body.type || 'misc';
+    res.json({ path: `/images/${type}/${req.file.filename}` });
+  });
+
+  // API: Save Hero JSON
+  app.post("/api/save-hero", (req, res) => {
+    const dir = path.join(process.cwd(), 'public', 'data');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const filePath = path.join(dir, 'hero.json');
+    fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2));
+    res.json({ success: true });
+  });
+
+  // API: Save Categories JSON
+  app.post("/api/save-categories", (req, res) => {
+    const dir = path.join(process.cwd(), 'public', 'data');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const filePath = path.join(dir, 'categories.json');
+    fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2));
+    res.json({ success: true });
+  });
 
   // 1. Explicitly serve manifest with correct headers to avoid 401
   // Move to top to ensure it's not intercepted
