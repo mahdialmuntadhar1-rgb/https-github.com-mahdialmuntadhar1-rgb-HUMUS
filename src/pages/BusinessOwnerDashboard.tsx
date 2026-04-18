@@ -404,3 +404,10 @@ export default function BusinessOwnerDashboard() {
                   {creatingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create Post'}
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
