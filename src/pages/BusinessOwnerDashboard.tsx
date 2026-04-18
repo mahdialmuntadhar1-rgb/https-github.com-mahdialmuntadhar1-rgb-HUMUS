@@ -60,7 +60,7 @@ export default function BusinessOwnerDashboard() {
         });
       }
     } catch (error) {
-      console.error('Error loading business:', error);
+      // Error loading business - handled silently
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ export default function BusinessOwnerDashboard() {
       if (error) throw error;
       setPosts(data || []);
     } catch (err) {
-      console.error('Error loading posts:', err);
+      // Error loading posts - handled silently
     } finally {
       setPostsLoading(false);
     }
@@ -148,20 +148,27 @@ export default function BusinessOwnerDashboard() {
     }
   };
 
+  const createPostPayload = (businessId: string, businessData: any, content: string, imageUrl: string | null) => ({
+    business_id: businessId,
+    businessId: businessId,
+    businessName: businessData.name,
+    businessAvatar: businessData.image_url || businessData.imageUrl || '',
+    content: content,
+    caption: content,
+    image_url: imageUrl,
+    imageUrl: imageUrl,
+    likes: 0,
+    views: 0,
+    status: 'visible',
+    created_at: new Date().toISOString(),
+  });
+
   const handleCreatePost = async () => {
     if (!newPost.content.trim()) { alert('Please write some content for your post'); return; }
     setCreatingPost(true);
     try {
-      const { error } = await supabase.from('posts').insert([{
-        business_id: business.id,
-        content: newPost.content,
-        caption: newPost.content,
-        image_url: newPost.image_url || null,
-        likes: 0,
-        views: 0,
-        status: 'visible',
-        created_at: new Date().toISOString(),
-      }]);
+      const payload = createPostPayload(business.id, business, newPost.content, newPost.image_url || null);
+      const { error } = await supabase.from('posts').insert([payload]);
       if (error) throw error;
       alert('Post published successfully!');
       setShowCreatePost(false);

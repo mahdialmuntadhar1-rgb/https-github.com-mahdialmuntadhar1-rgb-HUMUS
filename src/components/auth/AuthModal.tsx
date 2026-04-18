@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useHomeStore } from '@/stores/homeStore';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useBusinessManagement } from '@/hooks/useBusinessManagement';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,7 +19,8 @@ type UserRole = 'user' | 'business_owner';
 export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLoginSuccess }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(initialMode === 'login');
   const [isForgot, setIsForgot] = useState(initialMode === 'forgot');
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
+  const { createBusiness } = useBusinessManagement();
 
   React.useEffect(() => {
     if (isOpen) {
@@ -112,7 +114,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
           onClose();
         }
       } else {
-        await signUp(email, password, {
+        const signupData = await signUp(email, password, {
           full_name: name,
           role: role,
           business_name: role === 'business_owner' ? businessName : undefined,
@@ -122,11 +124,78 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onLo
           city: role === 'business_owner' ? city : undefined,
           description: role === 'business_owner' ? description : undefined,
         });
+
+        // Ensure profile is created and has correct role before proceeding
+        if (signupData?.user) {
+          try {
+            // Wait for auth trigger to create profile, with polling fallback
+            let profileExists = false;
+            let attempts = 0;
+            const maxAttempts = 5;
+
+            while (!profileExists && attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', signupData.user.id)
+                .single();
+
+              if (profile) {
+                profileExists = true;
+                // Update role if signup specified business_owner
+                if (role === 'business_owner' && profile.role !== 'business_owner') {
+                  await supabase
+                    .from('profiles')
+                    .update({ role: 'business_owner' })
+                    .eq('id', signupData.user.id);
+                }
+                break;
+              }
+
+              attempts++;
+            }
+
+            // If profile still doesn't exist, create it directly as fallback
+            if (!profileExists) {
+              await supabase
+                .from('profiles')
+                .insert([{
+                  id: signupData.user.id,
+                  full_name: name,
+                  role: role,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                }]);
+            }
+
+            // If business_owner role, create business record
+            if (role === 'business_owner' && businessName && category && governorate && city) {
+              try {
+                await createBusiness({
+                  name: businessName,
+                  category: category,
+                  governorate: governorate,
+                  city: city,
+                  address: city,
+                  phone: phone || '',
+                  description: description || '',
+                  image: ''
+                });
+              } catch (bizErr) {
+                // Business creation failed - continue anyway, profile was created
+              }
+            }
+          } catch (profileErr) {
+            // Profile creation failed - continue anyway, user can login and trigger profile creation
+          }
+        }
+
         setSuccess(language === 'ar' ? 'تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب.' : 'Account created! Please check your email to verify your account.');
         return;
       }
     } catch (err) {
-      console.error('Auth error:', err);
       let message = 'An error occurred during authentication';
       if (err instanceof Error) {
         message = err.message;

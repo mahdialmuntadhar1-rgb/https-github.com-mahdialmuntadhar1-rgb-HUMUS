@@ -12,10 +12,13 @@ import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
 import AddBusinessModal from "@/components/home/AddBusinessModal";
 import PWAInstallButton from "@/components/common/PWAInstallButton";
+import AdminEditToggle from "@/components/admin/AdminEditToggle";
+import AdminPanel from "@/components/admin/AdminPanel";
 import { useBusinesses } from "@/hooks/useBusinesses";
 import { useHomeStore } from "@/stores/homeStore";
 import { useAdminDB, HeroSlide } from "@/hooks/useAdminDB";
 import { useBuildMode } from "@/hooks/useBuildMode";
+import { useAdminMode } from "@/hooks/useAdminMode";
 import type { Business, Post } from "@/lib/supabase";
 
 import { ArrowRight, TrendingUp } from "lucide-react";
@@ -31,9 +34,11 @@ export default function HomePage() {
   const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'guide' | 'social'>('guide');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
 
   // Build Mode
   const { isBuildModeEnabled } = useBuildMode();
+  const { isAdminEditModeActive } = useAdminMode();
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
   const { fetchHeroSlides } = useAdminDB();
@@ -213,6 +218,8 @@ export default function HomePage() {
       )}
 
       <PWAInstallButton />
+      <AdminEditToggle onOpenPanel={() => setIsAdminPanelOpen(true)} />
+      <AdminPanel isOpen={isAdminPanelOpen} onClose={() => setIsAdminPanelOpen(false)} />
 
       {/* Footer */}
       <footer className="bg-text-main text-white pt-32 pb-16">
