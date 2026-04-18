@@ -7,7 +7,7 @@ export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
     plugins: [
-      react(), 
+      react(),
       tailwindcss(),
       // VitePWA disabled temporarily to fix manifest.json 401 error
       // Re-enable after deployment is stable
@@ -18,6 +18,16 @@ export default defineConfig(({mode}) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+      },
+    },
+    build: {
+      rollupOptions: {
+        onwarn(warning, warn) {
+          // Ignore external module warnings
+          if (warning.code === 'MODULE_NOT_FOUND') return;
+          if (warning.message.includes('externalize')) return;
+          warn(warning);
+        },
       },
     },
     server: {
