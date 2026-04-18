@@ -7,7 +7,11 @@ export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
     plugins: [
-      react({ strictMode: false }),
+      react({
+        babel: {
+          plugins: [],
+        },
+      }),
       tailwindcss(),
       // VitePWA disabled temporarily to fix manifest.json 401 error
       // Re-enable after deployment is stable
@@ -21,7 +25,12 @@ export default defineConfig(({mode}) => {
       },
     },
     build: {
-      logLevel: 'error',
+      rollupOptions: {
+        onwarn(warning, warn) {
+          // Suppress all warnings
+          return;
+        },
+      },
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
