@@ -1,11 +1,12 @@
 import React from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { motion } from 'motion/react';
 import { Smartphone, Heart, MessageCircle, Share2, MapPin, MoreHorizontal, Bookmark, ArrowRight, Loader2, Eye, Star, CheckCircle2, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useHomeStore } from '@/stores/homeStore';
 import { usePosts } from '@/hooks/usePosts';
 import { useBusinesses } from '@/hooks/useBusinesses';
+import { useBuildMode } from '@/hooks/useBuildMode';
 import { Business, Post } from '@/lib/supabase';
+import EditablePost from '@/components/buildMode/EditablePost';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useBuildMode } from '@/hooks/useBuildMode';
@@ -30,90 +31,26 @@ interface SocialFeedProps {
   onBusinessClick?: (business: Business) => void;
 }
 
-const ARABIC_POST_TEMPLATES = [
-  "نحن في {name} ملتزمون بتقديم أعلى مستويات الجودة والخدمة في {city}. تفضلوا بزيارتنا لتجربة استثنائية.",
-  "يعلن {name} عن توفر خدمات جديدة تلبي تطلعاتكم في {governorate}. الجودة هي شعارنا دائماً.",
-  "اكتشفوا معايير جديدة للتميز في {name} بـ {city}. نسعى دائماً لتقديم الأفضل لزبائننا الكرام."
-];
-
-const ARABIC_COMMENTS = [
-  "خدمة ممتازة جداً.",
-  "مكان راقي ويستحق الزيارة.",
-  "تعامل محترف وجودة عالية.",
-  "شكراً لكم على حسن الاستقبال.",
-  "من أفضل الأماكن في المنطقة."
-];
-
-const CATEGORY_IMAGES: Record<string, string[]> = {
-  cafe: [
-    "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=80"
-  ],
-  hotels: [
-    "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80"
-  ],
-  gym: [
-    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80"
-  ],
-  dining: [
-    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80"
-  ],
-  medical: [
-    "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=800&q=80"
-  ],
-  general: [
-    "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1527192491265-7e15c55b1ed2?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80"
-  ]
-};
-
-const FALLBACK_POST_TEMPLATES = [
-  "Welcome to {name}! Located in {city}, we offer the best {category} experience. ✨ #Iraq #ShakuMaku",
-  "Experience world-class {category} at {name} in {governorate}. A premier destination for excellence. 🌟",
-  "Discover amazing flavors at {name} in {address}. An unforgettable journey of taste and style. 🍢🔥",
-  "Immerse yourself in the sophisticated atmosphere of {name}. Located in {city}, we offer unparalleled facilities. 🏨💎",
-  "Proudly serving the {city} community. {name} is your first destination for {category}. 🛍️✨"
-];
+// Fake post templates removed - use only real posts from Supabase
 
 export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
   const { language } = useHomeStore();
   const { user } = useAuth();
-  const { feedItems } = useBuildMode();
+  const { isBuildModeEnabled } = useBuildMode();
   const { posts: realPosts, loading: postsLoading, error, hasMore, loadMore, likePost, createPost, addComment, fetchComments, refresh: fetchPosts } = usePosts();
   const { businesses, featuredBusinesses, loading: bizLoading } = useBusinesses("");
-  const [isSeeding, setIsSeeding] = React.useState(false);
-  const [seedProgress, setSeedProgress] = React.useState(0);
   const [feedType, setFeedType] = React.useState<'recent' | 'trending'>('recent');
   const [activeComments, setActiveComments] = React.useState<Record<string, Comment[]>>({});
   const [commentInputs, setCommentInputs] = React.useState<Record<string, string>>({});
   const [showComments, setShowComments] = React.useState<Record<string, boolean>>({});
-  
+  const [displayPosts, setDisplayPosts] = React.useState<Post[]>([]);
+
   const isRTL = language === 'ar' || language === 'ku';
 
-  // Use real posts + build mode items
-  const displayPosts = React.useMemo(() => {
-    const itemsAsPosts = feedItems.map(item => ({
-      id: item.id,
-      businessId: 'official',
-      authorName: item.authorName || (language === 'ar' ? 'شكو ماكو' : 'Shaku Maku'),
-      authorAvatar: item.authorAvatar || '/logo.png',
-      content: item.caption || '',
-      image: item.image,
-      likes: 1200,
-      createdAt: new Date().toISOString(),
-      isVerified: true
-    }));
-    
-    return [...itemsAsPosts, ...realPosts];
-  }, [feedItems, realPosts, language]);
+  // Update display posts when real posts change
+  React.useEffect(() => {
+    setDisplayPosts(realPosts);
+  }, [realPosts]);
 
   const handleLike = async (postId: string) => {
     if (postId.length > 20) return; // Skip for build mode items
@@ -135,7 +72,7 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
       const comments = await fetchComments(postId);
       setActiveComments(prev => ({ ...prev, [postId]: comments }));
     } catch (err) {
-      console.error('Failed to add comment:', err);
+      // Failed to add comment - handled silently
     }
   };
 
@@ -148,7 +85,7 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
         const comments = await fetchComments(postId);
         setActiveComments(prev => ({ ...prev, [postId]: comments }));
       } catch (err) {
-        console.error('Failed to fetch comments:', err);
+        // Failed to fetch comments - handled silently
       }
     }
   };
@@ -160,98 +97,21 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
     refresh();
   }, [feedType, fetchPosts]);
 
-  // AI Seeder Logic
-  React.useEffect(() => {
-    const seedPosts = async () => {
-      // Disable seeding if we have build mode feed items (manual control)
-      if (feedItems.length > 0) return;
-      
-      if (postsLoading || bizLoading || realPosts.length >= 50 || isSeeding) return;
-      
-      if (realPosts.length > 5) return;
+  // Fake post auto-seeding removed - use only real posts from Supabase
 
-      setIsSeeding(true);
-      try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
-        
-        const availableBusinesses = businesses.length > 0 ? businesses : [];
-        const targetCount = 50;
-        const postsToCreate = [];
-
-        for (let i = 0; i < targetCount; i++) {
-          setSeedProgress(Math.round((i / targetCount) * 100));
-          
-          const biz = availableBusinesses[i % availableBusinesses.length];
-          const category = biz?.category || ['Hotel', 'Restaurant', 'Cafe', 'Gym', 'Pharmacy', 'Mall', 'Salon', 'Hospital', 'Electronics', 'Services'][Math.floor(Math.random() * 10)];
-          const city = biz?.city || ['Baghdad', 'Erbil', 'Basra', 'Sulaymaniyah', 'Najaf'][Math.floor(Math.random() * 5)];
-          const bizName = biz?.name || (language === 'ar' ? `مؤسسة ${category} العراقية` : `Iraqi ${category} Co.`);
-
-          const captionResponse = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: `Generate a professional, high-end business announcement in Iraqi Arabic dialect for a ${category} named "${bizName}" in ${city}. The tone should be like a trusted corporate brand (e.g. Toyota or a luxury hotel). Focus on quality, service, and professionalism. No emojis, no hashtags. Max 100 characters.`,
-          });
-          const caption = captionResponse.text?.trim() || "نحن ملتزمون بتقديم أفضل الخدمات لزبائننا الكرام.";
-
-          const promptResponse = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: `Generate a short, descriptive English image generation prompt for a ${category} in Iraq. Focus on high quality, realistic lighting, and local atmosphere. Example: "luxury hotel lobby in Erbil, warm lighting, modern design, Iraqi style, high quality". Return ONLY the prompt.`,
-          });
-          const imagePrompt = promptResponse.text?.trim() || `${category} in ${city} Iraq, high quality`;
-
-          const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(imagePrompt)}?width=1080&height=1080&seed=${Math.random()}&nologo=true`;
-
-          postsToCreate.push({
-            businessId: biz?.id || `fallback-${i}`,
-            businessName: bizName,
-            businessAvatar: biz?.image || `https://i.pravatar.cc/150?u=${biz?.id || i}`,
-            content: caption,
-            caption: caption,
-            imageUrl: imageUrl,
-            image_url: imageUrl,
-            likes: Math.floor(Math.random() * 1000) + 100,
-            isVerified: biz?.isVerified || Math.random() > 0.7,
-            createdAt: new Date(Date.now() - (targetCount - i) * 3600000).toISOString()
-          });
-
-          await createPost(caption, imageUrl, {
-            businessName: bizName,
-            businessAvatar: biz?.image,
-            isVerified: biz?.isVerified
-          } as any);
-        }
-      } catch (err) {
-        console.error("Seeding failed:", err);
-      } finally {
-        setIsSeeding(false);
-        setSeedProgress(100);
-      }
-    };
-
-    seedPosts();
-  }, [realPosts, businesses, postsLoading, bizLoading, isSeeding]);
+  const handlePostUpdate = (updatedPost: Post) => {
+    if (updatedPost.id === '') {
+      // Post was deleted
+      setDisplayPosts(prev => prev.filter(p => p.id !== updatedPost.id));
+    } else {
+      // Post was updated
+      setDisplayPosts(prev =>
+        prev.map(p => p.id === updatedPost.id ? updatedPost : p)
+      );
+    }
+  };
 
   const isLoading = postsLoading || (realPosts.length === 0 && bizLoading);
-
-  if (isSeeding) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 px-4 text-center">
-        <div className="w-24 h-24 bg-accent/10 rounded-[40px] flex items-center justify-center mb-8 shadow-inner relative">
-          <Loader2 className="w-12 h-12 text-accent animate-spin" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[10px] font-black text-accent">{seedProgress}%</span>
-          </div>
-        </div>
-        <h3 className="text-2xl font-black text-bg-dark mb-4 poppins-bold uppercase tracking-tighter">
-          {language === 'ar' ? 'جاري توليد المحتوى بالذكاء الاصطناعي' : 'Generating AI Content'}
-        </h3>
-        <p className="text-sm text-slate-400 max-w-xs mx-auto leading-relaxed font-medium">
-          {language === 'ar' 
-            ? 'نقوم بتجهيز ٥٠ منشوراً فريداً لأعمال حقيقية في العراق باستخدام أحدث تقنيات الذكاء الاصطناعي.' 
-            : 'We are preparing 50 unique posts for real Iraqi businesses using state-of-the-art AI technology.'}
-        </p>
-      </div>
-    );
-  }
 
   if (isLoading && displayPosts.length === 0) {
     return (
@@ -327,13 +187,17 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
       </div>
 
       {displayPosts.map((post) => (
-        <motion.div 
-          key={post.id}
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="bg-white rounded-[40px] border border-slate-100 shadow-2xl overflow-hidden group"
+        <EditablePost
+          post={post}
+          onUpdate={handlePostUpdate}
         >
+          <motion.div
+            key={post.id}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="bg-white rounded-[40px] border border-slate-100 shadow-2xl overflow-hidden group"
+          >
           {/* Post Header */}
           <div className="p-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -431,7 +295,8 @@ export default function SocialFeed({ onBusinessClick }: SocialFeedProps) {
               <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
             </button>
           </div>
-        </motion.div>
+          </motion.div>
+        </EditablePost>
       ))}
 
       {/* End of Feed */}

@@ -43,6 +43,7 @@ import { Business, Post } from '@/lib/supabase';
 import { useBuildMode } from '@/hooks/useBuildMode';
 import { heroService, HeroSlide as SupabaseHeroSlide } from '@/lib/heroService';
 import { CATEGORIES, GOVERNORATES } from '@/constants';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function AdminDashboard() {
   const { profile, user } = useAuthStore();
@@ -299,41 +300,44 @@ function BusinessManager({ admin }: { admin: any }) {
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setLoading(true);
-    // Mock search results for frontend-only feel
-    setTimeout(() => {
-      setBusinesses([
-        {
-          id: '1',
-          name: 'Al-Mansour Restaurant',
-          nameAr: 'مطعم المنصور',
-          category: 'restaurants',
-          governorate: 'baghdad',
-          city: 'Mansour',
-          phone: '07701234567',
-          isVerified: true,
-          isFeatured: true,
-          image: 'https://picsum.photos/seed/restaurant/400/300'
-        },
-        {
-          id: '2',
-          name: 'Babylon Hotel',
-          nameAr: 'فندق بابل',
-          category: 'hotels',
-          governorate: 'baghdad',
-          city: 'Jadriya',
-          phone: '07801234567',
-          isVerified: true,
-          isFeatured: false,
-          image: 'https://picsum.photos/seed/hotel/400/300'
-        }
-      ] as any);
+    try {
+      const results = await admin.searchBusinesses(searchFilters);
+      setBusinesses(results);
+    } catch (err) {
+      console.error('Search error:', err);
+      alert('Failed to search businesses: ' + (err as any).message);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
+  // Load all businesses on mount
+  React.useEffect(() => {
+    handleSearch();
+  }, []);
+
   const handleUpdate = async (id: string, updates: any) => {
-    alert('Changes saved (Mock)');
-    setEditingBusiness(null);
+    try {
+      const dbUpdates: any = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.nameAr !== undefined) dbUpdates.name_ar = updates.nameAr;
+      if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+      if (updates.whatsapp !== undefined) dbUpdates.whatsapp = updates.whatsapp;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.governorate !== undefined) dbUpdates.governorate = updates.governorate;
+      if (updates.city !== undefined) dbUpdates.city = updates.city;
+      if (updates.image !== undefined) dbUpdates.image_url = updates.image;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.isFeatured !== undefined) dbUpdates.is_featured = updates.isFeatured;
+      if (updates.isVerified !== undefined) dbUpdates.is_verified = updates.isVerified;
+      dbUpdates.updated_at = new Date().toISOString();
+      await admin.updateBusiness(id, dbUpdates);
+      alert('Business updated successfully!');
+      setEditingBusiness(null);
+      handleSearch();
+    } catch (err) {
+      alert('Failed to save changes: ' + (err as any).message);
+    }
   };
 
   return (
@@ -859,6 +863,7 @@ function ContentManager({ admin }: { admin: any }) {
   const [editingPost, setEditingPost] = useState<any | null>(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [newPost, setNewPost] = useState({ businessId: '', title: '', content: '', caption: '', image_url: '', likes: 0, views: 0 });
+  const [uploadingPostImage, setUploadingPostImage] = useState(false);
 
   const loadPosts = async () => {
     setLoading(true);
@@ -882,13 +887,48 @@ function ContentManager({ admin }: { admin: any }) {
   };
 
   const handleCreate = async () => {
+    if (!newPost.image_url) {
+      alert('Please upload an image for the post');
+      return;
+    }
     try {
-      await admin.createPost(newPost);
+      // Convert empty string to NULL for business_id
+      const postData = {
+        ...newPost,
+        business_id: newPost.businessId || null
+      };
+      await admin.createPost(postData);
       loadPosts();
       setShowCreatePost(false);
       setNewPost({ businessId: '', title: '', content: '', caption: '', image_url: '', likes: 0, views: 0 });
     } catch (err) {
-      alert('Failed to create post');
+      alert('Failed to create post: ' + (err as any).message);
+    }
+  };
+
+  const handlePostImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPostImage(true);
+    try {
+      const fileName = `${Date.now()}-${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('feed-images')
+        .upload(`posts/${fileName}`, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('feed-images')
+        .getPublicUrl(`posts/${fileName}`);
+
+      setNewPost({ ...newPost, image_url: publicUrl });
+    } catch (error) {
+      alert('Failed to upload image: ' + (error as any).message);
+      console.error(error);
+    } finally {
+      setUploadingPostImage(false);
     }
   };
 
@@ -1029,6 +1069,34 @@ function ContentManager({ admin }: { admin: any }) {
                   />
                 </div>
                 <FormInput label="Post Title" value={newPost.title} onChange={(v: string) => setNewPost({...newPost, title: v})} />
+                
+                {/* Image Upload Section */}
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Post Image <span className="text-red-500">*</span></label>
+                  <div className="flex flex-col md:flex-row items-center gap-8">
+                    <div className="w-full md:w-80 aspect-video rounded-3xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-200 flex items-center justify-center relative group">
+                      {newPost.image_url ? (
+                        <img src={newPost.image_url} className="w-full h-full object-cover" alt="" />
+                      ) : (
+                        <ImageIcon className="w-12 h-12 text-slate-200" />
+                      )}
+                      {uploadingPostImage && (
+                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-4 w-full">
+                      <label className="flex-1 px-6 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary-dark transition-all uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 cursor-pointer shadow-xl shadow-primary/20">
+                        <Upload className="w-4 h-4" />
+                        {uploadingPostImage ? 'Uploading...' : 'Upload Image'}
+                        <input type="file" className="hidden" accept="image/*" onChange={handlePostImageUpload} disabled={uploadingPostImage} />
+                      </label>
+                      <p className="text-[9px] text-slate-400 font-medium">Upload an image from your device. Image will be stored in Supabase Storage.</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Caption / Content</label>
                   <textarea 
@@ -1038,7 +1106,6 @@ function ContentManager({ admin }: { admin: any }) {
                     placeholder="Write in Arabic or English..."
                   />
                 </div>
-                <FormInput label="Image URL" value={newPost.image_url} onChange={(v: string) => setNewPost({...newPost, image_url: v})} />
                 
                 <div className="grid grid-cols-2 gap-6">
                   <FormInput label="Fake Likes" type="number" value={newPost.likes} onChange={(v: string) => setNewPost({...newPost, likes: parseInt(v) || 0})} />

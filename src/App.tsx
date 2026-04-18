@@ -11,6 +11,7 @@ import BusinessDashboard from '@/pages/BusinessDashboard';
 import ClaimPage from '@/pages/ClaimPage';
 import AdminDashboard from '@/pages/AdminDashboard';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
+import BusinessOwnerDashboard from '@/pages/BusinessOwnerDashboard';
 import AdminRoute from '@/components/auth/AdminRoute';
 import PageEditor from '@/components/PageEditor';
 import { useAuthStore } from '@/stores/authStore';
@@ -55,6 +56,9 @@ export default function App() {
 
         {/* Business Dashboard */}
         <Route path="/dashboard" element={<BusinessDashboard />} />
+
+        {/* Business Owner Dashboard */}
+        <Route path="/my-business" element={<BusinessOwnerDashboard />} />
 
         {/* Claim Flow */}
         <Route path="/claim" element={<ClaimPage />} />

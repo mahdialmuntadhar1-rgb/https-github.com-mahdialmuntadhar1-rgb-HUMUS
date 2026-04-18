@@ -41,14 +41,28 @@ export function useAuth() {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // Profile doesn't exist, create it
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert([{ id: userId, created_at: new Date().toISOString() }])
-            .select()
-            .single();
-          
-          if (!createError) setProfile(newProfile);
+          // Profile doesn't exist, create it as fallback
+          try {
+            const { data: newProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert([{
+                id: userId,
+                full_name: '',
+                role: 'user',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }])
+              .select()
+              .single();
+
+            if (!createError && newProfile) {
+              setProfile(newProfile);
+            } else {
+              console.error('Failed to create profile fallback:', createError);
+            }
+          } catch (insertErr) {
+            console.error('Error creating profile fallback:', insertErr);
+          }
         } else {
           throw error;
         }
