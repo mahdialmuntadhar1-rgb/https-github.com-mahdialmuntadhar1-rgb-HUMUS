@@ -14,6 +14,20 @@ export default function ResetPasswordPage() {
   const { language } = useHomeStore();
   const navigate = useNavigate();
 
+  // Extract access_token from URL hash on mount
+  useEffect(() => {
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.substring(1));
+    const accessToken = params.get('access_token');
+
+    if (accessToken) {
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: params.get('refresh_token') || '',
+      });
+    }
+  }, []);
+
   const translations = {
     title: {
       en: 'Set New Password',
@@ -54,6 +68,11 @@ export default function ResetPasswordPage() {
       en: 'Passwords do not match',
       ar: 'كلمات المرور غير متطابقة',
       ku: 'وشە نهێنییەکان وەک یەک نین'
+    },
+    invalidLink: {
+      en: 'Invalid or expired reset link. Please request a new password reset.',
+      ar: 'رابط إعادة التعيين غير صالح أو منتهي الصلاحية. يرجى طلب إعادة تعيين كلمة المرور مرة أخرى.',
+      ku: 'لینکی دووبارە ڕێکخستنەوە نادروست یان بەسەرچووە. تکایە دووبارە داواکاری دووبارە ڕێکخستنەوەی وشەی نهێنی بکە.'
     }
   };
 
@@ -68,13 +87,18 @@ export default function ResetPasswordPage() {
     setError(null);
 
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error(translations.invalidLink[language]);
+      }
+
       const { error: updateError } = await supabase.auth.updateUser({
         password: password
       });
 
       if (updateError) throw updateError;
       setSuccess(true);
-      
+
       // Redirect to home after 3 seconds
       setTimeout(() => {
         navigate('/');
