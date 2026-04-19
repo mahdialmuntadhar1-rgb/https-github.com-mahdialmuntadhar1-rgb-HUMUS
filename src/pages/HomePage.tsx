@@ -10,6 +10,8 @@ import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
 import AddBusinessModal from "@/components/home/AddBusinessModal";
 import PWAInstallButton from "@/components/common/PWAInstallButton";
+import OwnerEditFAB from "@/components/home/OwnerEditFAB";
+import EditModePanel from "@/components/home/EditModePanel";
 import { useBusinesses } from "@/hooks/useBusinesses";
 import { useHomeStore } from "@/stores/homeStore";
 import type { Business, Post } from "@/lib/supabase";
@@ -27,6 +29,7 @@ export default function HomePage() {
   const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'guide' | 'social'>('guide');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [isEditModePanelOpen, setIsEditModePanelOpen] = useState(false);
 
   const { language, setLanguage } = useHomeStore();
   
@@ -163,6 +166,15 @@ export default function HomePage() {
       />
 
       <PWAInstallButton />
+
+      {/* Owner Edit FAB - Only shows for mahdialmuntadhar1@gmail.com */}
+      <OwnerEditFAB onEditClick={() => setIsEditModePanelOpen(true)} />
+
+      {/* Edit Mode Panel */}
+      <EditModePanel
+        isOpen={isEditModePanelOpen}
+        onClose={() => setIsEditModePanelOpen(false)}
+      />
 
       {/* Footer */}
       <footer className="bg-text-main text-white pt-32 pb-16">
