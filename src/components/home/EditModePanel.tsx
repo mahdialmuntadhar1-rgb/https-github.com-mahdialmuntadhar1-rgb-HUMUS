@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Loader2 } from 'lucide-react';
-import { useAdminDB, HeroSlide } from '@/hooks/useAdminDB';
-import HeroEditor from '@/components/admin/HeroEditor';
+import { X } from 'lucide-react';
 
 interface EditModePanelProps {
   isOpen: boolean;
@@ -10,28 +8,6 @@ interface EditModePanelProps {
 }
 
 export default function EditModePanel({ isOpen, onClose }: EditModePanelProps) {
-  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { fetchHeroSlides } = useAdminDB();
-
-  // Load hero slides when panel opens
-  useEffect(() => {
-    if (isOpen) {
-      loadSlides();
-    }
-  }, [isOpen]);
-
-  const loadSlides = async () => {
-    setIsLoading(true);
-    try {
-      const slides = await fetchHeroSlides();
-      setHeroSlides(slides);
-    } catch (err) {
-      console.error('Failed to load hero slides:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <AnimatePresence>
@@ -67,41 +43,14 @@ export default function EditModePanel({ isOpen, onClose }: EditModePanelProps) {
 
             {/* Content */}
             <div className="p-6">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 animate-spin text-[#0F7B6C]" />
+              <div className="space-y-6">
+                {/* Placeholder message */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700 leading-relaxed">
+                    <strong>Edit Mode:</strong> Owner-only editing features coming soon. Use the admin panel for advanced content management.
+                  </p>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Hero Editor */}
-                  {heroSlides.length > 0 ? (
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-[#2B2F33] uppercase tracking-wider">
-                        Hero Slides
-                      </h3>
-                      <HeroEditor
-                        slides={heroSlides}
-                        onUpdate={(updatedSlides) => {
-                          setHeroSlides(updatedSlides);
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-sm text-amber-700">
-                        No hero slides found. Add slides from the admin panel.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Info */}
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mt-6">
-                    <p className="text-xs text-blue-700 leading-relaxed">
-                      <strong>Edit Mode:</strong> Upload new hero images, manage content, and customize the homepage.
-                    </p>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           </motion.div>
         </>
