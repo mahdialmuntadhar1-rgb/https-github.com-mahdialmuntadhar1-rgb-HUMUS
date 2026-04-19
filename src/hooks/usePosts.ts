@@ -26,7 +26,7 @@ export function usePosts(businessId?: string) {
       let query = supabase
         .from('posts')
         .select('*', { count: 'exact' })
-        .or('status.eq.visible,status.is.null');
+        .or('status.eq.visible,status.eq.null');
 
       if (isTrending) {
         query = query.order('likes', { ascending: false });

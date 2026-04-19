@@ -109,7 +109,9 @@ CREATE TABLE IF NOT EXISTS hero_slides (
   subtitle_en TEXT,
   cta_text TEXT,
   cta_link TEXT,
+  display_order INT DEFAULT 0,
   sort_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

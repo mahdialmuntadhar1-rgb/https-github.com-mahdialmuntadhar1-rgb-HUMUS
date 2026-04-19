@@ -126,8 +126,7 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult & { feat
 
   const fetchFeatured = async () => {
     try {
-      // Fetch businesses without filtering on potentially missing 'is_featured' column
-      // to avoid 400 errors in production. Filter in JS instead.
+      // Fetch featured businesses using standard snake_case column name
       const { data, error: fetchError } = await supabase
         .from('businesses')
         .select('*')
@@ -135,32 +134,16 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult & { feat
         .limit(5);
 
       if (fetchError) {
-        // If is_featured fails, try isFeatured
-        const { data: altData, error: altError } = await supabase
-          .from('businesses')
-          .select('*')
-          .eq('isFeatured', true)
-          .limit(5);
+        console.error('Error fetching featured businesses:', fetchError);
+        setFeaturedBusinesses([]);
+        return;
+      }
 
-        if (altError) {
-          // If both fail, just fetch first 5 businesses as featured
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('businesses')
-            .select('*')
-            .limit(5);
-          if (fallbackError) throw fallbackError;
-          if (fallbackData) {
-            mapFeaturedData(fallbackData);
-          }
-        } else if (altData) {
-          mapFeaturedData(altData);
-        }
-      } else if (data) {
+      if (data && data.length > 0) {
         mapFeaturedData(data);
       }
     } catch (err) {
-      console.error('Error fetching featured businesses:', err);
-      // Fallback to empty or predefined featured if everything fails
+      console.error('Unexpected error fetching featured businesses:', err);
       setFeaturedBusinesses([]);
     }
   };

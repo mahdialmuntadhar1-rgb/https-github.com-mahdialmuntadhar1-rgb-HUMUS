@@ -102,35 +102,17 @@ export default function EditModePanel({ isOpen, onClose }: EditModePanelProps) {
                   {activeTab === 'hero' && (
                     <div className="space-y-4">
                       {heroSlides.length > 0 ? (
-                        <HeroEditor
-                          slides={heroSlides.map(s => ({
-                            id: s.id,
-                            image_url: s.image_url,
-                            sort_order: s.display_order
-                          }))}
-                          onUpdate={async (updatedSlides) => {
-                            setHeroSlides(heroSlides.map(s => {
-                              const updated = updatedSlides.find(us => us.id === s.id);
-                              return updated ? { ...s, image_url: updated.image_url } : s;
-                            }));
-                          }}
-                        />
+                        <HeroEditor slides={heroSlides} onUpdate={loadHeroSlides} />
                       ) : (
-                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                          <p className="text-sm text-amber-700">
-                            No hero slides found. Create slides from the admin panel.
-                          </p>
-                        </div>
+                        <p className="text-slate-500 text-sm">No hero slides found. Create one to get started.</p>
                       )}
                     </div>
                   )}
 
-                  {/* Posts Editor - Simplified placeholder */}
+                  {/* Posts Tab Placeholder */}
                   {activeTab === 'posts' && (
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-700 leading-relaxed">
-                        <strong>Feed Posts:</strong> Post editing coming soon. Use the admin panel for advanced post management.
-                      </p>
+                    <div className="space-y-4">
+                      <p className="text-slate-500 text-sm">Feed posts editor coming soon.</p>
                     </div>
                   )}
                 </div>
