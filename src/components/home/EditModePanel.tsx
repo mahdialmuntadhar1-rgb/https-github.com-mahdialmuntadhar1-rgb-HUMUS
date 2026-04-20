@@ -109,10 +109,14 @@ export default function EditModePanel({ isOpen, onClose }: EditModePanelProps) {
                     </div>
                   )}
 
-                  {/* Posts Tab Placeholder */}
+                  {/* Posts Tab Info */}
                   {activeTab === 'posts' && (
                     <div className="space-y-4">
-                      <p className="text-slate-500 text-sm">Feed posts editor coming soon.</p>
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                        <p className="text-blue-700 text-sm font-medium">
+                          Posts are editable inline in the feed. Log in as the owner and hover over any post to edit, change the image, or delete it.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
