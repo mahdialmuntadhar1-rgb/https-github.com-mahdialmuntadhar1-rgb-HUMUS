@@ -1,9 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import debounce from "lodash/debounce";
 import HomeHeader from "@/components/home/HomeHeader";
 import HeroSection from "@/components/home/HeroSection";
-import EditableHeroSection from "@/components/buildMode/EditableHeroSection";
+import FeaturesSection from "@/components/home/FeaturesSection";
 import MainTabSwitcher from "@/components/home/MainTabSwitcher";
 import DirectoryTabPanel from "@/components/home/DirectoryTabPanel";
 import SocialFeed from "@/components/home/SocialFeed";
@@ -11,19 +10,16 @@ import AuthModal from "@/components/auth/AuthModal";
 import BusinessDetailModal from "@/components/home/BusinessDetailModal";
 import AddBusinessModal from "@/components/home/AddBusinessModal";
 import PWAInstallButton from "@/components/common/PWAInstallButton";
-import OwnerEditFAB from "@/components/home/OwnerEditFAB";
-import EditModePanel from "@/components/home/EditModePanel";
 import { useBusinesses } from "@/hooks/useBusinesses";
 import { useHomeStore } from "@/stores/homeStore";
-import { useBuildMode } from "@/hooks/useBuildMode";
-import { heroService, HeroSlide } from "@/lib/heroService";
-import type { Business, Post } from "@/lib/supabase";
+import type { Business } from "@/lib/supabase";
 
+import { useLocalBuildStore } from "@/stores/localBuildStore";
 import { ArrowRight, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function HomePage() {
-  const navigate = useNavigate();
+  const { isBuildMode, setBuildMode } = useLocalBuildStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -32,12 +28,9 @@ export default function HomePage() {
   const [isAddBusinessModalOpen, setIsAddBusinessModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'guide' | 'social'>('guide');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
-  const [isEditModePanelOpen, setIsEditModePanelOpen] = useState(false);
-  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
-  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
 
   const { language, setLanguage } = useHomeStore();
-
+  
   // Set Arabic as default on first load if not set
   useEffect(() => {
     if (!language) {
@@ -45,24 +38,9 @@ export default function HomePage() {
     }
   }, [language, setLanguage]);
 
-  // Load hero slides from database
-  useEffect(() => {
-    const loadHeroSlides = async () => {
-      try {
-        const slides = await heroService.getActiveSlides();
-        if (slides && slides.length > 0) {
-          setHeroSlides(slides);
-        }
-      } catch (err) {
-        console.error('Failed to load hero slides:', err);
-      }
-    };
-    loadHeroSlides();
-  }, []);
-
-  const {
-    businesses,
-    loading: businessesLoading,
+  const { 
+    businesses, 
+    loading: businessesLoading, 
     hasMore,
     totalCount,
     loadMore,
@@ -82,22 +60,6 @@ export default function HomePage() {
 
   const isRTL = language === 'ar' || language === 'ku';
 
-  const handlePrevHero = () => {
-    if (heroSlides.length > 0) {
-      setCurrentHeroIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
-    }
-  };
-
-  const handleNextHero = () => {
-    if (heroSlides.length > 0) {
-      setCurrentHeroIndex((prev) => (prev + 1) % heroSlides.length);
-    }
-  };
-
-  const handleHeroSlidesUpdate = (updated: HeroSlide[]) => {
-    setHeroSlides(updated);
-  };
-
   return (
     <div className="min-h-screen bg-[#F7F7F5] selection:bg-[#0F7B6C]/20" dir={isRTL ? 'rtl' : 'ltr'}>
       <HomeHeader 
@@ -109,18 +71,14 @@ export default function HomePage() {
       />
 
       <main className="pt-4 sm:pt-8">
-        {/* Hero Section */}
-        <HeroSection
-          businesses={businesses}
+        <HeroSection 
+          businesses={businesses} 
           onBusinessClick={setSelectedBusiness}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          heroSlides={heroSlides}
-          currentHeroIndex={currentHeroIndex}
-          onPrevHero={handlePrevHero}
-          onNextHero={handleNextHero}
-          onHeroSlidesUpdate={handleHeroSlidesUpdate}
         />
+
+        <FeaturesSection />
 
         <div className="max-w-7xl mx-auto px-4 mb-12">
           <MainTabSwitcher 
@@ -146,6 +104,7 @@ export default function HomePage() {
                     hasMore={hasMore}
                     totalCount={totalCount}
                     loadMore={loadMore}
+                    refresh={refresh}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                     onBusinessClick={setSelectedBusiness}
@@ -164,14 +123,6 @@ export default function HomePage() {
                 className="bg-white/50 backdrop-blur-sm py-12 sm:py-20"
               >
                 <div className="max-w-4xl mx-auto px-4">
-                  <div className="text-center mb-16">
-                    <h2 className="text-4xl sm:text-6xl font-black text-[#111827] poppins-bold uppercase tracking-tighter mb-4">
-                      {language === 'ar' ? 'شكو ماكو' : 'Shaku Maku'}
-                    </h2>
-                    <p className="text-slate-500 font-medium text-lg">
-                      {language === 'ar' ? 'آخر أخبار وعروض الشركات في العراق' : 'Latest news and offers from businesses in Iraq'}
-                    </p>
-                  </div>
                   <SocialFeed onBusinessClick={setSelectedBusiness} />
                 </div>
               </motion.div>
@@ -181,18 +132,10 @@ export default function HomePage() {
       </main>
 
       {/* Modals */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
         initialMode={authMode}
-        onLoginSuccess={(profile: any) => {
-          if (profile?.role === 'business_owner') {
-            navigate('/my-business');
-          } else if (profile?.role === 'admin') {
-            // Admins use Build Mode on homepage, no redirect needed
-            // navigate('/'); // Stay on homepage
-          }
-        }}
       />
       
       <BusinessDetailModal 
@@ -200,22 +143,28 @@ export default function HomePage() {
         onClose={() => setSelectedBusiness(null)} 
       />
       
-      <AddBusinessModal
-        isOpen={isAddBusinessModalOpen}
+      <AddBusinessModal 
+        isOpen={isAddBusinessModalOpen} 
         onClose={() => setIsAddBusinessModalOpen(false)}
         onSuccess={() => refresh()}
       />
 
       <PWAInstallButton />
 
-      {/* Owner Edit FAB - Only shows for mahdialmuntadhar1@gmail.com */}
-      <OwnerEditFAB onEditClick={() => setIsEditModePanelOpen(true)} />
-
-      {/* Edit Mode Panel */}
-      <EditModePanel
-        isOpen={isEditModePanelOpen}
-        onClose={() => setIsEditModePanelOpen(false)}
-      />
+      {/* Build Mode Toggle */}
+      <div className="fixed bottom-8 left-8 z-[100] flex items-center gap-3">
+        <button
+          onClick={() => setBuildMode(!isBuildMode)}
+          className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl transition-all flex items-center gap-2 ${
+            isBuildMode 
+              ? 'bg-emerald-500 text-white shadow-emerald-500/20' 
+              : 'bg-white text-slate-400 hover:text-primary shadow-slate-200'
+          }`}
+        >
+          <div className={`w-2 h-2 rounded-full ${isBuildMode ? 'bg-white animate-pulse' : 'bg-slate-300'}`} />
+          {isBuildMode ? 'Build Mode: On' : 'Enter Build Mode'}
+        </button>
+      </div>
 
       {/* Footer */}
       <footer className="bg-text-main text-white pt-32 pb-16">

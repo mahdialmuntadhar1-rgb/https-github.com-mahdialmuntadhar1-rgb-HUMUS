@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, SearchX, RefreshCw } from 'lucide-react';
 import { Business } from '@/lib/supabase';
 import { useHomeStore } from '@/stores/homeStore';
 import BusinessCard from './BusinessCard';
-import EditableBusinessCard from '@/components/buildMode/EditableBusinessCard';
 
 interface BusinessGridProps {
   businesses: Business[];
@@ -12,6 +11,7 @@ interface BusinessGridProps {
   hasMore?: boolean;
   totalCount?: number;
   onLoadMore?: () => void;
+  onRefresh?: () => void;
   onBusinessClick?: (business: Business) => void;
 }
 
@@ -21,6 +21,7 @@ export default function BusinessGrid({
   hasMore, 
   totalCount = 0,
   onLoadMore, 
+  onRefresh,
   onBusinessClick 
 }: BusinessGridProps) {
   const { language } = useHomeStore();
@@ -95,18 +96,11 @@ export default function BusinessGrid({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
             >
-              <EditableBusinessCard
-                business={biz}
-                onUpdate={(updated) => {
-                  // Update local business data when owner edits
-                  onBusinessClick?.(updated);
-                }}
-              >
-                <BusinessCard
-                  biz={biz}
-                  onClick={onBusinessClick}
-                />
-              </EditableBusinessCard>
+              <BusinessCard
+                biz={biz}
+                onClick={onBusinessClick}
+                onRefresh={onRefresh}
+              />
             </motion.div>
           ))}
         </AnimatePresence>

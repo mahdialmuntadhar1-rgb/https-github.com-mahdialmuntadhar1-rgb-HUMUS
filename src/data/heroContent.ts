@@ -1,20 +1,28 @@
-export const heroContent = {
-  ar: {
-    title: 'شكو ماكو',
-    subtitle: 'اكتشف أفضل الأعمال والخدمات في العراق',
-    searchPlaceholder: 'ابحث عن مطعم، فندق، طبيب...',
-    searchButton: 'بحث'
+import { HeroSlide } from '@/types/buildMode';
+
+export const heroContent: HeroSlide[] = [
+  {
+    "id": "1",
+    "image": "/hero/hero-1-1776244383625.jpeg"
   },
-  en: {
-    title: 'Shaku Maku',
-    subtitle: 'Discover the best businesses and services across Iraq',
-    searchPlaceholder: 'Search for restaurants, hotels, doctors...',
-    searchButton: 'Search'
+  {
+    "id": "default-fallback",
+    "image": "https://picsum.photos/seed/belive/1200/600"
   },
-  ku: {
-    title: 'Shaku Maku',
-    subtitle: 'باشترین کار و خزمەتگوزارییەکان لە عێراق بدۆزەرەوە',
-    searchPlaceholder: 'گەڕان بۆ چێشتخانە، هوتێل، پزیشک...',
-    searchButton: 'گەڕان'
+  {
+    "id": "ixcy0tlnw",
+    "image": "/hero/hero-2-1776233980863.jpeg"
+  },
+  {
+    "id": "pmjcxrbga",
+    "image": "/hero/hero-3-1776243513533.jpeg"
+  },
+  {
+    "id": "l1zimk86g",
+    "image": "/hero/hero-4-1776243531650.jpeg"
+  },
+  {
+    "id": "txovgfamw",
+    "image": "https://picsum.photos/seed/new/1200/600"
   }
-};
+];

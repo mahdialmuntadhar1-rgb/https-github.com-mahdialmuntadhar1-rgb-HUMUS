@@ -8,6 +8,9 @@ export interface HeroSlide {
   subtitle_en: string;
   subtitle_ar: string;
   subtitle_ku: string;
+  slogan_en: string;
+  slogan_ar: string;
+  slogan_ku: string;
   image_url: string;
   cta_text_en: string;
   cta_text_ar: string;

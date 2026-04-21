@@ -262,7 +262,6 @@ export function useAdmin() {
 
   const createPost = async (postData: { 
     businessId?: string; 
-    business_id?: string | null;
     title?: string; 
     content: string; 
     caption?: string; 
@@ -276,7 +275,7 @@ export function useAdmin() {
       const { error: createError } = await supabase
         .from('posts')
         .insert([{
-          business_id: postData.business_id || (postData.businessId || null),
+          business_id: postData.businessId,
           title: postData.title,
           content: postData.content,
           caption: postData.caption,
