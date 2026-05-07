@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import debounce from "lodash/debounce";
 import HomeHeader from "@/components/home/HomeHeader";
 import HeroSection from "@/components/home/HeroSection";
+import GovernorateFilter from "@/components/home/GovernorateFilter";
 import FeaturesSection from "@/components/home/FeaturesSection";
 import MainTabSwitcher from "@/components/home/MainTabSwitcher";
 import DirectoryTabPanel from "@/components/home/DirectoryTabPanel";
@@ -21,7 +22,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 export default function HomePage() {
   const { isBuildMode, setBuildMode, canEdit } = useLocalBuildStore();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -63,7 +64,7 @@ export default function HomePage() {
   const isRTL = language === 'ar' || language === 'ku';
 
   return (
-    <div className="min-h-screen bg-[#F7F7F5] selection:bg-[#0F7B6C]/20" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="selection:bg-primary/20" dir={isRTL ? 'rtl' : 'ltr'}>
       <HomeHeader 
         onAddBusiness={() => setIsAddBusinessModalOpen(true)}
         onAuth={(mode) => {
@@ -74,15 +75,15 @@ export default function HomePage() {
 
       <main className="pt-4 sm:pt-8">
         <HeroSection 
-          businesses={businesses} 
-          onBusinessClick={setSelectedBusiness}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
         />
 
+        <GovernorateFilter />
+
         <FeaturesSection />
 
-        <div className="max-w-7xl mx-auto px-4 mb-12">
+        <div className="mb-12">
           <MainTabSwitcher 
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -154,7 +155,7 @@ export default function HomePage() {
       <PWAInstallButton />
 
       {/* Build Mode Toggle - Only for Owner */}
-      {canEdit(user?.email) && (
+      {canEdit(user?.email, profile?.role) && (
         <div className="fixed bottom-8 left-8 z-[100] flex items-center gap-3">
           <button
             onClick={() => setBuildMode(!isBuildMode)}

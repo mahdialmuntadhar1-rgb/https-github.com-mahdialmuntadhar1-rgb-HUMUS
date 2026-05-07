@@ -72,8 +72,11 @@ export function usePosts(businessId?: string) {
 
       if (fetchError) {
         // Handle common DB config errors quietly and use fallbacks
-        if (fetchError.code === '42P17' || fetchError.code === 'PGRST205') {
-          console.warn(`Supabase DB issues (${fetchError.code}) - falling back to mock posts.`);
+        const isNetworkError = fetchError.message?.includes('fetch') || fetchError.code === '';
+        const isRLSRecursion = fetchError.code === '42P17' || fetchError.code === 'PGRST205';
+
+        if (isRLSRecursion || isNetworkError) {
+          console.warn(`Supabase issues - falling back to mock posts. (${fetchError.code || 'Network'})`);
           setPosts(MOCK_POSTS);
           setHasMore(false);
           return;

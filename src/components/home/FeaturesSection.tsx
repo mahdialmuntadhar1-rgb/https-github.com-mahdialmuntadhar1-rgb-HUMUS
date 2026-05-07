@@ -160,8 +160,8 @@ export default function FeaturesSection() {
   }
 
   return (
-    <div className="w-full px-4 mb-24 sm:mb-32">
-      <div className="max-w-6xl mx-auto">
+    <div className="w-full mb-24 sm:mb-32">
+      <div className="max-w-full mx-auto">
         <div className="text-center mb-16 px-4">
           <h2 className="text-4xl sm:text-6xl font-black text-slate-900 poppins-bold uppercase tracking-tighter mb-6 leading-none">
             {language === 'ar' ? 'مميزات شكو ماكو' : language === 'ku' ? 'تایبەتمەندییەکان' : 'Our Features'}

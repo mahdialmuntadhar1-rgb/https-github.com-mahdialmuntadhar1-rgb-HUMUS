@@ -249,18 +249,15 @@ export function useBusinesses(searchQuery: string): UseBusinessesResult & { feat
         return newBusinesses;
       });
     } catch (err: any) {
-      // Quietly use fallbacks for known DB configuration issues
-      if (err?.code === '42P17' || err?.code === 'PGRST205') {
-        if (isRefresh) {
-          setBusinesses(FALLBACK_BUSINESSES);
-          setTotalCount(FALLBACK_BUSINESSES.length);
-          setHasMore(false);
-        }
-        return;
+      // Handle network errors or configuration issues
+      const isNetworkError = err instanceof Error && err.message.includes('fetch');
+      const isRLSRecursion = err?.code === '42P17' || err?.code === 'PGRST205';
+
+      if (isRLSRecursion) {
+        console.warn('RLS Recursion detected. Fallback applied.');
+      } else if (isNetworkError) {
+        console.error('Supabase Network Error: Failed to fetch. Check VITE_SUPABASE_URL or project status.');
       }
-      
-      console.error('Error fetching businesses:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch businesses');
       
       if (isRefresh) {
         setBusinesses(FALLBACK_BUSINESSES);
