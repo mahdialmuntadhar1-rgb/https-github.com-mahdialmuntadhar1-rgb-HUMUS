@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuthStore } from '@/stores/authStore';
 import type { Post } from '@/lib/supabase';
@@ -23,7 +23,7 @@ export function usePosts(businessId?: string) {
 
       let query = supabase
         .from('posts')
-        .select(`*, businesses:business_id (id, name, business_name, category, city, image_url, logo_url, phone_1, phone, whatsapp, social_links, is_active, status)`)
+        .select(`*, businesses:business_id (id, name, category, city, image_url, logo_url, phone_1, phone, whatsapp, social_links, is_active, status)`)
         .eq('is_active', true)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
@@ -63,9 +63,9 @@ export function usePosts(businessId?: string) {
             comments: item.comments_count || item.comments || 0,
             shares: item.shares_count || item.shares || 0,
             createdAt: item.created_at ? new Date(item.created_at) : new Date(),
-            authorName: business.business_name || business.name || item.author_name || 'Unknown Business',
+            authorName: business.name || item.author_name || 'Unknown Business',
             authorAvatar: business.image_url || business.logo_url || item.author_avatar || null,
-            businessName: business.business_name || business.name || 'Unknown Business',
+            businessName: business.name || 'Unknown Business',
             businessCity: business.city || '',
             businessCategory: business.category || 'General',
             businessPhone: business.phone_1 || business.phone || '',
@@ -89,7 +89,7 @@ export function usePosts(businessId?: string) {
 
   const loadMore = () => { if (!loading && hasMore) fetchPosts(true); };
 
-  const createPost = async (caption: string, imageUrl?: string) => {
+  const createPost = async (caption: string, imageUrl?: string, _metadata?: { businessName?: string; isVerified?: boolean }) => {
     if (!businessId) return null;
     try {
       const insertData: any = { business_id: businessId, caption };
@@ -99,6 +99,50 @@ export function usePosts(businessId?: string) {
       fetchPosts();
       return data;
     } catch (err) { console.error('[usePosts] Create fatal error:', err); return null; }
+  };
+
+  const updatePost = async (postId: string, updates: Partial<Post>) => {
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.content !== undefined) dbUpdates.caption = updates.content;
+    if (updates.caption !== undefined) dbUpdates.caption = updates.caption;
+    if (updates.image !== undefined) dbUpdates.image_url = updates.image;
+    if (updates.image_url !== undefined) dbUpdates.image_url = updates.image_url;
+
+    if (Object.keys(dbUpdates).length === 0) return null;
+
+    try {
+      const { data, error: updateError } = await supabase
+        .from('posts')
+        .update(dbUpdates)
+        .eq('id', postId)
+        .select()
+        .single();
+
+      if (updateError) { console.error('[usePosts] Update error:', updateError); return null; }
+      setPosts(prev => prev.map(post => post.id === postId ? { ...post, ...updates } : post));
+      return data;
+    } catch (err) { console.error('[usePosts] Update fatal error:', err); return null; }
+  };
+
+  const deletePost = async (postId: string) => {
+    try {
+      const { error: deleteError } = await supabase.from('posts').delete().eq('id', postId);
+      if (deleteError) { console.error('[usePosts] Delete error:', deleteError); return false; }
+      setPosts(prev => prev.filter(post => post.id !== postId));
+      return true;
+    } catch (err) { console.error('[usePosts] Delete fatal error:', err); return false; }
+  };
+
+  const uploadPostImage = async (file: File) => {
+    const path = `feed/${Date.now()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from('build-mode-images')
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from('build-mode-images').getPublicUrl(path);
+    return data.publicUrl;
   };
 
   const likePost = async (postId: string) => {
@@ -116,5 +160,5 @@ export function usePosts(businessId?: string) {
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
-  return { posts, loading, error, hasMore, loadMore, createPost, likePost, addComment, refresh: fetchPosts };
+  return { posts, loading, error, hasMore, loadMore, createPost, updatePost, deletePost, uploadPostImage, likePost, addComment, refresh: fetchPosts };
 }
